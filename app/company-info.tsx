@@ -1,0 +1,218 @@
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withSpring,
+    withTiming
+} from 'react-native-reanimated';
+
+const AnimatedView = ({ children, show, delay = 0, style }: { children: React.ReactNode; show: boolean; delay?: number; style?: any }) => {
+    const scale = useSharedValue(0.95);
+    const opacity = useSharedValue(0);
+    const translateY = useSharedValue(20);
+
+    useEffect(() => {
+        if (show) {
+            scale.value = withDelay(delay, withSpring(1, { 
+                damping: 20,
+                stiffness: 300,
+                mass: 0.5
+            }));
+            opacity.value = withDelay(delay, withTiming(1, { duration: 400 }));
+            translateY.value = withDelay(delay, withSpring(0, {
+                damping: 20,
+                stiffness: 300,
+                mass: 0.5
+            }));
+        }
+    }, [show, delay, opacity, scale, translateY]);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        opacity: opacity.value,
+        transform: [
+            { scale: scale.value },
+            { translateY: translateY.value }
+        ],
+    }));
+
+    return (
+        <Animated.View style={[style, animatedStyle]}>
+            {children}
+        </Animated.View>
+    );
+};
+
+const AnimatedText = ({ text, style, show, delay = 0 }: { text: string; style?: any; show: boolean; delay?: number }) => {
+    return (
+        <AnimatedView show={show} delay={delay}>
+            <Text style={style}>{text}</Text>
+        </AnimatedView>
+    );
+};
+
+export default function CompanyInfo() {
+    const { templateId } = useLocalSearchParams();
+    const [companyName, setCompanyName] = useState('');
+    const [socialMediaAndWeb, setSocialMediaAndWeb] = useState('');
+    const [showContent, setShowContent] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setShowContent(true), 100);
+        return () => clearTimeout(timer);
+    }, []);
+
+    const handleSubmit = () => {
+        router.push({
+            pathname: '/agent-setup',
+            params: { 
+                templateId,
+                companyName,
+                socialMediaAndWeb 
+            }
+        });
+    };
+
+    return (
+        <View style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
+            <ScrollView style={{ flex: 1 }}>
+                <View style={{ padding: 24, paddingBottom: 100, alignItems: 'center' }}>
+                    <AnimatedText
+                        text="Información de tu empresa"
+                        show={showContent}
+                        style={{
+                            fontSize: 32,
+                            fontWeight: 'bold',
+                            color: '#1a1a1a',
+                            marginBottom: 12,
+                            textAlign: 'center'
+                        }}
+                    />
+                    
+                    <AnimatedText
+                        text="Cuéntanos más sobre tu negocio"
+                        show={showContent}
+                        delay={200}
+                        style={{
+                            fontSize: 18,
+                            color: '#666',
+                            marginBottom: 40,
+                            textAlign: 'center'
+                        }}
+                    />
+                    
+                    <View style={{ width: '100%', gap: 24 }}>
+                        <AnimatedView show={showContent} delay={400}>
+                            <Text style={{ 
+                                fontSize: 17, 
+                                color: '#2c3e50', 
+                                marginBottom: 10,
+                                fontWeight: '600'
+                            }}>
+                                Nombre de la empresa
+                            </Text>
+                            <TextInput
+                                value={companyName}
+                                onChangeText={setCompanyName}
+                                placeholder="Ingresa el nombre de tu empresa"
+                                style={{
+                                    backgroundColor: 'white',
+                                    padding: 16,
+                                    borderRadius: 16,
+                                    fontSize: 16,
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 4 },
+                                    shadowOpacity: 0.1,
+                                    shadowRadius: 12,
+                                    elevation: 4,
+                                    borderWidth: 1,
+                                    borderColor: '#e1e8ed'
+                                }}
+                            />
+                        </AnimatedView>
+
+                        <AnimatedView show={showContent} delay={600}>
+                            <Text style={{ 
+                                fontSize: 17, 
+                                color: '#2c3e50', 
+                                marginBottom: 10,
+                                fontWeight: '600'
+                            }}>
+                                Sitio web y redes sociales
+                                <Text style={{ 
+                                    fontSize: 15, 
+                                    color: '#94a3b8',
+                                    fontWeight: '400'
+                                }}> (opcional)</Text>
+                            </Text>
+                            <TextInput
+                                value={socialMediaAndWeb}
+                                onChangeText={setSocialMediaAndWeb}
+                                placeholder="Ejemplos de formato:&#10;&#10;Sitio web: https://www.miempresa.com&#10;Facebook: https://facebook.com/miempresa&#10;Instagram: https://instagram.com/miempresa&#10;&#10;Ingresa tus URLs (una por línea):"
+                                multiline={true}
+                                numberOfLines={6}
+                                textAlignVertical="top"
+                                style={{
+                                    backgroundColor: 'white',
+                                    padding: 16,
+                                    borderRadius: 16,
+                                    fontSize: 16,
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 4 },
+                                    shadowOpacity: 0.1,
+                                    shadowRadius: 12,
+                                    elevation: 4,
+                                    height: 180,
+                                    textAlignVertical: 'top',
+                                    borderWidth: 1,
+                                    borderColor: '#e1e8ed'
+                                }}
+                            />
+                        </AnimatedView>
+                    </View>
+                </View>
+            </ScrollView>
+
+            <AnimatedView 
+                show={showContent} 
+                delay={800}
+                style={{
+                    width: '100%',
+                    padding: 24,
+                    position: 'absolute',
+                    bottom: 0,
+                    backgroundColor: '#f8f9fa',
+                    borderTopWidth: 1,
+                    borderTopColor: 'rgba(0, 0, 0, 0.05)'
+                }}
+            >
+                <TouchableOpacity
+                    style={{
+                        backgroundColor: '#0066FF',
+                        paddingVertical: 18,
+                        borderRadius: 16,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        shadowColor: '#0066FF',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 12,
+                        elevation: 6,
+                    }}
+                    onPress={handleSubmit}
+                >
+                    <Text style={{ 
+                        color: 'white', 
+                        fontSize: 17, 
+                        fontWeight: '600',
+                        letterSpacing: 0.3
+                    }}>
+                        Continuar
+                    </Text>
+                </TouchableOpacity>
+            </AnimatedView>
+        </View>
+    );
+}

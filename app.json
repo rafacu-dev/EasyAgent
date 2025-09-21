@@ -9,9 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.drecom.EasyAgent",
       "supportsTablet": true
     },
     "android": {
+      "package": "com.drecom.EasyAgent",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -43,6 +45,10 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "rcApplApiKey": "appl_nunGwWyvHhMVyiDGLfpXXtSyYsC",
+      "rcGooglApiKey": "goog_oIWkmVpSoygObsqnMXqKBofnNUK"
     }
   }
 }
