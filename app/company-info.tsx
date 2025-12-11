@@ -1,5 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, {
     useAnimatedStyle,
@@ -54,6 +55,7 @@ const AnimatedText = ({ text, style, show, delay = 0 }: { text: string; style?: 
 };
 
 export default function CompanyInfo() {
+    const { t } = useTranslation();
     const { templateId } = useLocalSearchParams();
     const [companyName, setCompanyName] = useState('');
     const [socialMediaAndWeb, setSocialMediaAndWeb] = useState('');
@@ -80,7 +82,7 @@ export default function CompanyInfo() {
             <ScrollView style={{ flex: 1 }}>
                 <View style={{ padding: 24, paddingBottom: 100, alignItems: 'center' }}>
                     <AnimatedText
-                        text="Información de tu empresa"
+                        text={t('companyInfo.title')}
                         show={showContent}
                         style={{
                             fontSize: 32,
@@ -92,7 +94,7 @@ export default function CompanyInfo() {
                     />
                     
                     <AnimatedText
-                        text="Cuéntanos más sobre tu negocio"
+                        text={t('companyInfo.subtitle')}
                         show={showContent}
                         delay={200}
                         style={{
@@ -111,12 +113,12 @@ export default function CompanyInfo() {
                                 marginBottom: 10,
                                 fontWeight: '600'
                             }}>
-                                Nombre de la empresa
+                                {t('companyInfo.companyName')}
                             </Text>
                             <TextInput
                                 value={companyName}
                                 onChangeText={setCompanyName}
-                                placeholder="Ingresa el nombre de tu empresa"
+                                placeholder={t('companyInfo.companyNamePlaceholder')}
                                 style={{
                                     backgroundColor: 'white',
                                     padding: 16,
@@ -140,17 +142,17 @@ export default function CompanyInfo() {
                                 marginBottom: 10,
                                 fontWeight: '600'
                             }}>
-                                Sitio web y redes sociales
+                                {t('companyInfo.socialMedia')}
                                 <Text style={{ 
                                     fontSize: 15, 
                                     color: '#94a3b8',
                                     fontWeight: '400'
-                                }}> (opcional)</Text>
+                                }}> ({t('common.optional')})</Text>
                             </Text>
                             <TextInput
                                 value={socialMediaAndWeb}
                                 onChangeText={setSocialMediaAndWeb}
-                                placeholder="Ejemplos de formato:&#10;&#10;Sitio web: https://www.miempresa.com&#10;Facebook: https://facebook.com/miempresa&#10;Instagram: https://instagram.com/miempresa&#10;&#10;Ingresa tus URLs (una por línea):"
+                                placeholder={t('companyInfo.socialMediaPlaceholder')}
                                 multiline={true}
                                 numberOfLines={6}
                                 textAlignVertical="top"
@@ -209,7 +211,7 @@ export default function CompanyInfo() {
                         fontWeight: '600',
                         letterSpacing: 0.3
                     }}>
-                        Continuar
+                        {t('common.continue')}
                     </Text>
                 </TouchableOpacity>
             </AnimatedView>

@@ -1,0 +1,40 @@
+{
+  "common": {
+    "continue": "Continuar",
+    "optional": "opcional",
+    "success": "Éxito"
+  },
+  "welcome": {
+    "title": "¡Bienvenido a EasyAgent!",
+    "subtitle": "Selecciona la plantilla del tipo de empresa para tu agente de llamadas por IA."
+  },
+  "templates": {
+    "construction": "Construcción",
+    "barber": "Peluquería",
+    "garden": "Jardinería",
+    "marketing": "Marketing",
+    "mechanic": "Mecánico de autos",
+    "events": "Eventos y fiestas"
+  },
+  "companyInfo": {
+    "title": "Información de tu empresa",
+    "subtitle": "Cuéntanos más sobre tu negocio",
+    "companyName": "Nombre de la empresa",
+    "companyNamePlaceholder": "Ingresa el nombre de tu empresa",
+    "socialMedia": "Sitio web y redes sociales",
+    "socialMediaPlaceholder": "Ejemplos de formato:\n\nSitio web: https://www.miempresa.com\nFacebook: https://facebook.com/miempresa\nInstagram: https://instagram.com/miempresa\n\nIngresa tus URLs (una por línea):"
+  },
+  "agentSetup": {
+    "title": "Configura tu Agente",
+    "subtitle": "Personaliza las características de tu asistente virtual",
+    "masculine": "Masculino",
+    "feminine": "Femenino",
+    "agentName": "Nombre del Agente",
+    "agentNamePlaceholder": "Ingresa un nombre para tu agente",
+    "description": "Descripción",
+    "descriptionPlaceholder": "Describe la personalidad o características especiales de tu agente",
+    "finish": "Finalizar",
+    "creating": "Creando agente...",
+    "agentCreated": "¡Tu agente ha sido creado exitosamente y está listo para usar!"
+  }
+}

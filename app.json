@@ -40,7 +40,8 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -48,7 +49,11 @@
     },
     "extra": {
       "rcApplApiKey": "appl_nunGwWyvHhMVyiDGLfpXXtSyYsC",
-      "rcGooglApiKey": "goog_oIWkmVpSoygObsqnMXqKBofnNUK"
+      "rcGooglApiKey": "goog_oIWkmVpSoygObsqnMXqKBofnNUK",
+      "router": {},
+      "eas": {
+        "projectId": "5a7204d1-9095-4611-8382-fa10bcee4403"
+      }
     }
   }
 }

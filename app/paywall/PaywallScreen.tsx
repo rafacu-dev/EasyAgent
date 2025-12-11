@@ -203,7 +203,7 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
             ),
             headerShown: true,
         });
-    }, [navigation, restorePurchases]);
+    }, [navigation, restorePurchases, t]);
 
     if (loading) {
         return (

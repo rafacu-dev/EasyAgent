@@ -1,6 +1,7 @@
 import Constants from "expo-constants";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { Image, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import Purchases, { LOG_LEVEL } from "react-native-purchases/dist/purchases";
 import Animated, {
@@ -11,35 +12,35 @@ import Animated, {
     withTiming
 } from 'react-native-reanimated';
 
-const templates = [
+const getTemplates = (t: any) => [
     {
         id: 'construction',
-        name: "Construcción",
+        name: t('templates.construction'),
         icon: require("../assets/images/construction.png"),
     },
     {
         id: 'barber',
-        name: "Peluquería",
+        name: t('templates.barber'),
         icon: require("../assets/images/barber.png"),
     },
     {
         id: 'garden',
-        name: "Jardinería",
+        name: t('templates.garden'),
         icon: require("../assets/images/garden.png"),
     },
     {
         id: 'marketing',
-        name: "Marketing",
+        name: t('templates.marketing'),
         icon: require("../assets/images/marketing.png"),
     },
     {
         id: 'mechanic',
-        name: "Mecanico de autos",
+        name: t('templates.mechanic'),
         icon: require("../assets/images/mechanic.png"),
     },
     {
         id: 'events',
-        name: "Eventos y fiestas",
+        name: t('templates.events'),
         icon: require("../assets/images/events.png"),
     },
 ];
@@ -167,10 +168,13 @@ const TemplateCard = ({
 };
 
 export default function Index() {
+    const { t } = useTranslation();
     const [showTitle, setShowTitle] = useState(false);
     const [showSubtitle, setShowSubtitle] = useState(false);
     const [showTemplates, setShowTemplates] = useState(false);
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+    
+    const templates = getTemplates(t);
 
     useEffect(() => {
         const titleTimer = setTimeout(() => setShowTitle(true), 100);
@@ -188,7 +192,7 @@ export default function Index() {
         <View style={{ flex: 1, backgroundColor: '#f5f5f5', justifyContent: 'flex-start', alignItems: 'center', paddingHorizontal: 10 }}>
             <View style={{ marginTop: 20, alignItems: 'center', marginBottom: 20, width: '100%' }}>
                 <AnimatedText
-                    text="¡Bienvenido a EasyAgent!"
+                    text={t('welcome.title')}
                     show={showTitle}
                     style={{
                         fontSize: 28,
@@ -203,7 +207,7 @@ export default function Index() {
                     }}
                 />
                 <AnimatedText
-                    text="Selecciona la plantilla del tipo de empresa para tu agente de llamadas por IA."
+                    text={t('welcome.subtitle')}
                     show={showSubtitle}
                     style={{
                         fontSize: 18,
@@ -260,7 +264,7 @@ export default function Index() {
                         }}
                     >
                         <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                            Continuar
+                            {t('common.continue')}
                         </Text>
                     </TouchableOpacity>
                 </View>

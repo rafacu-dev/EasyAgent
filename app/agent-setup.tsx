@@ -1,37 +1,76 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, {
-  FadeInDown,
-  FadeInUp
+    FadeInDown,
+    FadeInUp
 } from 'react-native-reanimated';
 import { saveAgentConfig } from '../utils/storage';
+import { BaseUrl } from '../utils/constants';
 
 export default function AgentSetup() {
+    const { t } = useTranslation();
     const params = useLocalSearchParams();
     const [agentName, setAgentName] = useState('Alex');
     const [agentGender, setAgentGender] = useState<'male' | 'female'>('male');
     const [agentDescription, setAgentDescription] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async () => {
-        try {
-        await saveAgentConfig({
-            templateId: params.templateId as string,
-            companyName: params.companyName as string,
-            socialMediaAndWeb: params.socialMediaAndWeb as string,
-            agentGender: agentGender,
-            agentName: agentName,
-            agentDescription: agentDescription
-        });
+        if (isLoading) return;
         
-        // Redirigir directamente al paywall después de configurar el agente
-        router.push('/paywall/PaywallScreen' as any);
+        setIsLoading(true);
+        try {
+            // Guardar configuración localmente
+            await saveAgentConfig({
+                templateId: params.templateId as string,
+                companyName: params.companyName as string,
+                socialMediaAndWeb: params.socialMediaAndWeb as string,
+                agentGender: agentGender,
+                agentName: agentName,
+                agentDescription: agentDescription
+            });
+            
+            // Enviar al API para crear el agente en Retell.ai
+            const response = await fetch(`${BaseUrl}/easyagent/retell/create/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    company_name: params.companyName as string,
+                    social_media_and_web: params.socialMediaAndWeb as string,
+                    agent_name: agentName,
+                    agent_gender: agentGender,
+                    agent_description: agentDescription
+                })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Error al crear el agente');
+            }
+            
+            const data = await response.json();
+            
+            Alert.alert(
+                t('common.success'),
+                t('agentSetup.agentCreated'),
+                [{ 
+                    text: 'OK',
+                    onPress: () => router.push('/')
+                }]
+            );
+            
         } catch (error) {
-        Alert.alert(
-            'Error',
-            String(error),
-            [{ text: 'OK' }]
-        );
+            Alert.alert(
+                'Error',
+                String(error),
+                [{ text: 'OK' }]
+            );
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -45,9 +84,9 @@ export default function AgentSetup() {
             entering={FadeInDown.delay(200).springify()}
             style={styles.header}
             >
-            <Text style={styles.title}>Configura tu Agente</Text>
+            <Text style={styles.title}>{t('agentSetup.title')}</Text>
             <Text style={styles.subtitle}>
-                Personaliza las características de tu asistente virtual
+                {t('agentSetup.subtitle')}
             </Text>
             </Animated.View>
 
@@ -75,7 +114,7 @@ export default function AgentSetup() {
                     styles.genderText,
                     agentGender === 'male' && styles.selectedGenderText
                     ]}>
-                    Masculino
+                    {t('agentSetup.masculine')}
                     </Text>
                 </Pressable>
                 </Animated.View>
@@ -98,7 +137,7 @@ export default function AgentSetup() {
                     styles.genderText,
                     agentGender === 'female' && styles.selectedGenderText
                     ]}>
-                    Femenino
+                    {t('agentSetup.feminine')}
                     </Text>
                 </Pressable>
                 </Animated.View>
@@ -106,20 +145,20 @@ export default function AgentSetup() {
             </View>
 
             <View style={styles.inputContainer}>
-            <Text style={styles.label}>Nombre del Agente</Text>
+            <Text style={styles.label}>{t('agentSetup.agentName')}</Text>
             <TextInput
                 style={styles.input}
-                placeholder="Ingresa un nombre para tu agente"
+                placeholder={t('agentSetup.agentNamePlaceholder')}
                 value={agentName}
                 onChangeText={setAgentName}
             />
             </View>
 
             <View style={styles.inputContainer}>
-            <Text style={styles.label}>Descripción (Opcional)</Text>
+            <Text style={styles.label}>{t('agentSetup.description')} ({t('common.optional')})</Text>
             <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="Describe la personalidad o características especiales de tu agente"
+                placeholder={t('agentSetup.descriptionPlaceholder')}
                 value={agentDescription}
                 onChangeText={setAgentDescription}
                 multiline
@@ -134,10 +173,13 @@ export default function AgentSetup() {
             style={styles.buttonContainer}
         >
             <Pressable 
-            style={styles.button}
+            style={[styles.button, isLoading && styles.buttonDisabled]}
             onPress={handleSubmit}
+            disabled={isLoading}
             >
-            <Text style={styles.buttonText}>Finalizar</Text>
+            <Text style={styles.buttonText}>
+                {isLoading ? t('agentSetup.creating') : t('agentSetup.finish')}
+            </Text>
             </Pressable>
         </Animated.View>
         </View>
@@ -237,6 +279,10 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         borderRadius: 12,
         alignItems: 'center',
+    },
+    buttonDisabled: {
+        backgroundColor: '#A0C4FF',
+        opacity: 0.7,
     },
     buttonText: {
         color: '#fff',

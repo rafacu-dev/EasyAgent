@@ -1,0 +1,40 @@
+{
+  "common": {
+    "continue": "Continue",
+    "optional": "optional",
+    "success": "Success"
+  },
+  "welcome": {
+    "title": "Welcome to EasyAgent!",
+    "subtitle": "Select the business template for your AI calling agent."
+  },
+  "templates": {
+    "construction": "Construction",
+    "barber": "Barber Shop",
+    "garden": "Gardening",
+    "marketing": "Marketing",
+    "mechanic": "Auto Mechanic",
+    "events": "Events & Parties"
+  },
+  "companyInfo": {
+    "title": "Your Company Information",
+    "subtitle": "Tell us more about your business",
+    "companyName": "Company Name",
+    "companyNamePlaceholder": "Enter your company name",
+    "socialMedia": "Website and Social Media",
+    "socialMediaPlaceholder": "Format examples:\n\nWebsite: https://www.mycompany.com\nFacebook: https://facebook.com/mycompany\nInstagram: https://instagram.com/mycompany\n\nEnter your URLs (one per line):"
+  },
+  "agentSetup": {
+    "title": "Configure Your Agent",
+    "subtitle": "Customize your virtual assistant's characteristics",
+    "masculine": "Male",
+    "feminine": "Female",
+    "agentName": "Agent Name",
+    "agentNamePlaceholder": "Enter a name for your agent",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe your agent's personality or special characteristics",
+    "finish": "Finish",
+    "creating": "Creating agent...",
+    "agentCreated": "Your agent has been successfully created and is ready to use!"
+  }
+}
