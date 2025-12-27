@@ -15,6 +15,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
+import { Colors } from "../utils/colors";
 
 const AnimatedView = ({
   children,
@@ -105,7 +106,7 @@ export default function CompanyInfo() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <ScrollView style={{ flex: 1 }}>
         <View style={{ padding: 24, paddingBottom: 100, alignItems: "center" }}>
           <AnimatedText
@@ -114,7 +115,7 @@ export default function CompanyInfo() {
             style={{
               fontSize: 32,
               fontWeight: "bold",
-              color: "#1a1a1a",
+              color: Colors.textPrimary,
               marginBottom: 12,
               textAlign: "center",
             }}
@@ -126,7 +127,7 @@ export default function CompanyInfo() {
             delay={200}
             style={{
               fontSize: 18,
-              color: "#666",
+              color: Colors.textSecondary,
               marginBottom: 40,
               textAlign: "center",
             }}
@@ -137,7 +138,7 @@ export default function CompanyInfo() {
               <Text
                 style={{
                   fontSize: 17,
-                  color: "#2c3e50",
+                  color: Colors.textPrimary,
                   marginBottom: 10,
                   fontWeight: "600",
                 }}
@@ -149,17 +150,17 @@ export default function CompanyInfo() {
                 onChangeText={setCompanyName}
                 placeholder={t("companyInfo.companyNamePlaceholder")}
                 style={{
-                  backgroundColor: "white",
+                  backgroundColor: Colors.cardBackground,
                   padding: 16,
                   borderRadius: 16,
                   fontSize: 16,
-                  shadowColor: "#000",
+                  shadowColor: Colors.shadow,
                   shadowOffset: { width: 0, height: 4 },
                   shadowOpacity: 0.1,
                   shadowRadius: 12,
                   elevation: 4,
                   borderWidth: 1,
-                  borderColor: "#e1e8ed",
+                  borderColor: Colors.border,
                 }}
               />
             </AnimatedView>
@@ -168,7 +169,7 @@ export default function CompanyInfo() {
               <Text
                 style={{
                   fontSize: 17,
-                  color: "#2c3e50",
+                  color: Colors.textPrimary,
                   marginBottom: 10,
                   fontWeight: "600",
                 }}
@@ -177,7 +178,7 @@ export default function CompanyInfo() {
                 <Text
                   style={{
                     fontSize: 15,
-                    color: "#94a3b8",
+                    color: Colors.textLight,
                     fontWeight: "400",
                   }}
                 >
@@ -193,11 +194,11 @@ export default function CompanyInfo() {
                 numberOfLines={6}
                 textAlignVertical="top"
                 style={{
-                  backgroundColor: "white",
+                  backgroundColor: Colors.cardBackground,
                   padding: 16,
                   borderRadius: 16,
                   fontSize: 16,
-                  shadowColor: "#000",
+                  shadowColor: Colors.shadow,
                   shadowOffset: { width: 0, height: 4 },
                   shadowOpacity: 0.1,
                   shadowRadius: 12,
@@ -205,7 +206,7 @@ export default function CompanyInfo() {
                   height: 180,
                   textAlignVertical: "top",
                   borderWidth: 1,
-                  borderColor: "#e1e8ed",
+                  borderColor: Colors.border,
                 }}
               />
             </AnimatedView>
@@ -221,19 +222,20 @@ export default function CompanyInfo() {
           padding: 24,
           position: "absolute",
           bottom: 0,
-          backgroundColor: "#f8f9fa",
+          backgroundColor: Colors.background,
           borderTopWidth: 1,
-          borderTopColor: "rgba(0, 0, 0, 0.05)",
+          borderTopColor: Colors.border,
         }}
       >
         <TouchableOpacity
           style={{
-            backgroundColor: companyName.trim() === "" ? "#A0C4FF" : "#0066FF",
+            backgroundColor:
+              companyName.trim() === "" ? Colors.primaryLight : Colors.primary,
             paddingVertical: 18,
             borderRadius: 16,
             alignItems: "center",
             justifyContent: "center",
-            shadowColor: companyName.trim() === "" ? "#A0C4FF" : "#0066FF",
+            shadowColor: Colors.shadowOrange,
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: companyName.trim() === "" ? 0.15 : 0.3,
             shadowRadius: 12,
@@ -245,7 +247,7 @@ export default function CompanyInfo() {
         >
           <Text
             style={{
-              color: "white",
+              color: Colors.textWhite,
               fontSize: 17,
               fontWeight: "600",
               letterSpacing: 0.3,

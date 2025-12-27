@@ -21,6 +21,8 @@ class ApiClient {
       timeout: 30000, // 30 seconds
       headers: {
         "Content-Type": "application/json",
+        Authorization:
+          "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzcxMTg5MzczLCJpYXQiOjE3NjY4NjkzNzMsImp0aSI6IjA2MDdmMzMzNjYxMTQ5Yzc5NGE3NjliZmFhNzhmOWNlIiwidXNlcl9pZCI6IjIifQ.rONOHc_bLnapP5O-wfCVP1lubSN0sWT7Ehbj_0mi7SY",
       },
     });
 

@@ -12,12 +12,14 @@ import {
   View,
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
-import { saveAgentConfig } from "../utils/storage";
 import { apiClient } from "../utils/axios-interceptor";
+import { Colors } from "../utils/colors";
+import { useAgent } from "../utils/AgentContext";
 
 export default function AgentSetup() {
   const { t } = useTranslation();
   const params = useLocalSearchParams();
+  const { updateAgentConfig } = useAgent();
   const [agentName, setAgentName] = useState("Alex");
   const [agentGender, setAgentGender] = useState<"male" | "female">("male");
   const [agentDescription, setAgentDescription] = useState("");
@@ -28,18 +30,8 @@ export default function AgentSetup() {
 
     setIsLoading(true);
     try {
-      // Guardar configuración localmente
-      await saveAgentConfig({
-        sector: params.sector as string,
-        companyName: params.companyName as string,
-        socialMediaAndWeb: params.socialMediaAndWeb as string,
-        agentGender: agentGender,
-        agentName: agentName,
-        agentDescription: agentDescription,
-      });
-
       // Enviar al API para crear el agente en Retell.ai usando axios client
-      await apiClient.post("/agents/", {
+      const response = await apiClient.post("/agents/", {
         sector: params.sector as string,
         company_name: params.companyName as string,
         social_media_and_web: params.socialMediaAndWeb as string,
@@ -47,7 +39,20 @@ export default function AgentSetup() {
         agent_gender: agentGender,
         agent_description: agentDescription,
       });
-      router.push("/");
+
+      if (response.data && response.data.id) {
+        await updateAgentConfig({
+          agentId: response.data.id,
+          sector: params.sector as string,
+          companyName: params.companyName as string,
+          socialMediaAndWeb: params.socialMediaAndWeb as string,
+          agentGender: agentGender,
+          agentName: agentName,
+          agentDescription: agentDescription,
+        });
+      }
+
+      router.replace("/(tabs)/home");
     } catch (error) {
       Alert.alert("Error", String(error), [{ text: "OK" }]);
     } finally {
@@ -179,7 +184,7 @@ export default function AgentSetup() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.background,
     padding: 20,
     justifyContent: "space-between",
   },
@@ -191,13 +196,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
     marginBottom: 10,
     textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    color: "#666",
+    color: Colors.textSecondary,
     lineHeight: 24,
     textAlign: "center",
     paddingHorizontal: 20,
@@ -211,15 +216,17 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
     marginBottom: 16,
   },
   input: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: Colors.cardBackground,
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   genderContainer: {
     flexDirection: "row",
@@ -241,7 +248,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   selectedImageContainer: {
-    borderColor: "#007AFF",
+    borderColor: Colors.primary,
   },
   genderImage: {
     width: 120,
@@ -250,11 +257,11 @@ const styles = StyleSheet.create({
   },
   genderText: {
     fontSize: 16,
-    color: "#666",
+    color: Colors.textSecondary,
     fontWeight: "500",
   },
   selectedGenderText: {
-    color: "#007AFF",
+    color: Colors.primary,
     fontWeight: "600",
   },
   textArea: {
@@ -265,17 +272,22 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   button: {
-    backgroundColor: "#007AFF",
+    backgroundColor: Colors.primary,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",
+    shadowColor: Colors.shadowOrange,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   buttonDisabled: {
-    backgroundColor: "#A0C4FF",
+    backgroundColor: Colors.primaryLight,
     opacity: 0.7,
   },
   buttonText: {
-    color: "#fff",
+    color: Colors.textWhite,
     fontSize: 18,
     fontWeight: "600",
   },

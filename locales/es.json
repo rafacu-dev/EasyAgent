@@ -2,7 +2,82 @@
   "common": {
     "continue": "Continuar",
     "optional": "opcional",
-    "success": "Éxito"
+    "success": "Éxito",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "error": "Error",
+    "loading": "Cargando..."
+  },
+  "tabs": {
+    "home": "Inicio",
+    "phone": "Llamar",
+    "calendar": "Calendario",
+    "settings": "Ajustes"
+  },
+  "home": {
+    "welcome": "Bienvenido",
+    "yourDashboard": "Tu Panel",
+    "totalCalls": "Llamadas Totales",
+    "activeCalls": "Llamadas Activas",
+    "avgDuration": "Tiempo Prom",
+    "yourAgent": "Tu Agente",
+    "agent": "Agente",
+    "quickActions": "Acciones Rápidas",
+    "makeCall": "Hacer Llamada",
+    "viewLogs": "Historial",
+    "editAgent": "Editar Configuración del Agente",
+    "analytics": "Analíticas",
+    "recentCalls": "Llamadas Recientes"
+  },
+  "phone": {
+    "title": "Teléfono",
+    "subtitle": "Realiza llamadas con tu agente IA",
+    "enterNumber": "Ingresa Número de Teléfono",
+    "makeCall": "Hacer Llamada",
+    "call": "Llamar",
+    "recentCalls": "Llamadas Recientes",
+    "noRecentCalls": "No hay llamadas recientes",
+    "callsWillAppear": "Tu historial de llamadas aparecerá aquí",
+    "error": "Error",
+    "invalidNumber": "Por favor ingresa un número de teléfono válido",
+    "confirmCall": "Confirmar Llamada",
+    "confirmMessage": "¿Llamar a este número?",
+    "success": "Éxito",
+    "callInitiated": "Llamada iniciada exitosamente",
+    "info": "Las llamadas se realizan usando tu agente IA configurado. Asegúrate de tener créditos suficientes."
+  },
+  "calendar": {
+    "title": "Calendario",
+    "subtitle": "Ver y gestionar citas",
+    "appointments": "Citas",
+    "noAppointments": "No hay citas",
+    "appointmentsWillAppear": "Las citas programadas aparecerán aquí",
+    "addAppointment": "Agregar Cita",
+    "syncCalendar": "Sincronizar con Calendario"
+  },
+  "settings": {
+    "title": "Ajustes",
+    "subtitle": "Gestiona tus preferencias",
+    "account": "Cuenta",
+    "agent": "Agente",
+    "company": "Empresa",
+    "editProfile": "Editar Perfil",
+    "editAgent": "Editar Configuración del Agente",
+    "preferences": "Preferencias",
+    "notifications": "Notificaciones",
+    "sound": "Sonido",
+    "language": "Idioma",
+    "support": "Soporte",
+    "help": "Ayuda y Soporte",
+    "terms": "Términos y Condiciones",
+    "privacy": "Política de Privacidad",
+    "dangerZone": "Zona de Peligro",
+    "deleteAgent": "Eliminar Agente",
+    "deleteAgentTitle": "Eliminar Agente",
+    "deleteAgentMessage": "Esto eliminará permanentemente tu agente. Esta acción no se puede deshacer.",
+    "logout": "Cerrar Sesión",
+    "logoutTitle": "Cerrar Sesión",
+    "logoutMessage": "¿Estás seguro de que quieres cerrar sesión?"
   },
   "welcome": {
     "title": "¡Bienvenido a EasyAgent!",
@@ -36,5 +111,19 @@
     "finish": "Finalizar",
     "creating": "Creando agente...",
     "agentCreated": "¡Tu agente ha sido creado exitosamente y está listo para usar!"
+  },
+  "editAgent": {
+    "title": "Editar Agente",
+    "subtitle": "Actualiza las propiedades y configuración de tu agente",
+    "noAgent": "No se encontró configuración del agente",
+    "noAgentId": "ID del agente no encontrado. No se puede actualizar.",
+    "updateSuccess": "Agente actualizado exitosamente",
+    "updateError": "Error al actualizar el agente",
+    "updating": "Actualizando...",
+    "update": "Actualizar Agente",
+    "sectorHelper": "Para cambiar el sector, crea un nuevo agente"
+  },
+  "firstLogin": {
+    "sector": "Sector"
   }
 }

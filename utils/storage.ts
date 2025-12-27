@@ -26,3 +26,12 @@ export const getAgentConfig = async (): Promise<AgentConfig | null> => {
     throw new Error("Failed to read agent configuration");
   }
 };
+
+export const clearStorage = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(STORAGE_KEYS.AGENT_CONFIG);
+  } catch (error) {
+    console.error("Error clearing storage:", error);
+    throw new Error("Failed to clear storage");
+  }
+};

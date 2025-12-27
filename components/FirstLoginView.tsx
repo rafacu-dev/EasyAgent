@@ -9,6 +9,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
+import { Colors } from "../utils/colors";
 
 const getTemplates = (t: any) => [
   {
@@ -118,19 +119,19 @@ const TemplateCard = ({
     <Animated.View style={animatedStyle}>
       <TouchableOpacity
         style={{
-          backgroundColor: "white",
+          backgroundColor: Colors.cardBackground,
           borderRadius: 20,
           margin: 12,
           width: 140,
           height: 160,
           alignItems: "center",
           justifyContent: "center",
-          shadowColor: "#000",
-          shadowOpacity: 0.2,
+          shadowColor: Colors.shadow,
+          shadowOpacity: 0.15,
           shadowRadius: 8,
           elevation: 6,
           borderWidth: isSelected ? 3 : 0,
-          borderColor: "#007AFF",
+          borderColor: Colors.primary,
         }}
         onPress={onSelect}
       >
@@ -143,7 +144,7 @@ const TemplateCard = ({
             fontSize: 14,
             fontWeight: isSelected ? "600" : "400",
             textAlign: "center",
-            color: isSelected ? "#007AFF" : "#000",
+            color: isSelected ? Colors.primary : Colors.textPrimary,
           }}
         >
           {template.name}
@@ -180,7 +181,7 @@ export default function FirstLoginView() {
     <View
       style={{
         flex: 1,
-        backgroundColor: "#f5f5f5",
+        backgroundColor: Colors.background,
         justifyContent: "flex-start",
         alignItems: "center",
         paddingHorizontal: 10,
@@ -200,7 +201,7 @@ export default function FirstLoginView() {
           style={{
             fontSize: 28,
             fontWeight: "bold",
-            color: "#222",
+            color: Colors.textPrimary,
             marginBottom: 10,
             minHeight: 38,
             textAlign: "center",
@@ -214,7 +215,7 @@ export default function FirstLoginView() {
           show={showSubtitle}
           style={{
             fontSize: 18,
-            color: "#555",
+            color: Colors.textSecondary,
             textAlign: "center",
             maxWidth: 320,
             minHeight: 48,
@@ -256,14 +257,14 @@ export default function FirstLoginView() {
             left: 0,
             right: 0,
             padding: 20,
-            backgroundColor: "#f5f5f5",
+            backgroundColor: Colors.background,
             borderTopWidth: 1,
-            borderTopColor: "#e0e0e0",
+            borderTopColor: Colors.border,
           }}
         >
           <TouchableOpacity
             style={{
-              backgroundColor: "#007AFF",
+              backgroundColor: Colors.primary,
               paddingVertical: 16,
               borderRadius: 12,
               alignItems: "center",
@@ -276,7 +277,13 @@ export default function FirstLoginView() {
               });
             }}
           >
-            <Text style={{ color: "white", fontSize: 16, fontWeight: "600" }}>
+            <Text
+              style={{
+                color: Colors.textWhite,
+                fontSize: 16,
+                fontWeight: "600",
+              }}
+            >
               {t("common.continue")}
             </Text>
           </TouchableOpacity>

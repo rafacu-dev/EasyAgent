@@ -2,7 +2,82 @@
   "common": {
     "continue": "Continue",
     "optional": "optional",
-    "success": "Success"
+    "success": "Success",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "error": "Error",
+    "loading": "Loading..."
+  },
+  "tabs": {
+    "home": "Home",
+    "phone": "Call",
+    "calendar": "Calendar",
+    "settings": "Settings"
+  },
+  "home": {
+    "welcome": "Welcome",
+    "yourDashboard": "Your Dashboard",
+    "totalCalls": "Total Calls",
+    "activeCalls": "Active Calls",
+    "avgDuration": "Avg Time",
+    "yourAgent": "Your Agent",
+    "agent": "Agent",
+    "quickActions": "Quick Actions",
+    "makeCall": "Make Call",
+    "viewLogs": "Call Logs",
+    "editAgent": "Edit Agent Settings",
+    "analytics": "Analytics",
+    "recentCalls": "Recent Calls"
+  },
+  "phone": {
+    "title": "Phone",
+    "subtitle": "Make calls with your AI agent",
+    "enterNumber": "Enter Phone Number",
+    "makeCall": "Make Call",
+    "call": "Call",
+    "recentCalls": "Recent Calls",
+    "noRecentCalls": "No recent calls",
+    "callsWillAppear": "Your call history will appear here",
+    "error": "Error",
+    "invalidNumber": "Please enter a valid phone number",
+    "confirmCall": "Confirm Call",
+    "confirmMessage": "Call this number?",
+    "success": "Success",
+    "callInitiated": "Call initiated successfully",
+    "info": "Calls are made using your configured AI agent. Make sure you have sufficient credits."
+  },
+  "calendar": {
+    "title": "Calendar",
+    "subtitle": "View and manage appointments",
+    "appointments": "Appointments",
+    "noAppointments": "No appointments",
+    "appointmentsWillAppear": "Scheduled appointments will appear here",
+    "addAppointment": "Add Appointment",
+    "syncCalendar": "Sync with Calendar"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your preferences",
+    "account": "Account",
+    "agent": "Agent",
+    "company": "Company",
+    "editProfile": "Edit Profile",
+    "editAgent": "Edit Agent Settings",
+    "preferences": "Preferences",
+    "notifications": "Notifications",
+    "sound": "Sound",
+    "language": "Language",
+    "support": "Support",
+    "help": "Help & Support",
+    "terms": "Terms & Conditions",
+    "privacy": "Privacy Policy",
+    "dangerZone": "Danger Zone",
+    "deleteAgent": "Delete Agent",
+    "deleteAgentTitle": "Delete Agent",
+    "deleteAgentMessage": "This will permanently delete your agent. This action cannot be undone.",
+    "logout": "Logout",
+    "logoutTitle": "Logout",
+    "logoutMessage": "Are you sure you want to logout?"
   },
   "welcome": {
     "title": "Welcome to EasyAgent!",
@@ -36,5 +111,19 @@
     "finish": "Finish",
     "creating": "Creating agent...",
     "agentCreated": "Your agent has been successfully created and is ready to use!"
+  },
+  "editAgent": {
+    "title": "Edit Agent",
+    "subtitle": "Update your agent's properties and configuration",
+    "noAgent": "No agent configuration found",
+    "noAgentId": "Agent ID not found. Cannot update.",
+    "updateSuccess": "Agent updated successfully",
+    "updateError": "Failed to update agent",
+    "updating": "Updating...",
+    "update": "Update Agent",
+    "sectorHelper": "To change sector, create a new agent"
+  },
+  "firstLogin": {
+    "sector": "Sector"
   }
 }

@@ -1,6 +1,7 @@
 // types.d.ts
 
 export interface AgentConfig {
+  id: string;
   sector: string;
   companyName: string;
   socialMediaAndWeb: string;
