@@ -6,15 +6,10 @@ import React, {
   ReactNode,
 } from "react";
 import { getAgentConfig, saveAgentConfig } from "./storage";
+import type { AgentConfig, AgentContextType } from "./types";
 import { apiClient } from "./axios-interceptor";
-import type { AgentConfig } from "./types";
 
-interface AgentContextType {
-  agentConfig: AgentConfig | null;
-  isLoading: boolean;
-  refreshAgentConfig: () => Promise<void>;
-  updateAgentConfig: (config: AgentConfig) => Promise<void>;
-}
+// Using AgentContextType from global types
 
 const AgentContext = createContext<AgentContextType | undefined>(undefined);
 
@@ -23,6 +18,7 @@ export const AgentProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
   console.log(agentConfig);
   const loadAgentConfig = async () => {
     try {
@@ -51,6 +47,8 @@ export const AgentProvider: React.FC<{ children: ReactNode }> = ({
     try {
       await saveAgentConfig(config);
       setAgentConfig(config);
+      // After updating agent config, refresh phone number
+      await refreshPhoneNumber();
     } catch (error) {
       console.error("Error updating agent config:", error);
       throw error;
@@ -61,12 +59,43 @@ export const AgentProvider: React.FC<{ children: ReactNode }> = ({
     loadAgentConfig();
   }, []);
 
+  const refreshPhoneNumber = async () => {
+    try {
+      if (!agentConfig?.id) {
+        setPhoneNumber(null);
+        return;
+      }
+      // Fetch user phone numbers and pick the one linked to current agent
+      const numbersResp = await apiClient.get("phone-numbers/");
+      const phoneNumbers: any[] =
+        numbersResp?.data ?? numbersResp?.phone_numbers ?? [];
+      const linked = phoneNumbers.find(
+        (pn: any) => pn?.agent === Number(agentConfig.id)
+      );
+      setPhoneNumber(linked?.phone_number ?? null);
+    } catch (error) {
+      console.error("Error loading agent phone number:", error);
+      setPhoneNumber(null);
+    }
+  };
+
+  useEffect(() => {
+    // Whenever agentConfig changes, try to refresh the phone number
+    if (agentConfig?.id) {
+      refreshPhoneNumber();
+    } else {
+      setPhoneNumber(null);
+    }
+  }, [agentConfig?.id]);
+
   return (
     <AgentContext.Provider
       value={{
         agentConfig,
         isLoading,
+        phoneNumber,
         refreshAgentConfig,
+        refreshPhoneNumber,
         updateAgentConfig,
       }}
     >

@@ -1,4 +1,11 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
+import { Colors } from "../../utils/colors";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
@@ -21,8 +28,18 @@ export default function CalendarScreen() {
   ).getDay();
 
   const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   const renderCalendarDays = () => {
@@ -32,18 +49,16 @@ export default function CalendarScreen() {
 
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(
-        <View key={`empty-${i}`} style={styles.calendarDay} />
-      );
+      days.push(<View key={`empty-${i}`} style={styles.calendarDay} />);
     }
 
     // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
-      const isToday = 
+      const isToday =
         day === today.getDate() &&
         selectedDate.getMonth() === today.getMonth() &&
         selectedDate.getFullYear() === today.getFullYear();
-      
+
       const isSelected = day === currentDay;
 
       days.push(
@@ -54,7 +69,11 @@ export default function CalendarScreen() {
             isToday && styles.calendarDayToday,
             isSelected && styles.calendarDaySelected,
           ]}
-          onPress={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day))}
+          onPress={() =>
+            setSelectedDate(
+              new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day)
+            )
+          }
         >
           <Text
             style={[
@@ -73,7 +92,11 @@ export default function CalendarScreen() {
 
   const changeMonth = (direction: number) => {
     setSelectedDate(
-      new Date(selectedDate.getFullYear(), selectedDate.getMonth() + direction, 1)
+      new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth() + direction,
+        1
+      )
     );
   };
 
@@ -81,7 +104,9 @@ export default function CalendarScreen() {
     <View style={styles.container}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t("calendar.title", "Calendar")}</Text>
+          <Text style={styles.headerTitle}>
+            {t("calendar.title", "Calendar")}
+          </Text>
           <Text style={styles.headerSubtitle}>
             {t("calendar.subtitle", "View and manage appointments")}
           </Text>
@@ -89,16 +114,30 @@ export default function CalendarScreen() {
 
         <View style={styles.calendarContainer}>
           <View style={styles.calendarHeader}>
-            <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.monthButton}>
-              <Ionicons name="chevron-back" size={24} color="#007AFF" />
+            <TouchableOpacity
+              onPress={() => changeMonth(-1)}
+              style={styles.monthButton}
+            >
+              <Ionicons
+                name="chevron-back"
+                size={24}
+                color={Colors.secondary}
+              />
             </TouchableOpacity>
-            
+
             <Text style={styles.monthText}>
               {monthNames[selectedDate.getMonth()]} {selectedDate.getFullYear()}
             </Text>
-            
-            <TouchableOpacity onPress={() => changeMonth(1)} style={styles.monthButton}>
-              <Ionicons name="chevron-forward" size={24} color="#007AFF" />
+
+            <TouchableOpacity
+              onPress={() => changeMonth(1)}
+              style={styles.monthButton}
+            >
+              <Ionicons
+                name="chevron-forward"
+                size={24}
+                color={Colors.secondary}
+              />
             </TouchableOpacity>
           </View>
 
@@ -115,30 +154,48 @@ export default function CalendarScreen() {
 
         <View style={styles.appointmentsContainer}>
           <Text style={styles.sectionTitle}>
-            {t("calendar.appointments", "Appointments")} - {selectedDate.toLocaleDateString()}
+            {t("calendar.appointments", "Appointments")} -{" "}
+            {selectedDate.toLocaleDateString()}
           </Text>
 
           {appointments.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="calendar-outline" size={64} color="#ccc" />
+              <Ionicons
+                name="calendar-outline"
+                size={64}
+                color={Colors.textLight}
+              />
               <Text style={styles.emptyStateText}>
                 {t("calendar.noAppointments", "No appointments")}
               </Text>
               <Text style={styles.emptyStateSubtext}>
-                {t("calendar.appointmentsWillAppear", "Scheduled appointments will appear here")}
+                {t(
+                  "calendar.appointmentsWillAppear",
+                  "Scheduled appointments will appear here"
+                )}
               </Text>
             </View>
           ) : (
             appointments.map((appointment, index) => (
               <TouchableOpacity key={index} style={styles.appointmentItem}>
                 <View style={styles.appointmentTime}>
-                  <Text style={styles.appointmentTimeText}>{appointment.time}</Text>
+                  <Text style={styles.appointmentTimeText}>
+                    {appointment.time}
+                  </Text>
                 </View>
                 <View style={styles.appointmentDetails}>
-                  <Text style={styles.appointmentTitle}>{appointment.title}</Text>
-                  <Text style={styles.appointmentDescription}>{appointment.description}</Text>
+                  <Text style={styles.appointmentTitle}>
+                    {appointment.title}
+                  </Text>
+                  <Text style={styles.appointmentDescription}>
+                    {appointment.description}
+                  </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#ccc" />
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={Colors.textLight}
+                />
               </TouchableOpacity>
             ))
           )}
@@ -146,14 +203,14 @@ export default function CalendarScreen() {
 
         <View style={styles.quickActionsContainer}>
           <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="add-circle" size={24} color="#007AFF" />
+            <Ionicons name="add-circle" size={24} color={Colors.secondary} />
             <Text style={styles.actionButtonText}>
               {t("calendar.addAppointment", "Add Appointment")}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="sync" size={24} color="#007AFF" />
+            <Ionicons name="sync" size={24} color={Colors.secondary} />
             <Text style={styles.actionButtonText}>
               {t("calendar.syncCalendar", "Sync with Calendar")}
             </Text>
@@ -167,7 +224,7 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
@@ -179,16 +236,16 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 18,
-    color: "#666",
+    color: Colors.textSecondary,
   },
   calendarContainer: {
     margin: 16,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.cardBackground,
     borderRadius: 16,
     padding: 16,
     shadowColor: "#000",
@@ -209,7 +266,7 @@ const styles = StyleSheet.create({
   monthText: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
   },
   weekDaysContainer: {
     flexDirection: "row",
@@ -221,7 +278,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 12,
     fontWeight: "600",
-    color: "#666",
+    color: Colors.textSecondary,
   },
   calendarGrid: {
     flexDirection: "row",
@@ -235,19 +292,19 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   calendarDayToday: {
-    backgroundColor: "#E3F2FD",
+    backgroundColor: Colors.secondaryLight,
     borderRadius: 8,
   },
   calendarDaySelected: {
-    backgroundColor: "#007AFF",
+    backgroundColor: Colors.secondary,
     borderRadius: 8,
   },
   calendarDayText: {
     fontSize: 16,
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
   },
   calendarDayTextHighlight: {
-    color: "#fff",
+    color: Colors.textWhite,
     fontWeight: "600",
   },
   appointmentsContainer: {
@@ -256,12 +313,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
     marginBottom: 16,
     paddingHorizontal: 8,
   },
   emptyState: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.cardBackground,
     borderRadius: 16,
     padding: 48,
     alignItems: "center",
@@ -274,17 +331,17 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
     marginTop: 16,
     marginBottom: 8,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: "#666",
+    color: Colors.textSecondary,
     textAlign: "center",
   },
   appointmentItem: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.cardBackground,
     borderRadius: 12,
     padding: 16,
     flexDirection: "row",
@@ -303,7 +360,7 @@ const styles = StyleSheet.create({
   appointmentTimeText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#007AFF",
+    color: Colors.secondary,
   },
   appointmentDetails: {
     flex: 1,
@@ -311,19 +368,19 @@ const styles = StyleSheet.create({
   appointmentTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
     marginBottom: 4,
   },
   appointmentDescription: {
     fontSize: 14,
-    color: "#666",
+    color: Colors.textSecondary,
   },
   quickActionsContainer: {
     padding: 16,
     paddingBottom: 32,
   },
   actionButton: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.cardBackground,
     borderRadius: 12,
     padding: 16,
     flexDirection: "row",
@@ -338,7 +395,7 @@ const styles = StyleSheet.create({
   actionButtonText: {
     flex: 1,
     fontSize: 16,
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
     marginLeft: 16,
   },
 });

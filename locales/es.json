@@ -6,7 +6,9 @@
     "cancel": "Cancelar",
     "delete": "Eliminar",
     "error": "Error",
-    "loading": "Cargando..."
+    "loading": "Cargando...",
+    "yes": "Sí",
+    "no": "No"
   },
   "tabs": {
     "home": "Inicio",
@@ -18,8 +20,8 @@
     "welcome": "Bienvenido",
     "yourDashboard": "Tu Panel",
     "totalCalls": "Llamadas Totales",
-    "activeCalls": "Llamadas Activas",
-    "avgDuration": "Tiempo Prom",
+    "ongoingCalls": "Llamadas en Curso",
+    "totalDuration": "Duración Total",
     "yourAgent": "Tu Agente",
     "agent": "Agente",
     "quickActions": "Acciones Rápidas",
@@ -28,6 +30,30 @@
     "editAgent": "Editar Configuración del Agente",
     "analytics": "Analíticas",
     "recentCalls": "Llamadas Recientes"
+  },
+  "callDetails": {
+    "title": "Detalles de Llamada",
+    "loading": "Cargando detalles de llamada...",
+    "callInfo": "Información de Llamada",
+    "agent": "Agente",
+    "from": "De",
+    "to": "Para",
+    "duration": "Duración",
+    "started": "Iniciada",
+    "ended": "Finalizada",
+    "cost": "Costo Estimado",
+    "disconnectReason": "Razón de Desconexión",
+    "inbound": "Entrante",
+    "outbound": "Saliente",
+    "analysis": "Análisis de Llamada",
+    "summary": "Resumen",
+    "sentiment": "Sentimiento del Usuario",
+    "outcome": "Resultado de Llamada",
+    "successful": "Exitosa",
+    "unsuccessful": "No Exitosa",
+    "voicemail": "Buzón de Voz",
+    "transcript": "Transcripción",
+    "playRecording": "Reproducir Grabación"
   },
   "phone": {
     "title": "Teléfono",

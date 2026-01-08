@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import {
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -42,7 +44,7 @@ export default function AgentSetup() {
 
       if (response.data && response.data.id) {
         await updateAgentConfig({
-          agentId: response.data.id,
+          id: response.data.id,
           sector: params.sector as string,
           companyName: params.companyName as string,
           socialMediaAndWeb: params.socialMediaAndWeb as string,
@@ -63,120 +65,130 @@ export default function AgentSetup() {
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 20 }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <Animated.View
-          entering={FadeInDown.delay(200).springify()}
-          style={styles.header}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            flexGrow: 1,
+            padding: 20,
+          }}
         >
-          <Text style={styles.title}>{t("agentSetup.title")}</Text>
-          <Text style={styles.subtitle}>{t("agentSetup.subtitle")}</Text>
-        </Animated.View>
+          <Animated.View
+            entering={FadeInDown.delay(200).springify()}
+            style={styles.header}
+          >
+            <Text style={styles.title}>{t("agentSetup.title")}</Text>
+            <Text style={styles.subtitle}>{t("agentSetup.subtitle")}</Text>
+          </Animated.View>
 
-        <Animated.View
-          entering={FadeInUp.delay(400).springify()}
-          style={styles.form}
-        >
-          <View style={styles.inputContainer}>
-            <View style={styles.genderContainer}>
-              <Animated.View>
-                <Pressable
-                  style={styles.genderButton}
-                  onPress={() => setAgentGender("male")}
-                >
-                  <View
-                    style={[
-                      styles.imageContainer,
-                      agentGender === "male" && styles.selectedImageContainer,
-                    ]}
+          <Animated.View
+            entering={FadeInUp.delay(400).springify()}
+            style={styles.form}
+          >
+            <View style={styles.inputContainer}>
+              <View style={styles.genderContainer}>
+                <Animated.View>
+                  <Pressable
+                    style={styles.genderButton}
+                    onPress={() => setAgentGender("male")}
                   >
-                    <Image
-                      source={require("../assets/images/agent-m.jpg")}
-                      style={styles.genderImage}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.genderText,
-                      agentGender === "male" && styles.selectedGenderText,
-                    ]}
-                  >
-                    {t("agentSetup.masculine")}
-                  </Text>
-                </Pressable>
-              </Animated.View>
+                    <View
+                      style={[
+                        styles.imageContainer,
+                        agentGender === "male" && styles.selectedImageContainer,
+                      ]}
+                    >
+                      <Image
+                        source={require("../assets/images/agent-m.jpg")}
+                        style={styles.genderImage}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.genderText,
+                        agentGender === "male" && styles.selectedGenderText,
+                      ]}
+                    >
+                      {t("agentSetup.masculine")}
+                    </Text>
+                  </Pressable>
+                </Animated.View>
 
-              <Animated.View>
-                <Pressable
-                  style={styles.genderButton}
-                  onPress={() => setAgentGender("female")}
-                >
-                  <View
-                    style={[
-                      styles.imageContainer,
-                      agentGender === "female" && styles.selectedImageContainer,
-                    ]}
+                <Animated.View>
+                  <Pressable
+                    style={styles.genderButton}
+                    onPress={() => setAgentGender("female")}
                   >
-                    <Image
-                      source={require("../assets/images/agent-f.jpg")}
-                      style={styles.genderImage}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.genderText,
-                      agentGender === "female" && styles.selectedGenderText,
-                    ]}
-                  >
-                    {t("agentSetup.feminine")}
-                  </Text>
-                </Pressable>
-              </Animated.View>
+                    <View
+                      style={[
+                        styles.imageContainer,
+                        agentGender === "female" &&
+                          styles.selectedImageContainer,
+                      ]}
+                    >
+                      <Image
+                        source={require("../assets/images/agent-f.jpg")}
+                        style={styles.genderImage}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.genderText,
+                        agentGender === "female" && styles.selectedGenderText,
+                      ]}
+                    >
+                      {t("agentSetup.feminine")}
+                    </Text>
+                  </Pressable>
+                </Animated.View>
+              </View>
             </View>
-          </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>{t("agentSetup.agentName")}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder={t("agentSetup.agentNamePlaceholder")}
-              value={agentName}
-              onChangeText={setAgentName}
-            />
-          </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>{t("agentSetup.agentName")}</Text>
+              <TextInput
+                style={styles.input}
+                placeholder={t("agentSetup.agentNamePlaceholder")}
+                placeholderTextColor="#B0B0B0"
+                value={agentName}
+                onChangeText={setAgentName}
+              />
+            </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>
-              {t("agentSetup.description")} ({t("common.optional")})
-            </Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder={t("agentSetup.descriptionPlaceholder")}
-              value={agentDescription}
-              onChangeText={setAgentDescription}
-              multiline
-              numberOfLines={4}
-            />
-          </View>
-        </Animated.View>
-      </ScrollView>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>
+                {t("agentSetup.description")} ({t("common.optional")})
+              </Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder={t("agentSetup.descriptionPlaceholder")}
+                placeholderTextColor="#B0B0B0"
+                value={agentDescription}
+                onChangeText={setAgentDescription}
+                multiline
+                numberOfLines={4}
+              />
+            </View>
+          </Animated.View>
 
-      <Animated.View
-        entering={FadeInUp.delay(600).springify()}
-        style={styles.buttonContainer}
-      >
-        <Pressable
-          style={[styles.button, isDisabled && styles.buttonDisabled]}
-          onPress={handleSubmit}
-          disabled={isDisabled}
-        >
-          <Text style={styles.buttonText}>
-            {isLoading ? t("agentSetup.creating") : t("agentSetup.finish")}
-          </Text>
-        </Pressable>
-      </Animated.View>
+          <Animated.View
+            entering={FadeInUp.delay(600).springify()}
+            style={styles.buttonContainer}
+          >
+            <Pressable
+              style={[styles.button, isDisabled && styles.buttonDisabled]}
+              onPress={handleSubmit}
+              disabled={isDisabled}
+            >
+              <Text style={styles.buttonText}>
+                {isLoading ? t("agentSetup.creating") : t("agentSetup.finish")}
+              </Text>
+            </Pressable>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -185,8 +197,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-    padding: 20,
-    justifyContent: "space-between",
   },
   header: {
     marginTop: 60,

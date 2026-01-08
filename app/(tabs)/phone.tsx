@@ -1,4 +1,13 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+} from "react-native";
+import { Colors } from "../../utils/colors";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
@@ -57,17 +66,24 @@ export default function PhoneScreen() {
         </View>
 
         <View style={styles.dialerContainer}>
-          <Text style={styles.sectionTitle}>{t("phone.enterNumber", "Enter Phone Number")}</Text>
-          
+          <Text style={styles.sectionTitle}>
+            {t("phone.enterNumber", "Enter Phone Number")}
+          </Text>
+
           <View style={styles.inputContainer}>
-            <Ionicons name="call" size={20} color="#666" style={styles.inputIcon} />
+            <Ionicons
+              name="call"
+              size={20}
+              color="#666"
+              style={styles.inputIcon}
+            />
             <TextInput
               style={styles.phoneInput}
               placeholder="+1234567890"
+              placeholderTextColor="#B0B0B0"
               value={phoneNumber}
               onChangeText={formatPhoneNumber}
               keyboardType="phone-pad"
-              placeholderTextColor="#999"
             />
             {phoneNumber.length > 0 && (
               <TouchableOpacity onPress={() => setPhoneNumber("")}>
@@ -76,8 +92,11 @@ export default function PhoneScreen() {
             )}
           </View>
 
-          <TouchableOpacity 
-            style={[styles.callButton, !phoneNumber && styles.callButtonDisabled]}
+          <TouchableOpacity
+            style={[
+              styles.callButton,
+              !phoneNumber && styles.callButtonDisabled,
+            ]}
             onPress={handleMakeCall}
             disabled={!phoneNumber}
           >
@@ -89,8 +108,10 @@ export default function PhoneScreen() {
         </View>
 
         <View style={styles.recentCallsContainer}>
-          <Text style={styles.sectionTitle}>{t("phone.recentCalls", "Recent Calls")}</Text>
-          
+          <Text style={styles.sectionTitle}>
+            {t("phone.recentCalls", "Recent Calls")}
+          </Text>
+
           {recentCalls.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="call-outline" size={64} color="#ccc" />
@@ -98,17 +119,20 @@ export default function PhoneScreen() {
                 {t("phone.noRecentCalls", "No recent calls")}
               </Text>
               <Text style={styles.emptyStateSubtext}>
-                {t("phone.callsWillAppear", "Your call history will appear here")}
+                {t(
+                  "phone.callsWillAppear",
+                  "Your call history will appear here"
+                )}
               </Text>
             </View>
           ) : (
             recentCalls.map((call, index) => (
               <TouchableOpacity key={index} style={styles.callItem}>
                 <View style={styles.callIcon}>
-                  <Ionicons 
-                    name={call.type === "outgoing" ? "call-outline" : "call"} 
-                    size={24} 
-                    color="#007AFF" 
+                  <Ionicons
+                    name={call.type === "outgoing" ? "call-outline" : "call"}
+                    size={24}
+                    color={Colors.secondary}
                   />
                 </View>
                 <View style={styles.callDetails}>
@@ -123,9 +147,16 @@ export default function PhoneScreen() {
 
         <View style={styles.infoContainer}>
           <View style={styles.infoCard}>
-            <Ionicons name="information-circle" size={24} color="#007AFF" />
+            <Ionicons
+              name="information-circle"
+              size={24}
+              color={Colors.secondary}
+            />
             <Text style={styles.infoText}>
-              {t("phone.info", "Calls are made using your configured AI agent. Make sure you have sufficient credits.")}
+              {t(
+                "phone.info",
+                "Calls are made using your configured AI agent. Make sure you have sufficient credits."
+              )}
             </Text>
           </View>
         </View>
@@ -137,7 +168,7 @@ export default function PhoneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
@@ -149,12 +180,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 18,
-    color: "#666",
+    color: Colors.textSecondary,
   },
   dialerContainer: {
     padding: 16,
@@ -162,12 +193,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
     marginBottom: 16,
     paddingHorizontal: 8,
   },
   inputContainer: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.cardBackground,
     borderRadius: 12,
     padding: 16,
     flexDirection: "row",
@@ -185,16 +216,16 @@ const styles = StyleSheet.create({
   phoneInput: {
     flex: 1,
     fontSize: 18,
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
   },
   callButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: Colors.secondary,
     borderRadius: 12,
     padding: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#007AFF",
+    shadowColor: Colors.secondary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -205,7 +236,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
   },
   callButtonText: {
-    color: "#fff",
+    color: Colors.textWhite,
     fontSize: 18,
     fontWeight: "600",
     marginLeft: 12,
@@ -214,7 +245,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   emptyState: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.cardBackground,
     borderRadius: 16,
     padding: 48,
     alignItems: "center",
@@ -227,17 +258,17 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
     marginTop: 16,
     marginBottom: 8,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: "#666",
+    color: Colors.textSecondary,
     textAlign: "center",
   },
   callItem: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.cardBackground,
     borderRadius: 12,
     padding: 16,
     flexDirection: "row",
@@ -253,7 +284,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#E3F2FD",
+    backgroundColor: Colors.secondaryLight,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 16,
@@ -264,19 +295,19 @@ const styles = StyleSheet.create({
   callNumber: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
     marginBottom: 4,
   },
   callTime: {
     fontSize: 14,
-    color: "#666",
+    color: Colors.textSecondary,
   },
   infoContainer: {
     padding: 16,
     paddingBottom: 32,
   },
   infoCard: {
-    backgroundColor: "#E3F2FD",
+    backgroundColor: Colors.secondaryLight,
     borderRadius: 12,
     padding: 16,
     flexDirection: "row",
@@ -285,7 +316,7 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 14,
-    color: "#1565C0",
+    color: Colors.secondary,
     marginLeft: 12,
     lineHeight: 20,
   },

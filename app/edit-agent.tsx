@@ -248,6 +248,7 @@ export default function EditAgent() {
                 "agentSetup.agentNamePlaceholder",
                 "Enter agent name"
               )}
+              placeholderTextColor="#B0B0B0"
               value={formData.agentName}
               onChangeText={(text) =>
                 setFormData({ ...formData, agentName: text })
@@ -265,6 +266,7 @@ export default function EditAgent() {
                 "companyInfo.companyNamePlaceholder",
                 "Enter company name"
               )}
+              placeholderTextColor="#B0B0B0"
               value={formData.companyName}
               onChangeText={(text) =>
                 setFormData({ ...formData, companyName: text })
@@ -283,6 +285,7 @@ export default function EditAgent() {
                 "agentSetup.descriptionPlaceholder",
                 "Describe your agent's personality..."
               )}
+              placeholderTextColor="#B0B0B0"
               value={formData.agentDescription}
               onChangeText={(text) =>
                 setFormData({ ...formData, agentDescription: text })
@@ -303,6 +306,7 @@ export default function EditAgent() {
                 "companyInfo.socialMediaPlaceholder",
                 "Add social media links..."
               )}
+              placeholderTextColor="#B0B0B0"
               value={formData.socialMediaAndWeb}
               onChangeText={(text) =>
                 setFormData({ ...formData, socialMediaAndWeb: text })

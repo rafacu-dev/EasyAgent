@@ -149,6 +149,7 @@ export default function CompanyInfo() {
                 value={companyName}
                 onChangeText={setCompanyName}
                 placeholder={t("companyInfo.companyNamePlaceholder")}
+                placeholderTextColor="#B0B0B0"
                 style={{
                   backgroundColor: Colors.cardBackground,
                   padding: 16,
@@ -190,6 +191,7 @@ export default function CompanyInfo() {
                 value={socialMediaAndWeb}
                 onChangeText={setSocialMediaAndWeb}
                 placeholder={t("companyInfo.socialMediaPlaceholder")}
+                placeholderTextColor="#B0B0B0"
                 multiline={true}
                 numberOfLines={6}
                 textAlignVertical="top"

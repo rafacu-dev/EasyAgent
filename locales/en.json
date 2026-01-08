@@ -6,7 +6,9 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "error": "Error",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "yes": "Yes",
+    "no": "No"
   },
   "tabs": {
     "home": "Home",
@@ -18,8 +20,8 @@
     "welcome": "Welcome",
     "yourDashboard": "Your Dashboard",
     "totalCalls": "Total Calls",
-    "activeCalls": "Active Calls",
-    "avgDuration": "Avg Time",
+    "ongoingCalls": "Ongoing Calls",
+    "totalDuration": "Total Duration",
     "yourAgent": "Your Agent",
     "agent": "Agent",
     "quickActions": "Quick Actions",
@@ -28,6 +30,30 @@
     "editAgent": "Edit Agent Settings",
     "analytics": "Analytics",
     "recentCalls": "Recent Calls"
+  },
+  "callDetails": {
+    "title": "Call Details",
+    "loading": "Loading call details...",
+    "callInfo": "Call Information",
+    "agent": "Agent",
+    "from": "From",
+    "to": "To",
+    "duration": "Duration",
+    "started": "Started",
+    "ended": "Ended",
+    "cost": "Estimated Cost",
+    "disconnectReason": "Disconnect Reason",
+    "inbound": "Inbound",
+    "outbound": "Outbound",
+    "analysis": "Call Analysis",
+    "summary": "Summary",
+    "sentiment": "User Sentiment",
+    "outcome": "Call Outcome",
+    "successful": "Successful",
+    "unsuccessful": "Unsuccessful",
+    "voicemail": "Voicemail",
+    "transcript": "Transcript",
+    "playRecording": "Play Recording"
   },
   "phone": {
     "title": "Phone",

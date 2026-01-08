@@ -5,6 +5,10 @@ export const Colors = {
   primaryLight: "#FFA500", // Lighter orange
   primaryDark: "#E67E00", // Darker orange
 
+  // Secondary Colors (Blue replacement)
+  secondary: "#2E86C1", // Strong professional blue
+  secondaryLight: "#D6EAF8", // Very light blue for backgrounds
+
   // Background Colors
   background: "#FFF5EE", // Soft peach/cream
   backgroundLight: "#FFFAF5", // Very light peach
@@ -18,7 +22,7 @@ export const Colors = {
 
   // Accent Colors
   success: "#4CAF50", // Green
-  info: "#2196F3", // Blue
+  info: "#2E86C1", // Updated to match secondary
   warning: "#FFA726", // Orange warning
   error: "#FF6B6B", // Red
 

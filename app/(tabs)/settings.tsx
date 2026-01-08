@@ -7,6 +7,7 @@ import {
   Switch,
   Alert,
 } from "react-native";
+import { Colors } from "../../utils/colors";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
@@ -102,7 +103,7 @@ export default function SettingsScreen() {
                 <Ionicons
                   name={agentConfig?.agentGender === "female" ? "woman" : "man"}
                   size={32}
-                  color="#007AFF"
+                  color={Colors.primary}
                 />
               </View>
               <View style={styles.agentDetails}>
@@ -237,7 +238,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
@@ -249,12 +250,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 18,
-    color: "#666",
+    color: Colors.textSecondary,
   },
   section: {
     padding: 16,
@@ -262,12 +263,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
     marginBottom: 12,
     paddingHorizontal: 8,
   },
   settingCard: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.cardBackground,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -285,7 +286,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#E3F2FD",
+    backgroundColor: Colors.backgroundLight,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 16,
@@ -296,15 +297,15 @@ const styles = StyleSheet.create({
   agentName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
     marginBottom: 4,
   },
   agentCompany: {
     fontSize: 14,
-    color: "#666",
+    color: Colors.textSecondary,
   },
   settingItem: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.cardBackground,
     borderRadius: 12,
     padding: 16,
     flexDirection: "row",
@@ -319,12 +320,12 @@ const styles = StyleSheet.create({
   settingItemText: {
     flex: 1,
     fontSize: 16,
-    color: "#1a1a1a",
+    color: Colors.textPrimary,
     marginLeft: 16,
   },
   settingItemValue: {
     fontSize: 14,
-    color: "#666",
+    color: Colors.textSecondary,
     marginRight: 8,
   },
   versionContainer: {
