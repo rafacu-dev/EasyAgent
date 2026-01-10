@@ -11,6 +11,7 @@ export default function Index() {
   const { agentConfig, updateAgentConfig } = useAgent();
 
   useEffect(() => {
+    console.log("App started, checking for existing agent configuration...");
     clearStorage(); // For testing purposes, clear storage on app start
     const initialize = async () => {
       try {

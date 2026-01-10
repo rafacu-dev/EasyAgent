@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Colors } from "../../utils/colors";
 import { router } from "expo-router";
 import { useAgent } from "../../utils/AgentContext";
@@ -19,6 +19,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import type { RecentCallItem } from "../../utils/types";
+import NoPhoneNumber from "../../components/NoPhoneNumber";
 
 // RecentCallItem type moved to global `utils/types.d.ts`
 
@@ -27,6 +28,9 @@ import type { RecentCallItem } from "../../utils/types";
 export default function HomeScreen() {
   const { t } = useTranslation();
   const { agentConfig, phoneNumber } = useAgent();
+  const [callTypeFilter, setCallTypeFilter] = useState<"all" | "phone" | "web">(
+    "all"
+  );
 
   const agentDbId = agentConfig?.id ?? null;
 
@@ -71,77 +75,27 @@ export default function HomeScreen() {
     isLoading: callsLoading,
     error: callsErr,
   } = useQuery({
-    queryKey: ["recent-calls", agentDbId],
+    queryKey: ["recent-calls", agentDbId, callTypeFilter],
     enabled: !!agentDbId,
-    queryFn: () =>
-      apiClient.get(
+    queryFn: () => {
+      const callTypeParam =
+        callTypeFilter === "all"
+          ? ""
+          : `&call_type=${
+              callTypeFilter === "phone" ? "phone_call" : "web_call"
+            }`;
+      return apiClient.get(
         `calls/?agent_id=${encodeURIComponent(
           String(agentDbId)
-        )}&limit=10&sort_order=descending&call_type=phone_call`
-      ),
+        )}&limit=10&sort_order=descending${callTypeParam}`
+      );
+    },
   });
   console.log("Recent calls response:", callsResp, statsResp);
 
-  // Mock data for testing (memoized)
-  const mockCalls = useMemo<RecentCallItem[]>(
-    () => [
-      {
-        id: "1",
-        number: "+1 555-0123",
-        duration: "5:23",
-        date: "2026-01-07",
-        status: "ended",
-        direction: "inbound",
-        fromNumber: "+1 555-0123",
-        toNumber: phoneNumber || "+1 555-TEST",
-      },
-      {
-        id: "2",
-        number: "+1 555-0456",
-        duration: "3:15",
-        date: "2026-01-07",
-        status: "ended",
-        direction: "outbound",
-        fromNumber: phoneNumber || "+1 555-TEST",
-        toNumber: "+1 555-0456",
-      },
-      {
-        id: "3",
-        number: "+1 555-0789",
-        duration: "8:42",
-        date: "2026-01-06",
-        status: "ended",
-        direction: "inbound",
-        fromNumber: "+1 555-0789",
-        toNumber: phoneNumber || "+1 555-TEST",
-      },
-      {
-        id: "4",
-        number: "+1 555-0321",
-        duration: "0:00",
-        date: "2026-01-06",
-        status: "missed",
-        direction: "inbound",
-        fromNumber: "+1 555-0321",
-        toNumber: phoneNumber || "+1 555-TEST",
-      },
-      {
-        id: "5",
-        number: "+1 555-0654",
-        duration: "6:55",
-        date: "2026-01-05",
-        status: "ended",
-        direction: "outbound",
-        fromNumber: phoneNumber || "+1 555-TEST",
-        toNumber: "+1 555-0654",
-      },
-    ],
-    [phoneNumber]
-  );
-
   const calls: RecentCallItem[] = useMemo(() => {
     const rawCalls: any[] = callsResp?.calls ?? [];
-    const realCalls = rawCalls.map((c: any) => {
+    return rawCalls.map((c: any) => {
       const direction = c?.direction;
       const number = direction === "inbound" ? c?.from_number : c?.to_number;
       return {
@@ -155,9 +109,7 @@ export default function HomeScreen() {
         toNumber: c?.to_number ?? "Unknown",
       };
     });
-    // Use mock data if no real calls for testing
-    return realCalls.length > 0 ? realCalls : mockCalls;
-  }, [callsResp, mockCalls]);
+  }, [callsResp]);
 
   const error = (statsErr || callsErr)?.message as string | undefined;
 
@@ -251,124 +203,197 @@ export default function HomeScreen() {
             <Text style={styles.agentSector}>
               {t(`templates.${agentConfig?.sector}` || "General")}
             </Text>
-            <Text style={styles.agentNumber}>
-              Number: {phoneNumber || "+1 555-TEST"}
-            </Text>
+            {phoneNumber && (
+              <Text style={styles.agentNumber}>
+                {t("home.number", "Number")}: {phoneNumber}
+              </Text>
+            )}
+            {!phoneNumber && (
+              <Text style={styles.agentNumberMissing}>
+                {t("home.noNumber", "No number assigned")}
+              </Text>
+            )}
           </View>
           <Ionicons name="settings-outline" size={20} color={Colors.primary} />
         </TouchableOpacity>
       </View>
 
-      {/* Stats Container */}
-      <View style={styles.statsContainer}>
-        {statsLoading ? (
-          <>
-            <View style={styles.statCard}>
-              <SkeletonBar width={60} height={16} />
-              <SkeletonBar width={40} height={12} />
-            </View>
-            <View style={styles.statCard}>
-              <SkeletonBar width={60} height={16} />
-              <SkeletonBar width={40} height={12} />
-            </View>
-            <View style={styles.statCard}>
-              <SkeletonBar width={60} height={16} />
-              <SkeletonBar width={40} height={12} />
-            </View>
-          </>
-        ) : (
-          <>
-            <View style={styles.statCard}>
-              <View style={styles.statRow}>
-                <Ionicons
-                  name="call"
-                  size={18}
-                  color={Colors.primary}
-                  style={styles.statIconInline}
-                />
-                <Text style={styles.statValue}>{stats.totalCalls}</Text>
+      {/* Stats Container - Only show if phone number exists */}
+      {phoneNumber && (
+        <View style={styles.statsContainer}>
+          {statsLoading ? (
+            <>
+              <View style={styles.statCard}>
+                <SkeletonBar width={60} height={16} />
+                <SkeletonBar width={40} height={12} />
               </View>
-              <Text style={styles.statLabel}>
-                {t("home.totalCalls", "Total Calls")}
-              </Text>
-            </View>
-
-            <View style={styles.statCard}>
-              <View style={styles.statRow}>
-                <Ionicons
-                  name="time"
-                  size={18}
-                  color={Colors.success}
-                  style={styles.statIconInline}
-                />
-                <Text style={styles.statValue}>{stats.ongoingCalls}</Text>
+              <View style={styles.statCard}>
+                <SkeletonBar width={60} height={16} />
+                <SkeletonBar width={40} height={12} />
               </View>
-              <Text style={styles.statLabel}>
-                {t("home.ongoingCalls", "Active Calls")}
-              </Text>
-            </View>
-
-            <View style={styles.statCard}>
-              <View style={styles.statRow}>
-                <Ionicons
-                  name="trending-up"
-                  size={18}
-                  color={Colors.info}
-                  style={styles.statIconInline}
-                />
-                <Text style={styles.statValue}>
-                  {Math.round(stats.totalDurationMinutes)}m
+              <View style={styles.statCard}>
+                <SkeletonBar width={60} height={16} />
+                <SkeletonBar width={40} height={12} />
+              </View>
+            </>
+          ) : (
+            <>
+              <View style={styles.statCard}>
+                <View style={styles.statRow}>
+                  <Ionicons
+                    name="call"
+                    size={18}
+                    color={Colors.primary}
+                    style={styles.statIconInline}
+                  />
+                  <Text style={styles.statValue}>{stats.totalCalls}</Text>
+                </View>
+                <Text style={styles.statLabel}>
+                  {t("home.totalCalls", "Total Calls")}
                 </Text>
               </View>
-              <Text style={styles.statLabel}>
-                {t("home.totalDuration", "Total Duration")}
+
+              <View style={styles.statCard}>
+                <View style={styles.statRow}>
+                  <Ionicons
+                    name="time"
+                    size={18}
+                    color={Colors.success}
+                    style={styles.statIconInline}
+                  />
+                  <Text style={styles.statValue}>{stats.ongoingCalls}</Text>
+                </View>
+                <Text style={styles.statLabel}>
+                  {t("home.ongoingCalls", "Active Calls")}
+                </Text>
+              </View>
+
+              <View style={styles.statCard}>
+                <View style={styles.statRow}>
+                  <Ionicons
+                    name="trending-up"
+                    size={18}
+                    color={Colors.info}
+                    style={styles.statIconInline}
+                  />
+                  <Text style={styles.statValue}>
+                    {Math.round(stats.totalDurationMinutes)}m
+                  </Text>
+                </View>
+                <Text style={styles.statLabel}>
+                  {t("home.totalDuration", "Total Duration")}
+                </Text>
+              </View>
+            </>
+          )}
+        </View>
+      )}
+
+      {/* Quick Actions - Only show if phone number exists */}
+      {phoneNumber && (
+        <>
+          <View style={styles.quickActionsContainer}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => router.push("/(tabs)/phone")}
+            >
+              <Ionicons name="call" size={18} color={Colors.primary} />
+              <Text style={styles.actionButtonText}>
+                {t("home.makeCall", "Make Call")}
               </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => router.push("/call-history")}
+            >
+              <Ionicons name="document-text" size={18} color={Colors.primary} />
+              <Text style={styles.actionButtonText}>
+                {t("home.viewLogs", "Call Logs")}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => router.push("/analytics")}
+            >
+              <Ionicons name="analytics" size={18} color={Colors.primary} />
+              <Text style={styles.actionButtonText}>
+                {t("home.analytics", "Analytics")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Section Title with Filter */}
+          <View style={styles.callsListContainer}>
+            <Text style={styles.sectionTitle}>
+              {t("home.recentCalls", "Recent Calls")}
+            </Text>
+            <View style={styles.filterContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.filterButton,
+                  callTypeFilter === "all" && styles.filterButtonActive,
+                ]}
+                onPress={() => setCallTypeFilter("all")}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    callTypeFilter === "all" && styles.filterButtonTextActive,
+                  ]}
+                >
+                  {t("home.filterAll", "All")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.filterButton,
+                  callTypeFilter === "phone" && styles.filterButtonActive,
+                ]}
+                onPress={() => setCallTypeFilter("phone")}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    callTypeFilter === "phone" && styles.filterButtonTextActive,
+                  ]}
+                >
+                  {t("home.filterPhone", "Phone")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.filterButton,
+                  callTypeFilter === "web" && styles.filterButtonActive,
+                ]}
+                onPress={() => setCallTypeFilter("web")}
+              >
+                <Text
+                  style={[
+                    styles.filterButtonText,
+                    callTypeFilter === "web" && styles.filterButtonTextActive,
+                  ]}
+                >
+                  {t("home.filterWeb", "Web")}
+                </Text>
+              </TouchableOpacity>
             </View>
-          </>
-        )}
-      </View>
-
-      {/* Quick Actions */}
-      <View style={styles.quickActionsContainer}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => router.push("/(tabs)/phone")}
-        >
-          <Ionicons name="call" size={18} color={Colors.primary} />
-          <Text style={styles.actionButtonText}>
-            {t("home.makeCall", "Make Call")}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => router.push("/(tabs)/calendar")}
-        >
-          <Ionicons name="document-text" size={18} color={Colors.primary} />
-          <Text style={styles.actionButtonText}>
-            {t("home.viewLogs", "Call Logs")}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => router.push("/(tabs)/settings")}
-        >
-          <Ionicons name="analytics" size={18} color={Colors.primary} />
-          <Text style={styles.actionButtonText}>
-            {t("home.analytics", "Analytics")}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Section Title */}
-      <View style={styles.callsListContainer}>
-        <Text style={styles.sectionTitle}>
-          {t("home.recentCalls", "Recent Calls")}
-        </Text>
-      </View>
+          </View>
+        </>
+      )}
     </>
   );
+
+  // No phone number view
+  if (!phoneNumber) {
+    return (
+      <View style={styles.container}>
+        <ListHeaderComponent />
+        <NoPhoneNumber variant="detailed" translationPrefix="home" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -435,14 +460,15 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   header: {
-    padding: 20,
-    paddingTop: 12,
+    padding: 24,
+    paddingTop: 16,
     backgroundColor: Colors.background,
   },
   headerTitle: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: "bold",
     color: Colors.textPrimary,
+    wordWrap: "break-word",
     marginBottom: 4,
   },
   headerSubtitle: {
@@ -495,6 +521,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textSecondary,
     marginTop: 2,
+  },
+  agentNumberMissing: {
+    fontSize: 12,
+    color: Colors.textLight,
+    marginTop: 2,
+    fontStyle: "italic",
   },
   statsContainer: {
     flexDirection: "row",
@@ -562,14 +594,40 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   callsListContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     marginBottom: 12,
+  },
+  filterContainer: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  filterButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: Colors.backgroundLight,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  filterButtonActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  filterButtonText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: Colors.textSecondary,
+  },
+  filterButtonTextActive: {
+    color: "#fff",
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: Colors.textPrimary,
-    marginBottom: 12,
   },
   callsList: {
     flex: 1,

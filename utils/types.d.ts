@@ -28,4 +28,5 @@ export interface RecentCallItem {
   direction?: string;
   fromNumber?: string;
   toNumber?: string;
+  callType?: string;
 }

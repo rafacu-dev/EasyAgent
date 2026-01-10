@@ -25,6 +25,7 @@ export const Colors = {
   info: "#2E86C1", // Updated to match secondary
   warning: "#FFA726", // Orange warning
   error: "#FF6B6B", // Red
+  purple: "#9B59B6", // Purple for analytics
 
   // Border & Divider Colors
   border: "#FFE4CC", // Light orange

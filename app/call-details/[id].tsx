@@ -9,6 +9,7 @@ import {
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import { Colors } from "../../utils/colors";
 import { apiClient } from "../../utils/axios-interceptor";
 import { useQuery } from "@tanstack/react-query";
@@ -37,6 +38,8 @@ interface AgentInfo {
 export default function CallDetailsScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const [isAnalysisExpanded, setIsAnalysisExpanded] = useState(false);
+  const [isTranscriptExpanded, setIsTranscriptExpanded] = useState(false);
   console.log("Fetching call details for ID:", id);
   const { data, isLoading } = useQuery<
     CallDetails | { call?: CallDetails; agent?: AgentInfo } | undefined
@@ -50,37 +53,15 @@ export default function CallDetailsScreen() {
   });
   console.log("Call details data:", data);
 
-  const mockCall: CallDetails = {
-    id: String(id ?? "mock"),
-    from_number: "+1 555-0100",
-    to_number: "+1 555-0200",
-    duration_ms: 185000,
-    start_timestamp: Date.now() - 200000,
-    end_timestamp: Date.now() - 15000,
-    call_status: "completed",
-    disconnect_reason: "User ended call",
-    direction: "inbound",
-    call_type: "sales_demo",
-    transcript:
-      "Agent: Hello!\nUser: Hi, I'm interested in your product.\nAgent: Great, let me share the details...",
-    call_analysis: [
-      [
-        "call_summary",
-        "Discussed product features, user showed strong interest.",
-      ],
-      ["user_sentiment", "positive"],
-      ["call_successful", true],
-    ],
-    agent_name: "EasyAgent",
-  };
-
-  const mockAgent: AgentInfo = { name: "EasyAgent" };
-
   const rawCall: CallDetails | undefined =
     (data && (data as any).call) || (data as CallDetails) || undefined;
-  const displayCall: CallDetails = rawCall ?? mockCall;
-  const displayAgent: AgentInfo =
-    (data && (data as any).agent) || { name: rawCall?.agent_name } || mockAgent;
+  const displayCall: CallDetails = rawCall ?? {
+    id: String(id ?? "unknown"),
+    call_status: "unknown",
+  };
+  const displayAgent: AgentInfo = (data && (data as any).agent) || {
+      name: rawCall?.agent_name,
+    } || { name: "Unknown" };
 
   const toObj = (analysis?: CallDetails["call_analysis"]) => {
     if (!analysis) return {} as Record<string, any>;
@@ -229,7 +210,7 @@ export default function CallDetailsScreen() {
                 <Text style={styles.compactInfoLabel}>
                   {t("callDetails.agent")}
                 </Text>
-                <Text style={styles.compactInfoValue}>
+                <Text style={styles.compactInfoValue} selectable>
                   {displayAgent.name || "Unknown Agent"}
                 </Text>
               </View>
@@ -243,7 +224,7 @@ export default function CallDetailsScreen() {
                 <Text style={styles.compactInfoLabel}>
                   {t("callDetails.from")}
                 </Text>
-                <Text style={styles.compactInfoValue}>
+                <Text style={styles.compactInfoValue} selectable>
                   {displayCall.from_number || "Unknown"}
                 </Text>
               </View>
@@ -257,7 +238,7 @@ export default function CallDetailsScreen() {
                 <Text style={styles.compactInfoLabel}>
                   {t("callDetails.to")}
                 </Text>
-                <Text style={styles.compactInfoValue}>
+                <Text style={styles.compactInfoValue} selectable>
                   {displayCall.to_number || "Unknown"}
                 </Text>
               </View>
@@ -345,11 +326,13 @@ export default function CallDetailsScreen() {
           {/* Analysis */}
           {callAnalysis && Object.keys(callAnalysis).length > 0 ? (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>{t("callDetails.analysis")}</Text>
-              <ScrollView
-                style={styles.analysisScrollView}
-                showsVerticalScrollIndicator
-              >
+              <View style={styles.cardTitleRow}>
+                <Ionicons name="analytics" size={18} color={Colors.primary} />
+                <Text style={styles.cardTitle}>
+                  {t("callDetails.analysis")}
+                </Text>
+              </View>
+              <View style={isAnalysisExpanded ? {} : styles.collapsedContent}>
                 {callAnalysis.call_summary ? (
                   <View style={styles.analysisSection}>
                     <View style={styles.analysisSectionHeader}>
@@ -420,7 +403,22 @@ export default function CallDetailsScreen() {
                     </Text>
                   </View>
                 ) : null}
-              </ScrollView>
+              </View>
+              {Object.keys(callAnalysis).length > 0 && (
+                <TouchableOpacity
+                  style={styles.expandButton}
+                  onPress={() => setIsAnalysisExpanded(!isAnalysisExpanded)}
+                >
+                  <Text style={styles.expandButtonText}>
+                    {isAnalysisExpanded ? "Show Less" : "Read More"}
+                  </Text>
+                  <Ionicons
+                    name={isAnalysisExpanded ? "chevron-up" : "chevron-down"}
+                    size={16}
+                    color={Colors.primary}
+                  />
+                </TouchableOpacity>
+              )}
             </View>
           ) : null}
 
@@ -433,16 +431,26 @@ export default function CallDetailsScreen() {
                   {t("callDetails.transcript")}
                 </Text>
               </View>
-              <ScrollView
-                style={styles.transcriptScrollView}
-                showsVerticalScrollIndicator
-              >
+              <View style={isTranscriptExpanded ? {} : styles.collapsedContent}>
                 <View style={styles.transcriptContainer}>
                   <Text style={styles.transcriptText}>
                     {displayCall.transcript}
                   </Text>
                 </View>
-              </ScrollView>
+              </View>
+              <TouchableOpacity
+                style={styles.expandButton}
+                onPress={() => setIsTranscriptExpanded(!isTranscriptExpanded)}
+              >
+                <Text style={styles.expandButtonText}>
+                  {isTranscriptExpanded ? "Show Less" : "Read More"}
+                </Text>
+                <Ionicons
+                  name={isTranscriptExpanded ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color={Colors.primary}
+                />
+              </TouchableOpacity>
             </View>
           ) : null}
 
@@ -568,8 +576,25 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: Colors.textPrimary,
   },
-  analysisScrollView: { maxHeight: 250 },
-  transcriptScrollView: { maxHeight: 200 },
+  collapsedContent: {
+    maxHeight: 200,
+    overflow: "hidden",
+  },
+  expandButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 12,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+  },
+  expandButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.primary,
+  },
   analysisSection: { marginBottom: 12 },
   analysisSectionHeader: {
     flexDirection: "row",

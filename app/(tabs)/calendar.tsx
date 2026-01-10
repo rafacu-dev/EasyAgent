@@ -9,11 +9,33 @@ import { Colors } from "../../utils/colors";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
+import { useAgent } from "../../utils/AgentContext";
+import NoPhoneNumber from "../../components/NoPhoneNumber";
 
 export default function CalendarScreen() {
   const { t } = useTranslation();
+  const { phoneNumber } = useAgent();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [appointments, setAppointments] = useState<any[]>([]);
+
+  // No phone number view
+  if (!phoneNumber) {
+    return (
+      <View style={styles.container}>
+        <ScrollView style={styles.scrollView}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>
+              {t("calendar.title", "Calendar")}
+            </Text>
+            <Text style={styles.headerSubtitle}>
+              {t("calendar.subtitle", "View and manage appointments")}
+            </Text>
+          </View>
+          <NoPhoneNumber variant="detailed" translationPrefix="calendar" />
+        </ScrollView>
+      </View>
+    );
+  }
 
   const daysInMonth = new Date(
     selectedDate.getFullYear(),
@@ -234,7 +256,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   headerTitle: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "bold",
     color: Colors.textPrimary,
     marginBottom: 4,
