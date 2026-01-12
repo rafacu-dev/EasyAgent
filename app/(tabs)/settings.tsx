@@ -10,24 +10,16 @@ import {
 import { Colors } from "../../utils/colors";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
-import { useState, useEffect } from "react";
-import { getAgentConfig, clearStorage } from "../../utils/storage";
+import { useState } from "react";
+import { clearStorage, clearAuthData } from "../../utils/storage";
 import { router } from "expo-router";
+import { useAgent } from "@/utils/AgentContext";
 
 export default function SettingsScreen() {
   const { t, i18n } = useTranslation();
-  const [agentConfig, setAgentConfig] = useState<any>(null);
+  const { agentConfig } = useAgent();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
-
-  useEffect(() => {
-    loadAgentConfig();
-  }, []);
-
-  const loadAgentConfig = async () => {
-    const config = await getAgentConfig();
-    setAgentConfig(config);
-  };
 
   const changeLanguage = () => {
     const newLang = i18n.language === "en" ? "es" : "en";
@@ -47,8 +39,8 @@ export default function SettingsScreen() {
           text: t("settings.logout", "Logout"),
           style: "destructive",
           onPress: async () => {
-            await clearStorage();
-            router.replace("/");
+            await clearAuthData();
+            router.replace("/login" as any);
           },
         },
       ]

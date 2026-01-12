@@ -1,3 +1,8 @@
+/**
+ * API Client - Centralized HTTP client with interceptors
+ * Handles authentication, error handling, and request/response transformation
+ */
+
 import axios, {
   AxiosInstance,
   AxiosError,
@@ -5,39 +10,29 @@ import axios, {
   AxiosResponse,
 } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { BaseUrl } from "./constants";
 import { router } from "expo-router";
+import { API_BASE_URL, API_TIMEOUTS } from "./config";
 
-/**
- * Centralized API Client with interceptors
- * All HTTP requests should use this instance
- */
 class ApiClient {
   private axiosInstance: AxiosInstance;
 
   constructor() {
-    // Create axios instance with base configuration
     this.axiosInstance = axios.create({
-      baseURL: BaseUrl,
-      timeout: 30000, // 30 seconds
+      baseURL: API_BASE_URL,
+      timeout: API_TIMEOUTS.DEFAULT,
       headers: {
         "Content-Type": "application/json",
       },
     });
 
-    // Configure interceptors
     this.setupInterceptors();
   }
 
-  /**
-   * Configure request and response interceptors
-   */
   private setupInterceptors(): void {
-    // Request Interceptor
+    // Request Interceptor - Add auth token
     this.axiosInstance.interceptors.request.use(
       async (config: InternalAxiosRequestConfig) => {
         try {
-          // Add JWT Auth token if exists
           const authToken = await AsyncStorage.getItem("authToken");
           if (authToken && config.headers) {
             config.headers.Authorization = `Bearer ${authToken}`;
@@ -54,51 +49,36 @@ class ApiClient {
       }
     );
 
-    // Response Interceptor
+    // Response Interceptor - Handle errors
     this.axiosInstance.interceptors.response.use(
-      (response: AxiosResponse) => {
-        return response;
-      },
+      (response: AxiosResponse) => response,
       async (error: AxiosError) => {
-        // Handle HTTP errors
         if (error.response) {
           const { status, data } = error.response;
-
           console.error(` [${status}] ${error.config?.url}`, data);
 
-          // Handle specific error cases
           switch (status) {
             case 401:
-              // Invalid or expired token
               console.log("Invalid or expired token, redirecting to login");
               await AsyncStorage.removeItem("authToken");
               await AsyncStorage.removeItem("refreshToken");
               await AsyncStorage.removeItem("user");
-              // Redirect to login
               router.replace("/login");
               break;
-
             case 403:
               console.log("Access denied");
               break;
-
             case 404:
               console.log("Resource not found");
               break;
-
             case 500:
               console.log("Server error");
               break;
-
-            default:
-              console.log(`HTTP Error ${status}`);
           }
         } else if (error.request) {
-          // Request was made but no response received
           console.error("❌ No response from server:", error.request);
         } else {
-          // Error configuring the request
-          console.error("❌ Error configuring request:", error.message);
+          console.error("❌ Request configuration error:", error.message);
         }
 
         return Promise.reject(error);
@@ -106,54 +86,32 @@ class ApiClient {
     );
   }
 
-  /**
-   * Get the configured axios instance
-   */
-  public getInstance(): AxiosInstance {
-    return this.axiosInstance;
-  }
-
-  /**
-   * Helper methods for common requests
-   */
-  public async get<T = any>(url: string, config?: any): Promise<T> {
-    const response = await this.axiosInstance.get<T>(url, config);
+  // HTTP Methods
+  async get<T>(url: string, params?: object): Promise<T> {
+    const response = await this.axiosInstance.get<T>(url, { params });
     return response.data;
   }
 
-  public async post<T = any>(
-    url: string,
-    data?: any,
-    config?: any
-  ): Promise<T> {
-    const response = await this.axiosInstance.post<T>(url, data, config);
+  async post<T>(url: string, data?: object): Promise<T> {
+    const response = await this.axiosInstance.post<T>(url, data);
     return response.data;
   }
 
-  public async put<T = any>(url: string, data?: any, config?: any): Promise<T> {
-    const response = await this.axiosInstance.put<T>(url, data, config);
+  async put<T>(url: string, data?: object): Promise<T> {
+    const response = await this.axiosInstance.put<T>(url, data);
     return response.data;
   }
 
-  public async patch<T = any>(
-    url: string,
-    data?: any,
-    config?: any
-  ): Promise<T> {
-    const response = await this.axiosInstance.patch<T>(url, data, config);
+  async patch<T>(url: string, data?: object): Promise<T> {
+    const response = await this.axiosInstance.patch<T>(url, data);
     return response.data;
   }
 
-  public async delete<T = any>(url: string, config?: any): Promise<T> {
-    const response = await this.axiosInstance.delete<T>(url, config);
+  async delete<T>(url: string): Promise<T> {
+    const response = await this.axiosInstance.delete<T>(url);
     return response.data;
   }
 }
 
-// Export a single instance (Singleton)
+// Export singleton instance
 export const apiClient = new ApiClient();
-
-// Export the axios instance for advanced cases
-export const axiosInstance = apiClient.getInstance();
-
-export default apiClient;

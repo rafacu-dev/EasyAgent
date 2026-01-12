@@ -10,6 +10,27 @@
     "yes": "Sí",
     "no": "No"
   },
+  "login": {
+    "title": "Bienvenido a EasyAgent",
+    "subtitle": "Ingresa tu correo para iniciar sesión o crear una cuenta",
+    "emailLabel": "Correo Electrónico",
+    "emailPlaceholder": "tu@correo.com",
+    "emailRequired": "Por favor ingresa tu correo electrónico",
+    "invalidEmail": "Por favor ingresa un correo electrónico válido",
+    "requestFailed": "Error al enviar el código. Por favor intenta de nuevo.",
+    "infoText": "Te enviaremos un código de 6 dígitos para verificar tu correo"
+  },
+  "verifyToken": {
+    "title": "Revisa tu Correo",
+    "subtitle": "Enviamos un código de 6 dígitos a",
+    "codeRequired": "Por favor ingresa el código de 6 dígitos",
+    "verifyFailed": "Código inválido o expirado. Por favor intenta de nuevo.",
+    "verify": "Verificar Código",
+    "noCode": "¿No recibiste el código?",
+    "resend": "Reenviar",
+    "codeSent": "Un nuevo código ha sido enviado a tu correo",
+    "resendFailed": "Error al reenviar el código. Por favor intenta de nuevo."
+  },
   "tabs": {
     "home": "Inicio",
     "phone": "Llamar",

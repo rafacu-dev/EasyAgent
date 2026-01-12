@@ -2,11 +2,13 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  Alert,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -16,6 +18,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { Colors } from "../utils/colors";
+import { apiClient } from "@/utils/axios-interceptor";
 
 const AnimatedView = ({
   children,
@@ -88,21 +91,42 @@ export default function CompanyInfo() {
   const [companyName, setCompanyName] = useState("");
   const [socialMediaAndWeb, setSocialMediaAndWeb] = useState("");
   const [showContent, setShowContent] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setShowContent(true), 100);
     return () => clearTimeout(timer);
   }, []);
 
-  const handleSubmit = () => {
-    router.push({
-      pathname: "/agent-setup",
-      params: {
-        sector,
-        companyName,
-        socialMediaAndWeb,
-      },
-    });
+  const handleSubmit = async () => {
+    if (!companyName.trim()) return;
+
+    setIsLoading(true);
+    try {
+      // Save company info to user profile
+      await apiClient.patch("/profile/", {
+        company_name: companyName.trim(),
+        sector: sector as string,
+      });
+
+      // Continue to agent setup (pass social_media_and_web for agent creation)
+      router.push({
+        pathname: "/agent-setup",
+        params: {
+          sector,
+          companyName,
+          socialMediaAndWeb,
+        },
+      });
+    } catch (error: any) {
+      console.error("Error saving company info:", error);
+      Alert.alert(
+        t("common.error"),
+        error.response?.data?.error || "Failed to save company info"
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -232,7 +256,9 @@ export default function CompanyInfo() {
         <TouchableOpacity
           style={{
             backgroundColor:
-              companyName.trim() === "" ? Colors.primaryLight : Colors.primary,
+              companyName.trim() === "" || isLoading
+                ? Colors.primaryLight
+                : Colors.primary,
             paddingVertical: 18,
             borderRadius: 16,
             alignItems: "center",
@@ -242,21 +268,25 @@ export default function CompanyInfo() {
             shadowOpacity: companyName.trim() === "" ? 0.15 : 0.3,
             shadowRadius: 12,
             elevation: 6,
-            opacity: companyName.trim() === "" ? 0.7 : 1,
+            opacity: companyName.trim() === "" || isLoading ? 0.7 : 1,
           }}
-          disabled={companyName.trim() === ""}
+          disabled={companyName.trim() === "" || isLoading}
           onPress={handleSubmit}
         >
-          <Text
-            style={{
-              color: Colors.textWhite,
-              fontSize: 17,
-              fontWeight: "600",
-              letterSpacing: 0.3,
-            }}
-          >
-            {t("common.continue")}
-          </Text>
+          {isLoading ? (
+            <ActivityIndicator color={Colors.textWhite} />
+          ) : (
+            <Text
+              style={{
+                color: Colors.textWhite,
+                fontSize: 17,
+                fontWeight: "600",
+                letterSpacing: 0.3,
+              }}
+            >
+              {t("common.continue")}
+            </Text>
+          )}
         </TouchableOpacity>
       </AnimatedView>
     </View>

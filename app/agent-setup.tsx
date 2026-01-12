@@ -32,14 +32,12 @@ export default function AgentSetup() {
 
     setIsLoading(true);
     try {
-      // Enviar al API para crear el agente en Retell.ai usando axios client
+      // Create agent in Retell.ai (company info comes from user profile)
       const response = await apiClient.post("/agents/", {
-        sector: params.sector as string,
-        company_name: params.companyName as string,
-        social_media_and_web: params.socialMediaAndWeb as string,
         agent_name: agentName,
         agent_gender: agentGender,
         agent_description: agentDescription,
+        social_media_and_web: (params.socialMediaAndWeb as string) || "",
       });
 
       if (response.data && response.data.id) {
@@ -55,8 +53,9 @@ export default function AgentSetup() {
       }
 
       router.replace("/(tabs)/home");
-    } catch (error) {
-      Alert.alert("Error", String(error), [{ text: "OK" }]);
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || String(error);
+      Alert.alert("Error", errorMessage, [{ text: "OK" }]);
     } finally {
       setIsLoading(false);
     }

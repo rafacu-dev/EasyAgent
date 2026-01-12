@@ -417,7 +417,24 @@ export default function HomeScreen() {
           </View>
         ) : calls.length === 0 ? (
           <View style={styles.callsListCard}>
-            <Text style={styles.headerSubtitle}>No recent calls</Text>
+            <View style={styles.emptyCallsContainer}>
+              <View style={styles.emptyCallsIconContainer}>
+                <Ionicons
+                  name="call-outline"
+                  size={48}
+                  color={Colors.textLight}
+                />
+              </View>
+              <Text style={styles.emptyCallsTitle}>
+                {t("home.noCallsYet", "No Calls Yet")}
+              </Text>
+              <Text style={styles.emptyCallsSubtitle}>
+                {t(
+                  "home.noCallsDescription",
+                  "Your recent calls will appear here once you start making or receiving calls."
+                )}
+              </Text>
+            </View>
           </View>
         ) : (
           <View style={styles.callsListCard}>
@@ -688,5 +705,36 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginRight: 8,
     fontWeight: "500",
+  },
+  emptyCallsContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+    paddingHorizontal: 40,
+  },
+  emptyCallsIconContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: Colors.backgroundLight,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: Colors.borderLight,
+  },
+  emptyCallsTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.textPrimary,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  emptyCallsSubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 20,
   },
 });

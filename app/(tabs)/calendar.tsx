@@ -4,19 +4,193 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Modal,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { Colors } from "../../utils/colors";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useAgent } from "../../utils/AgentContext";
 import NoPhoneNumber from "../../components/NoPhoneNumber";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "../../utils/axios-interceptor";
+
+// Types
+interface Appointment {
+  id: number;
+  title: string;
+  description: string;
+  date: string;
+  start_time: string;
+  end_time: string | null;
+  duration_minutes: number;
+  client_name: string;
+  client_phone: string;
+  client_email: string;
+  status: string;
+  notes: string;
+  agent: number | null;
+  agent_name: string | null;
+  created_by_agent: boolean;
+  is_past: boolean;
+}
+
+interface MonthResponse {
+  data: Appointment[];
+  appointment_dates: string[];
+}
+
+const STATUS_COLORS: { [key: string]: string } = {
+  scheduled: Colors.info,
+  confirmed: Colors.success,
+  completed: Colors.textSecondary,
+  cancelled: Colors.error,
+  no_show: Colors.warning,
+  rescheduled: "#9b59b6",
+};
 
 export default function CalendarScreen() {
   const { t } = useTranslation();
-  const { phoneNumber } = useAgent();
+  const { phoneNumber, agentConfig } = useAgent();
+  const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [appointments, setAppointments] = useState<any[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<Appointment | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Form state for new appointment
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    date: "",
+    start_time: "",
+    duration_minutes: "30",
+    client_name: "",
+    client_phone: "",
+    client_email: "",
+    notes: "",
+  });
+
+  // Fetch appointments for the month
+  const { data: monthData, isLoading } = useQuery<MonthResponse>({
+    queryKey: [
+      "appointments-month",
+      selectedDate.getFullYear(),
+      selectedDate.getMonth() + 1,
+    ],
+    queryFn: async () => {
+      const response = await apiClient.get(
+        `appointments/month/?year=${selectedDate.getFullYear()}&month=${
+          selectedDate.getMonth() + 1
+        }`
+      );
+      return response.data;
+    },
+    enabled: !!phoneNumber,
+  });
+
+  const appointments: Appointment[] = monthData?.data ?? [];
+  const appointmentDates: string[] = monthData?.appointment_dates ?? [];
+
+  // Get appointments for selected date
+  const selectedDateStr = selectedDate.toISOString().split("T")[0];
+  const dayAppointments = appointments.filter(
+    (apt) => apt.date === selectedDateStr
+  );
+
+  // Create appointment mutation
+  const createMutation = useMutation({
+    mutationFn: (data: any) => apiClient.post("appointments/", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments-month"] });
+      setShowAddModal(false);
+      resetForm();
+      Alert.alert(
+        t("calendar.success", "Success"),
+        t("calendar.appointmentCreated", "Appointment created successfully")
+      );
+    },
+    onError: (error: any) => {
+      Alert.alert(
+        t("common.error", "Error"),
+        error.response?.data?.error || "Failed to create appointment"
+      );
+    },
+  });
+
+  // Cancel appointment mutation
+  const cancelMutation = useMutation({
+    mutationFn: (id: number) => apiClient.post(`appointments/${id}/cancel/`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments-month"] });
+      setShowDetailModal(false);
+    },
+  });
+
+  // Confirm appointment mutation
+  const confirmMutation = useMutation({
+    mutationFn: (id: number) => apiClient.post(`appointments/${id}/confirm/`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments-month"] });
+      setShowDetailModal(false);
+    },
+  });
+
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      description: "",
+      date: selectedDateStr,
+      start_time: "",
+      duration_minutes: "30",
+      client_name: "",
+      client_phone: "",
+      client_email: "",
+      notes: "",
+    });
+  };
+
+  const handleCreateAppointment = () => {
+    if (
+      !formData.title ||
+      !formData.date ||
+      !formData.start_time ||
+      !formData.client_name
+    ) {
+      Alert.alert(
+        t("common.error", "Error"),
+        t("calendar.fillRequired", "Please fill all required fields")
+      );
+      return;
+    }
+
+    createMutation.mutate({
+      ...formData,
+      duration_minutes: parseInt(formData.duration_minutes, 10),
+      agent: agentConfig?.id,
+    });
+  };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    queryClient
+      .invalidateQueries({ queryKey: ["appointments-month"] })
+      .finally(() => setRefreshing(false));
+  }, [queryClient]);
+
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(":");
+    const h = parseInt(hours, 10);
+    const ampm = h >= 12 ? "PM" : "AM";
+    const h12 = h % 12 || 12;
+    return `${h12}:${minutes} ${ampm}`;
+  };
 
   // No phone number view
   if (!phoneNumber) {
@@ -76,6 +250,11 @@ export default function CalendarScreen() {
 
     // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${selectedDate.getFullYear()}-${String(
+        selectedDate.getMonth() + 1
+      ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const hasAppointments = appointmentDates.includes(dateStr);
+
       const isToday =
         day === today.getDate() &&
         selectedDate.getMonth() === today.getMonth() &&
@@ -105,6 +284,7 @@ export default function CalendarScreen() {
           >
             {day}
           </Text>
+          {hasAppointments && <View style={styles.appointmentDot} />}
         </TouchableOpacity>
       );
     }
@@ -124,7 +304,12 @@ export default function CalendarScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <View style={styles.header}>
           <Text style={styles.headerTitle}>
             {t("calendar.title", "Calendar")}
@@ -180,7 +365,11 @@ export default function CalendarScreen() {
             {selectedDate.toLocaleDateString()}
           </Text>
 
-          {appointments.length === 0 ? (
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={Colors.primary} />
+            </View>
+          ) : dayAppointments.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons
                 name="calendar-outline"
@@ -198,20 +387,49 @@ export default function CalendarScreen() {
               </Text>
             </View>
           ) : (
-            appointments.map((appointment, index) => (
-              <TouchableOpacity key={index} style={styles.appointmentItem}>
+            dayAppointments.map((appointment) => (
+              <TouchableOpacity
+                key={appointment.id}
+                style={styles.appointmentItem}
+                onPress={() => {
+                  setSelectedAppointment(appointment);
+                  setShowDetailModal(true);
+                }}
+              >
+                <View
+                  style={[
+                    styles.statusBar,
+                    {
+                      backgroundColor:
+                        STATUS_COLORS[appointment.status] || Colors.info,
+                    },
+                  ]}
+                />
                 <View style={styles.appointmentTime}>
                   <Text style={styles.appointmentTimeText}>
-                    {appointment.time}
+                    {formatTime(appointment.start_time)}
+                  </Text>
+                  <Text style={styles.appointmentDuration}>
+                    {appointment.duration_minutes} min
                   </Text>
                 </View>
                 <View style={styles.appointmentDetails}>
                   <Text style={styles.appointmentTitle}>
                     {appointment.title}
                   </Text>
-                  <Text style={styles.appointmentDescription}>
-                    {appointment.description}
+                  <Text style={styles.appointmentClient}>
+                    {appointment.client_name}
                   </Text>
+                  {appointment.created_by_agent && (
+                    <View style={styles.aiTag}>
+                      <Ionicons
+                        name="sparkles"
+                        size={12}
+                        color={Colors.primary}
+                      />
+                      <Text style={styles.aiTagText}>AI Created</Text>
+                    </View>
+                  )}
                 </View>
                 <Ionicons
                   name="chevron-forward"
@@ -224,21 +442,369 @@ export default function CalendarScreen() {
         </View>
 
         <View style={styles.quickActionsContainer}>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="add-circle" size={24} color={Colors.secondary} />
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => {
+              resetForm();
+              setFormData((prev) => ({ ...prev, date: selectedDateStr }));
+              setShowAddModal(true);
+            }}
+          >
+            <Ionicons name="add-circle" size={24} color={Colors.primary} />
             <Text style={styles.actionButtonText}>
               {t("calendar.addAppointment", "Add Appointment")}
             </Text>
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="sync" size={24} color={Colors.secondary} />
-            <Text style={styles.actionButtonText}>
-              {t("calendar.syncCalendar", "Sync with Calendar")}
-            </Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Add Appointment Modal */}
+      <Modal visible={showAddModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {t("calendar.newAppointment", "New Appointment")}
+              </Text>
+              <TouchableOpacity onPress={() => setShowAddModal(false)}>
+                <Ionicons name="close" size={24} color={Colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.inputLabel}>
+                {t("calendar.appointmentTitle", "Title")} *
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={formData.title}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, title: text }))
+                }
+                placeholder={t(
+                  "calendar.titlePlaceholder",
+                  "Appointment title"
+                )}
+                placeholderTextColor={Colors.textLight}
+              />
+
+              <Text style={styles.inputLabel}>
+                {t("calendar.date", "Date")} *
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={formData.date}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, date: text }))
+                }
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={Colors.textLight}
+              />
+
+              <Text style={styles.inputLabel}>
+                {t("calendar.time", "Time")} *
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={formData.start_time}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, start_time: text }))
+                }
+                placeholder="HH:MM (e.g., 14:30)"
+                placeholderTextColor={Colors.textLight}
+              />
+
+              <Text style={styles.inputLabel}>
+                {t("calendar.duration", "Duration (minutes)")}
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={formData.duration_minutes}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, duration_minutes: text }))
+                }
+                keyboardType="numeric"
+                placeholderTextColor={Colors.textLight}
+              />
+
+              <Text style={styles.inputLabel}>
+                {t("calendar.clientName", "Client Name")} *
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={formData.client_name}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, client_name: text }))
+                }
+                placeholder={t(
+                  "calendar.clientNamePlaceholder",
+                  "Client's name"
+                )}
+                placeholderTextColor={Colors.textLight}
+              />
+
+              <Text style={styles.inputLabel}>
+                {t("calendar.clientPhone", "Client Phone")}
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={formData.client_phone}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, client_phone: text }))
+                }
+                placeholder="+1234567890"
+                keyboardType="phone-pad"
+                placeholderTextColor={Colors.textLight}
+              />
+
+              <Text style={styles.inputLabel}>
+                {t("calendar.clientEmail", "Client Email")}
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={formData.client_email}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, client_email: text }))
+                }
+                placeholder="email@example.com"
+                keyboardType="email-address"
+                placeholderTextColor={Colors.textLight}
+              />
+
+              <Text style={styles.inputLabel}>
+                {t("calendar.description", "Description")}
+              </Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={formData.description}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, description: text }))
+                }
+                placeholder={t(
+                  "calendar.descriptionPlaceholder",
+                  "Appointment details..."
+                )}
+                multiline
+                numberOfLines={3}
+                placeholderTextColor={Colors.textLight}
+              />
+
+              <Text style={styles.inputLabel}>
+                {t("calendar.notes", "Notes")}
+              </Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={formData.notes}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, notes: text }))
+                }
+                placeholder={t(
+                  "calendar.notesPlaceholder",
+                  "Additional notes..."
+                )}
+                multiline
+                numberOfLines={3}
+                placeholderTextColor={Colors.textLight}
+              />
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowAddModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>
+                  {t("common.cancel", "Cancel")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={handleCreateAppointment}
+                disabled={createMutation.isPending}
+              >
+                {createMutation.isPending ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.saveButtonText}>
+                    {t("common.save", "Save")}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Appointment Detail Modal */}
+      <Modal visible={showDetailModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {selectedAppointment?.title}
+              </Text>
+              <TouchableOpacity onPress={() => setShowDetailModal(false)}>
+                <Ionicons name="close" size={24} color={Colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            {selectedAppointment && (
+              <ScrollView style={styles.modalBody}>
+                <View style={styles.detailRow}>
+                  <Ionicons
+                    name="calendar"
+                    size={20}
+                    color={Colors.textSecondary}
+                  />
+                  <Text style={styles.detailText}>
+                    {new Date(selectedAppointment.date).toLocaleDateString()} at{" "}
+                    {formatTime(selectedAppointment.start_time)}
+                  </Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Ionicons
+                    name="time"
+                    size={20}
+                    color={Colors.textSecondary}
+                  />
+                  <Text style={styles.detailText}>
+                    {selectedAppointment.duration_minutes} minutes
+                  </Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Ionicons
+                    name="person"
+                    size={20}
+                    color={Colors.textSecondary}
+                  />
+                  <Text style={styles.detailText}>
+                    {selectedAppointment.client_name}
+                  </Text>
+                </View>
+
+                {selectedAppointment.client_phone && (
+                  <View style={styles.detailRow}>
+                    <Ionicons
+                      name="call"
+                      size={20}
+                      color={Colors.textSecondary}
+                    />
+                    <Text style={styles.detailText}>
+                      {selectedAppointment.client_phone}
+                    </Text>
+                  </View>
+                )}
+
+                {selectedAppointment.client_email && (
+                  <View style={styles.detailRow}>
+                    <Ionicons
+                      name="mail"
+                      size={20}
+                      color={Colors.textSecondary}
+                    />
+                    <Text style={styles.detailText}>
+                      {selectedAppointment.client_email}
+                    </Text>
+                  </View>
+                )}
+
+                <View style={styles.statusBadge}>
+                  <View
+                    style={[
+                      styles.statusDot,
+                      {
+                        backgroundColor:
+                          STATUS_COLORS[selectedAppointment.status],
+                      },
+                    ]}
+                  />
+                  <Text style={styles.statusText}>
+                    {selectedAppointment.status.charAt(0).toUpperCase() +
+                      selectedAppointment.status.slice(1)}
+                  </Text>
+                </View>
+
+                {selectedAppointment.description && (
+                  <View style={styles.descriptionSection}>
+                    <Text style={styles.descriptionLabel}>
+                      {t("calendar.description", "Description")}
+                    </Text>
+                    <Text style={styles.descriptionText}>
+                      {selectedAppointment.description}
+                    </Text>
+                  </View>
+                )}
+
+                {selectedAppointment.notes && (
+                  <View style={styles.descriptionSection}>
+                    <Text style={styles.descriptionLabel}>
+                      {t("calendar.notes", "Notes")}
+                    </Text>
+                    <Text style={styles.descriptionText}>
+                      {selectedAppointment.notes}
+                    </Text>
+                  </View>
+                )}
+
+                {selectedAppointment.created_by_agent && (
+                  <View style={styles.aiCreatedBadge}>
+                    <Ionicons
+                      name="sparkles"
+                      size={16}
+                      color={Colors.primary}
+                    />
+                    <Text style={styles.aiCreatedText}>
+                      {t(
+                        "calendar.createdByAgent",
+                        "Created by AI Agent during a call"
+                      )}
+                    </Text>
+                  </View>
+                )}
+              </ScrollView>
+            )}
+
+            <View style={styles.modalFooter}>
+              {selectedAppointment?.status === "scheduled" && (
+                <>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={() =>
+                      cancelMutation.mutate(selectedAppointment.id)
+                    }
+                  >
+                    <Text style={styles.cancelButtonText}>
+                      {t("calendar.cancelAppointment", "Cancel")}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.confirmButton}
+                    onPress={() =>
+                      confirmMutation.mutate(selectedAppointment.id)
+                    }
+                  >
+                    <Text style={styles.confirmButtonText}>
+                      {t("calendar.confirmAppointment", "Confirm")}
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              )}
+              {selectedAppointment?.status !== "scheduled" && (
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setShowDetailModal(false)}
+                >
+                  <Text style={styles.closeButtonText}>
+                    {t("common.close", "Close")}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -329,6 +895,13 @@ const styles = StyleSheet.create({
     color: Colors.textWhite,
     fontWeight: "600",
   },
+  appointmentDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.primary,
+    marginTop: 2,
+  },
   appointmentsContainer: {
     padding: 16,
   },
@@ -338,6 +911,10 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     marginBottom: 16,
     paddingHorizontal: 8,
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: "center",
   },
   emptyState: {
     backgroundColor: Colors.cardBackground,
@@ -374,15 +951,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 1,
+    overflow: "hidden",
+  },
+  statusBar: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
   },
   appointmentTime: {
     width: 70,
     marginRight: 16,
+    marginLeft: 8,
   },
   appointmentTimeText: {
     fontSize: 14,
     fontWeight: "600",
     color: Colors.secondary,
+  },
+  appointmentDuration: {
+    fontSize: 12,
+    color: Colors.textLight,
   },
   appointmentDetails: {
     flex: 1,
@@ -391,11 +981,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: Colors.textPrimary,
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  appointmentDescription: {
+  appointmentClient: {
     fontSize: 14,
     color: Colors.textSecondary,
+  },
+  aiTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  aiTagText: {
+    fontSize: 11,
+    color: Colors.primary,
+    marginLeft: 4,
+    fontWeight: "500",
   },
   quickActionsContainer: {
     padding: 16,
@@ -419,5 +1020,168 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textPrimary,
     marginLeft: 16,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: Colors.cardBackground,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: "90%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.textPrimary,
+  },
+  modalBody: {
+    padding: 20,
+    maxHeight: 400,
+  },
+  modalFooter: {
+    flexDirection: "row",
+    padding: 20,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+    marginBottom: 8,
+    marginTop: 12,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: Colors.textPrimary,
+    backgroundColor: Colors.backgroundLight,
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: "top",
+  },
+  cancelButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.error,
+    alignItems: "center",
+  },
+  cancelButtonText: {
+    color: Colors.error,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  saveButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+  },
+  saveButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  confirmButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    backgroundColor: Colors.success,
+    alignItems: "center",
+  },
+  confirmButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  closeButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    backgroundColor: Colors.secondary,
+    alignItems: "center",
+  },
+  closeButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  // Detail modal styles
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    gap: 12,
+  },
+  detailText: {
+    fontSize: 16,
+    color: Colors.textPrimary,
+  },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 12,
+    gap: 8,
+  },
+  statusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.textSecondary,
+  },
+  descriptionSection: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: Colors.backgroundLight,
+    borderRadius: 8,
+  },
+  descriptionLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: Colors.textSecondary,
+    marginBottom: 4,
+  },
+  descriptionText: {
+    fontSize: 14,
+    color: Colors.textPrimary,
+    lineHeight: 20,
+  },
+  aiCreatedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: Colors.backgroundLight,
+    borderRadius: 8,
+    gap: 8,
+  },
+  aiCreatedText: {
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: "500",
   },
 });

@@ -1,5 +1,13 @@
 // types.d.ts
 
+export interface UserProfile {
+  id: string;
+  email: string;
+  company_name: string;
+  sector: string;
+  social_media_and_web: string;
+}
+
 export interface AgentConfig {
   id: string;
   sector: string;

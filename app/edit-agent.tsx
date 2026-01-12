@@ -83,13 +83,17 @@ export default function EditAgent() {
 
     setIsLoading(true);
     try {
+      // Update user profile (company info)
+      await apiClient.patch("/profile/", {
+        company_name: formData.companyName,
+        sector: formData.sector,
+      });
+
       // Update agent via API
       await apiClient.put(`/agents/${formData.agentId}/`, {
         name: formData.agentName,
         agent_gender: formData.agentGender,
         agent_description: formData.agentDescription,
-        sector: formData.sector,
-        company_name: formData.companyName,
         social_media_and_web: formData.socialMediaAndWeb,
       });
 
@@ -373,7 +377,6 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   header: {
-    marginTop: 60,
     marginBottom: 40,
     alignItems: "center",
   },
