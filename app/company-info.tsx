@@ -104,7 +104,7 @@ export default function CompanyInfo() {
     setIsLoading(true);
     try {
       // Save company info to user profile
-      await apiClient.patch("/profile/", {
+      await apiClient.patch("profile/", {
         company_name: companyName.trim(),
         sector: sector as string,
       });

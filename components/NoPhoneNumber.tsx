@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 import { Colors } from "../utils/colors";
+import { useUser } from "../utils/UserContext";
 
 interface NoPhoneNumberProps {
   variant?: "simple" | "detailed";
@@ -14,6 +15,31 @@ export default function NoPhoneNumber({
   translationPrefix = "home",
 }: NoPhoneNumberProps) {
   const { t } = useTranslation();
+  const { isProOrAbove } = useUser();
+
+  const handleBuyPhoneNumber = () => {
+    if (!isProOrAbove) {
+      Alert.alert(
+        t("subscription.proFeature", "Pro Feature"),
+        t(
+          "subscription.phoneNumberProMessage",
+          "Phone numbers are a Pro feature. Upgrade to access this feature."
+        ),
+        [
+          {
+            text: t("common.cancel", "Cancel"),
+            style: "cancel",
+          },
+          {
+            text: t("subscription.upgrade", "Upgrade"),
+            onPress: () => router.push("/paywall/PaywallScreen"),
+          },
+        ]
+      );
+    } else {
+      router.push("/buy-phone-number");
+    }
+  };
 
   if (variant === "detailed") {
     return (
@@ -72,7 +98,7 @@ export default function NoPhoneNumber({
 
         <TouchableOpacity
           style={styles.buyButton}
-          onPress={() => router.push("/buy-phone-number")}
+          onPress={handleBuyPhoneNumber}
         >
           <Ionicons name="add-circle" size={20} color="#fff" />
           <Text style={styles.buyButtonText}>
@@ -102,7 +128,7 @@ export default function NoPhoneNumber({
       </Text>
       <TouchableOpacity
         style={styles.buyButtonSimple}
-        onPress={() => router.push("/buy-phone-number")}
+        onPress={handleBuyPhoneNumber}
       >
         <Ionicons name="add-circle" size={20} color="#fff" />
         <Text style={styles.buyButtonTextSimple}>

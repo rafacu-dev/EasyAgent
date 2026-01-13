@@ -13,6 +13,7 @@ import { useState } from "react";
 import { Colors } from "../../utils/colors";
 import { apiClient } from "../../utils/axios-interceptor";
 import { useQuery } from "@tanstack/react-query";
+import { formatDuration, formatDateTime } from "../../utils/formatters";
 
 interface CallDetails {
   id: string;
@@ -36,22 +37,22 @@ interface AgentInfo {
 }
 
 export default function CallDetailsScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [isAnalysisExpanded, setIsAnalysisExpanded] = useState(false);
   const [isTranscriptExpanded, setIsTranscriptExpanded] = useState(false);
-  console.log("Fetching call details for ID:", id);
+  const currentLocale = i18n.language;
+
   const { data, isLoading } = useQuery<
     CallDetails | { call?: CallDetails; agent?: AgentInfo } | undefined
   >({
     queryKey: ["callDetails", id],
     queryFn: async ({ queryKey }) => {
-      const res = await apiClient.get(`/calls/${queryKey[1]}/`);
+      const res = await apiClient.get(`calls/${queryKey[1]}/`);
       return res;
     },
     enabled: !!id,
   });
-  console.log("Call details data:", data);
 
   const rawCall: CallDetails | undefined =
     (data && (data as any).call) || (data as CallDetails) || undefined;
@@ -103,18 +104,8 @@ export default function CallDetailsScreen() {
     }
   };
 
-  const formatDuration = (ms?: number) => {
-    if (!ms || ms <= 0) return "00:00";
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-  };
-
-  const formatDateTime = (timestampMs?: number) => {
-    if (!timestampMs) return "—";
-    const d = new Date(timestampMs);
-    return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+  const formatCallDateTime = (timestampMs?: number) => {
+    return formatDateTime(timestampMs, currentLocale) || "—";
   };
 
   const estimateCost = (ms?: number) => {
@@ -125,6 +116,62 @@ export default function CallDetailsScreen() {
   };
 
   const directionInfo = getDirectionInfo(displayCall.direction);
+
+  // Parse transcript into chat messages
+  const parseTranscript = (transcript?: string) => {
+    if (!transcript) return [];
+
+    const messages: Array<{ role: "agent" | "client"; text: string }> = [];
+    const lines = transcript.split("\n");
+
+    let currentRole: "agent" | "client" | null = null;
+    let currentText = "";
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+
+      // Check if line starts with role indicator
+      if (
+        trimmed.toLowerCase().startsWith("agent:") ||
+        trimmed.toLowerCase().startsWith("assistant:")
+      ) {
+        if (currentRole && currentText) {
+          messages.push({ role: currentRole, text: currentText.trim() });
+        }
+        currentRole = "agent";
+        currentText = trimmed.substring(trimmed.indexOf(":") + 1).trim();
+      } else if (
+        trimmed.toLowerCase().startsWith("client:") ||
+        trimmed.toLowerCase().startsWith("user:") ||
+        trimmed.toLowerCase().startsWith("customer:")
+      ) {
+        if (currentRole && currentText) {
+          messages.push({ role: currentRole, text: currentText.trim() });
+        }
+        currentRole = "client";
+        currentText = trimmed.substring(trimmed.indexOf(":") + 1).trim();
+      } else {
+        // Continue current message
+        if (currentText) currentText += " ";
+        currentText += trimmed;
+      }
+    }
+
+    // Add last message
+    if (currentRole && currentText) {
+      messages.push({ role: currentRole, text: currentText.trim() });
+    }
+
+    // If no role indicators found, treat as single agent message
+    if (messages.length === 0 && transcript.trim()) {
+      messages.push({ role: "agent", text: transcript.trim() });
+    }
+
+    return messages;
+  };
+
+  const transcriptMessages = parseTranscript(displayCall.transcript);
 
   return (
     <View style={styles.container}>
@@ -423,7 +470,7 @@ export default function CallDetailsScreen() {
           ) : null}
 
           {/* Transcript */}
-          {displayCall.transcript ? (
+          {displayCall.transcript && transcriptMessages.length > 0 ? (
             <View style={styles.card}>
               <View style={styles.cardTitleRow}>
                 <Ionicons name="chatbubbles" size={18} color={Colors.primary} />
@@ -431,19 +478,60 @@ export default function CallDetailsScreen() {
                   {t("callDetails.transcript")}
                 </Text>
               </View>
-              <View style={isTranscriptExpanded ? {} : styles.collapsedContent}>
-                <View style={styles.transcriptContainer}>
-                  <Text style={styles.transcriptText}>
-                    {displayCall.transcript}
-                  </Text>
-                </View>
+              <View
+                style={
+                  isTranscriptExpanded
+                    ? styles.chatContainer
+                    : [styles.chatContainer, styles.collapsedContent]
+                }
+              >
+                {transcriptMessages.map((message, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.chatMessageRow,
+                      message.role === "client" && styles.chatMessageRowRight,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.chatBubble,
+                        message.role === "agent"
+                          ? styles.chatBubbleAgent
+                          : styles.chatBubbleClient,
+                      ]}
+                    >
+                      <View style={styles.chatBubbleHeader}>
+                        <Ionicons
+                          name={
+                            message.role === "agent" ? "person-circle" : "call"
+                          }
+                          size={14}
+                          color={
+                            message.role === "agent"
+                              ? Colors.primary
+                              : Colors.success
+                          }
+                        />
+                        <Text style={styles.chatBubbleRole}>
+                          {message.role === "agent"
+                            ? t("callDetails.agent")
+                            : t("callDetails.client")}
+                        </Text>
+                      </View>
+                      <Text style={styles.chatBubbleText}>{message.text}</Text>
+                    </View>
+                  </View>
+                ))}
               </View>
               <TouchableOpacity
                 style={styles.expandButton}
                 onPress={() => setIsTranscriptExpanded(!isTranscriptExpanded)}
               >
                 <Text style={styles.expandButtonText}>
-                  {isTranscriptExpanded ? "Show Less" : "Read More"}
+                  {isTranscriptExpanded
+                    ? t("callDetails.showLess", "Show Less")
+                    : t("callDetails.readMore", "Read More")}
                 </Text>
                 <Ionicons
                   name={isTranscriptExpanded ? "chevron-up" : "chevron-down"}
@@ -628,14 +716,58 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   outcomeText: { fontSize: 14, fontWeight: "600" },
-  transcriptContainer: {
-    backgroundColor: Colors.backgroundLight,
+  chatContainer: {
+    gap: 12,
+    paddingVertical: 8,
+  },
+  chatMessageRow: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    paddingHorizontal: 4,
+  },
+  chatMessageRowRight: {
+    justifyContent: "flex-end",
+  },
+  chatBubble: {
+    maxWidth: "80%",
     borderRadius: 12,
     padding: 12,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  chatBubbleAgent: {
+    backgroundColor: Colors.backgroundLight,
     borderWidth: 1,
     borderColor: Colors.borderLight,
+    borderBottomLeftRadius: 4,
   },
-  transcriptText: { fontSize: 13, color: Colors.textPrimary, lineHeight: 18 },
+  chatBubbleClient: {
+    backgroundColor: Colors.primary + "15",
+    borderWidth: 1,
+    borderColor: Colors.primary + "30",
+    borderBottomRightRadius: 4,
+  },
+  chatBubbleHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 6,
+  },
+  chatBubbleRole: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: Colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  chatBubbleText: {
+    fontSize: 13,
+    color: Colors.textPrimary,
+    lineHeight: 18,
+  },
   recordingButton: {
     flexDirection: "row",
     alignItems: "center",

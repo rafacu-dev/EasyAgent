@@ -1,10 +1,14 @@
 // types.d.ts
 
+export type UserTier = "free" | "pro" | "business" | "enterprise";
+
 export interface UserProfile {
   id: string;
   email: string;
   company_name: string;
   sector: string;
+  tier: UserTier;
+  tier_updated_at: string | null;
   social_media_and_web: string;
 }
 

@@ -166,6 +166,34 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
+            {t("settings.reports", "Reports")}
+          </Text>
+
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => router.push("/analytics")}
+          >
+            <Ionicons name="analytics-outline" size={24} color="#666" />
+            <Text style={styles.settingItemText}>
+              {t("settings.analytics", "Agent Analytics")}
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color="#ccc" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => router.push("/call-history")}
+          >
+            <Ionicons name="list-outline" size={24} color="#666" />
+            <Text style={styles.settingItemText}>
+              {t("settings.callHistory", "Full Call History")}
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color="#ccc" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
             {t("settings.support", "Support")}
           </Text>
 

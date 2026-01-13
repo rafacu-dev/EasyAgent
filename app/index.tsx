@@ -3,83 +3,27 @@ import { View, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import FirstLoginView from "../components/FirstLoginView";
-import { apiClient } from "@/utils/axios-interceptor";
 import { useAgent } from "@/utils/AgentContext";
-import { clearStorage } from "@/utils/storage";
 
 export default function Index() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const { agentConfig, updateAgentConfig } = useAgent();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const { agentConfig, isLoading: agentLoading } = useAgent();
 
   useEffect(() => {
-    console.log("App started, checking authentication...");
+    const checkAuth = async () => {
+      const authToken = await AsyncStorage.getItem("authToken");
+      setIsAuthenticated(!!authToken);
 
-    const initialize = async () => {
-      try {
-        // Check if user is authenticated
-        const authToken = await AsyncStorage.getItem("authToken");
-
-        if (!authToken) {
-          // Not authenticated, redirect to login
-          console.log("No auth token found, redirecting to login");
-          router.replace("/login" as any);
-          return;
-        }
-
-        setIsAuthenticated(true);
-
-        if (agentConfig) {
-          // Redirect to tabs layout
-          router.replace("/(tabs)/home");
-          return;
-        }
-
-        // Fetch agent from server
-        apiClient
-          .get("/agents/")
-          .then(async (response) => {
-            if (response.data && response.data.length > 0) {
-              const agentData = response.data[0];
-              console.log("Fetched agent from server:", agentData);
-
-              // Map API response to AgentConfig structure
-              await updateAgentConfig({
-                id: agentData.id,
-                agentName: agentData.name,
-                agentGender: agentData.agent_gender,
-                companyName: agentData.company_name,
-                sector: agentData.sector,
-                agentDescription: agentData.agent_description,
-                socialMediaAndWeb: agentData.social_media_and_web,
-              });
-
-              router.replace("/(tabs)/home");
-            } else {
-              console.log("No agents found on server");
-              setIsLoading(false);
-            }
-          })
-          .catch((error) => {
-            console.log("Error fetching agents from server:", error.message);
-            // If 401 error, redirect to login
-            if (error.response?.status === 401) {
-              AsyncStorage.removeItem("authToken");
-              router.replace("/login" as any);
-            } else {
-              setIsLoading(false);
-            }
-          });
-      } catch (error) {
-        console.error("Error initializing app:", error);
-        setIsLoading(false);
+      if (!authToken) {
+        router.replace("/login" as any);
       }
     };
 
-    initialize();
-  }, [agentConfig]);
+    checkAuth();
+  }, []);
 
-  if (isLoading) {
+  // Wait for auth check
+  if (isAuthenticated === null) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color="#007AFF" />
@@ -87,12 +31,31 @@ export default function Index() {
     );
   }
 
-  // Only show FirstLoginView if authenticated but no agent config
+  // Wait for agent loading (AgentContext handles API fetch if no cache)
+  if (agentLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
+  // If authenticated and has agent, go to home
+  if (isAuthenticated && agentConfig) {
+    router.replace("/(tabs)/home");
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
+  // Authenticated but no agent - show first login view
   if (isAuthenticated) {
     return <FirstLoginView />;
   }
 
-  // This shouldn't render, but return loading as fallback
+  // Fallback loading
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
       <ActivityIndicator size="large" color="#007AFF" />

@@ -1,4 +1,4 @@
-import { useNavigation } from "expo-router";
+import { useNavigation, router } from "expo-router";
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -32,17 +32,18 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
     useState<PurchasesPackage | null>(null);
 
   const onClose = React.useCallback(() => {
-    navigation.goBack();
-  }, [navigation]);
+    // Navigate to home instead of going back (which might be login)
+    router.replace("/(tabs)/home");
+  }, []);
 
   const onPurchaseSuccess = React.useCallback(() => {
-    navigation.goBack();
-  }, [navigation]);
+    router.replace("/(tabs)/home");
+  }, []);
 
   const getOfferings = React.useCallback(async () => {
     try {
       const offerings = await Purchases.getOfferings();
-      console.log("Offerings fetched:", offerings);
+      if (__DEV__) console.log("Offerings fetched:", offerings);
       setOfferings(offerings);
 
       const currentOffering = offerings?.current;

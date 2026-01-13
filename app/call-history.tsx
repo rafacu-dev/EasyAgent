@@ -11,16 +11,17 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Colors } from "../utils/colors";
 import { useAgent } from "../utils/AgentContext";
 import { apiClient } from "../utils/axios-interceptor";
 import { useQuery } from "@tanstack/react-query";
 import type { RecentCallItem } from "../utils/types";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { formatDuration, formatDateTime } from "../utils/formatters";
 
 export default function CallHistoryScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { agentConfig } = useAgent();
   const agentDbId = agentConfig?.id ?? null;
 
@@ -41,23 +42,6 @@ export default function CallHistoryScreen() {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
-
-  const formatDuration = (durationMs?: number) => {
-    if (!durationMs || durationMs <= 0) return "0:00";
-    const totalSeconds = Math.floor(durationMs / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-  };
-
-  const formatDate = (timestampMs?: number) => {
-    if (!timestampMs) return "";
-    const d = new Date(timestampMs);
-    return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    })}`;
-  };
 
   const buildQueryParams = (pagination?: string | null) => {
     let params = `agent_id=${encodeURIComponent(
@@ -131,16 +115,22 @@ export default function CallHistoryScreen() {
     },
   });
 
-  const calls: RecentCallItem[] = useMemo(() => {
+  // Transform raw calls data
+  const newCalls: RecentCallItem[] = useMemo(() => {
     const rawCalls: any[] = callsResp?.calls ?? [];
-    const newCalls = rawCalls.map((c: any) => {
+    return rawCalls.map((c: any) => {
       const direction = c?.direction;
       const number = direction === "inbound" ? c?.from_number : c?.to_number;
       return {
         id: c?.call_id ?? `${c?.start_timestamp ?? Math.random()}`,
         number: number ?? "Unknown",
         duration: formatDuration(c?.duration_ms),
-        date: formatDate(c?.start_timestamp),
+        date: c?.start_timestamp
+          ? formatDateTime(
+              new Date(c.start_timestamp).getMilliseconds(),
+              i18n.language
+            )
+          : "",
         status: c?.call_status ?? "",
         direction: direction ?? "unknown",
         fromNumber: c?.from_number ?? "Unknown",
@@ -148,18 +138,23 @@ export default function CallHistoryScreen() {
         callType: c?.call_type ?? "",
       };
     });
+  }, [callsResp, i18n.language]);
 
-    // If loading more, append to existing calls
+  // Update allCalls when new data arrives
+  useEffect(() => {
+    if (newCalls.length === 0) return;
+
     if (paginationKey && allCalls.length > 0) {
-      const combined = [...allCalls, ...newCalls];
-      setAllCalls(combined);
-      return combined;
+      // Loading more - append to existing calls
+      setAllCalls((prev) => [...prev, ...newCalls]);
     } else {
       // First load or filter change
       setAllCalls(newCalls);
-      return newCalls;
     }
-  }, [callsResp, paginationKey]);
+  }, [newCalls, paginationKey]);
+
+  // Use allCalls as the final list
+  const calls = allCalls;
 
   const handleLoadMore = () => {
     const lastCallId = callsResp?.pagination_key;

@@ -7,6 +7,7 @@ export const STORAGE_KEYS = {
   AUTH_TOKEN: "authToken",
   REFRESH_TOKEN: "refreshToken",
   USER: "user",
+  LAST_LOGIN: "lastLogin",
 } as const;
 
 // Storage functions
@@ -79,4 +80,22 @@ export const clearAuthData = async (): Promise<void> => {
 export const isAuthenticated = async (): Promise<boolean> => {
   const token = await getAuthToken();
   return token !== null;
+};
+
+// Last login tracking
+export const saveLastLogin = async (datetime: string): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.LAST_LOGIN, datetime);
+  } catch (error) {
+    console.error("Error saving last login:", error);
+  }
+};
+
+export const getLastLogin = async (): Promise<string | null> => {
+  try {
+    return await AsyncStorage.getItem(STORAGE_KEYS.LAST_LOGIN);
+  } catch (error) {
+    console.error("Error reading last login:", error);
+    return null;
+  }
 };

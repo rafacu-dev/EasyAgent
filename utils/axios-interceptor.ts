@@ -5,7 +5,7 @@ import axios, {
   AxiosResponse,
 } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { BaseUrl } from "./constants";
+import { BaseUrl, STORAGE_KEYS } from "./constants";
 import { router } from "expo-router";
 
 /**
@@ -38,18 +38,18 @@ class ApiClient {
       async (config: InternalAxiosRequestConfig) => {
         try {
           // Add JWT Auth token if exists
-          const authToken = await AsyncStorage.getItem("authToken");
+          const authToken = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
           if (authToken && config.headers) {
             config.headers.Authorization = `Bearer ${authToken}`;
           }
           return config;
         } catch (error) {
-          console.error("Error in request interceptor:", error);
+          if (__DEV__) console.error("Error in request interceptor:", error);
           return config;
         }
       },
       (error: AxiosError) => {
-        console.error("❌ Request error:", error);
+        if (__DEV__) console.error("❌ Request error:", error);
         return Promise.reject(error);
       }
     );
@@ -64,41 +64,44 @@ class ApiClient {
         if (error.response) {
           const { status, data } = error.response;
 
-          console.error(` [${status}] ${error.config?.url}`, data);
+          if (__DEV__) console.error(` [${status}] ${error.config?.url}`, data);
 
           // Handle specific error cases
           switch (status) {
             case 401:
               // Invalid or expired token
-              console.log("Invalid or expired token, redirecting to login");
-              await AsyncStorage.removeItem("authToken");
-              await AsyncStorage.removeItem("refreshToken");
-              await AsyncStorage.removeItem("user");
+              if (__DEV__)
+                console.log("Invalid or expired token, redirecting to login");
+              await AsyncStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+              await AsyncStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+              await AsyncStorage.removeItem(STORAGE_KEYS.USER);
               // Redirect to login
               router.replace("/login");
               break;
 
             case 403:
-              console.log("Access denied");
+              if (__DEV__) console.log("Access denied");
               break;
 
             case 404:
-              console.log("Resource not found");
+              if (__DEV__) console.log("Resource not found");
               break;
 
             case 500:
-              console.log("Server error");
+              if (__DEV__) console.log("Server error");
               break;
 
             default:
-              console.log(`HTTP Error ${status}`);
+              if (__DEV__) console.log(`HTTP Error ${status}`);
           }
         } else if (error.request) {
           // Request was made but no response received
-          console.error("❌ No response from server:", error.request);
+          if (__DEV__)
+            console.error("❌ No response from server:", error.request);
         } else {
           // Error configuring the request
-          console.error("❌ Error configuring request:", error.message);
+          if (__DEV__)
+            console.error("❌ Error configuring request:", error.message);
         }
 
         return Promise.reject(error);

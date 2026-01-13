@@ -15,6 +15,7 @@ import { router } from "expo-router";
 import { useAgent } from "../../utils/AgentContext";
 import { apiClient } from "../../utils/axios-interceptor";
 import { useQuery } from "@tanstack/react-query";
+import { getLastLogin } from "../../utils/storage";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -22,41 +23,22 @@ import Animated, {
 } from "react-native-reanimated";
 import type { RecentCallItem } from "../../utils/types";
 import NoPhoneNumber from "../../components/NoPhoneNumber";
+import { formatDuration, formatDateWithWeekday } from "../../utils/formatters";
 
 // RecentCallItem type moved to global `utils/types.d.ts`
 
 // Removed mock data; now using live API via React Query
 
 export default function HomeScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { agentConfig, phoneNumber } = useAgent();
-  const [callTypeFilter, setCallTypeFilter] = useState<"all" | "inbound" | "outbound">(
-    "all"
-  );
+  const [callTypeFilter, setCallTypeFilter] = useState<
+    "all" | "inbound" | "outbound"
+  >("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   const agentDbId = agentConfig?.id ?? null;
-
-  const formatDuration = (durationMs?: number) => {
-    if (!durationMs || durationMs <= 0) return "0:00";
-    const totalSeconds = Math.floor(durationMs / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-  };
-
-  const formatDate = (timestampMs?: number) => {
-    if (!timestampMs) return "";
-    const d = new Date(timestampMs);
-    const days = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
-    const months = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-    
-    const dayName = days[d.getDay()];
-    const day = d.getDate();
-    const monthName = months[d.getMonth()];
-    
-    return `${dayName}, ${monthName} ${day}`;
-  };
+  const currentLocale = i18n.language;
 
   // Stats query
   const {
@@ -86,9 +68,7 @@ export default function HomeScreen() {
     enabled: !!agentDbId,
     queryFn: () => {
       const directionParam =
-        callTypeFilter === "all"
-          ? ""
-          : `&direction=${callTypeFilter}`;
+        callTypeFilter === "all" ? "" : `&direction=${callTypeFilter}`;
       return apiClient.get(
         `calls/?agent_id=${encodeURIComponent(
           String(agentDbId)
@@ -96,7 +76,39 @@ export default function HomeScreen() {
       );
     },
   });
-  console.log("Recent calls response:", callsResp, statsResp);
+
+  // Notifications query - new items since last login
+  const { data: notificationsResp, isLoading: notificationsLoading } = useQuery(
+    {
+      queryKey: ["notifications", agentDbId],
+      enabled: !!agentDbId,
+      queryFn: async () => {
+        const lastLogin = await getLastLogin();
+        const lastLoginParam = lastLogin
+          ? `?after_datetime=${encodeURIComponent(lastLogin)}`
+          : "";
+
+        // Get new calls and appointments counts
+        const [callsData, appointmentsData] = await Promise.all([
+          apiClient.get(
+            `calls/?agent_id=${encodeURIComponent(
+              String(agentDbId)
+            )}&limit=5&sort_order=descending${
+              lastLogin
+                ? `&after_datetime=${encodeURIComponent(lastLogin)}`
+                : ""
+            }`
+          ),
+          apiClient.get(`appointments/${lastLoginParam}`),
+        ]);
+
+        return {
+          newCalls: callsData?.calls?.length ?? 0,
+          newAppointments: appointmentsData?.data?.length ?? 0,
+        };
+      },
+    }
+  );
 
   const callSections = useMemo(() => {
     const rawCalls: any[] = callsResp?.calls ?? [];
@@ -105,8 +117,8 @@ export default function HomeScreen() {
     rawCalls.forEach((c: any) => {
       const direction = c?.direction;
       const number = direction === "inbound" ? c?.from_number : c?.to_number;
-      const date = formatDate(c?.start_timestamp);
-      
+      const date = formatDateWithWeekday(c?.start_timestamp, currentLocale);
+
       const call: RecentCallItem = {
         id: c?.call_id ?? `${c?.start_timestamp ?? Math.random()}`,
         number: number ?? "Unknown",
@@ -124,7 +136,7 @@ export default function HomeScreen() {
         const matchesNumber = number?.toLowerCase().includes(query);
         const matchesFrom = c?.from_number?.toLowerCase().includes(query);
         const matchesTo = c?.to_number?.toLowerCase().includes(query);
-        
+
         if (!matchesNumber && !matchesFrom && !matchesTo) {
           return;
         }
@@ -186,21 +198,26 @@ export default function HomeScreen() {
     >
       <View style={styles.callAvatarContainer}>
         <LinearGradient
-          colors={[Colors.primary, '#ffc09cff']}
+          colors={[Colors.primary, "#ffc09cff"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.callAvatar}
         >
           <Ionicons name="person" size={20} color="#fff" />
         </LinearGradient>
-        <View style={[
-          styles.callDirectionBadge,
-          { backgroundColor: item.direction === "inbound" ? "#10B981" : "#3B82F6" }
-        ]}>
-          <Ionicons 
-            name={item.direction === "inbound" ? "arrow-down" : "arrow-up"} 
-            size={10} 
-            color="#fff" 
+        <View
+          style={[
+            styles.callDirectionBadge,
+            {
+              backgroundColor:
+                item.direction === "inbound" ? "#10B981" : "#3B82F6",
+            },
+          ]}
+        >
+          <Ionicons
+            name={item.direction === "inbound" ? "arrow-down" : "arrow-up"}
+            size={10}
+            color="#fff"
           />
         </View>
       </View>
@@ -231,6 +248,67 @@ export default function HomeScreen() {
         </Text>
         {error ? <Text style={styles.headerSubtitle}>{error}</Text> : null}
       </View>
+
+      {/* Notifications Card */}
+      {phoneNumber && (
+        <View style={styles.notificationsCard}>
+          <View style={styles.notificationsHeader}>
+            <Ionicons name="notifications" size={20} color={Colors.primary} />
+            <Text style={styles.notificationsTitle}>
+              {t("home.notifications", "New Activity")}
+            </Text>
+          </View>
+          {notificationsLoading ? (
+            <View style={styles.notificationsContent}>
+              <SkeletonBar width="100%" height={40} />
+            </View>
+          ) : (
+            <View style={styles.notificationsContent}>
+              <View style={styles.notificationItem}>
+                <View style={styles.notificationIconContainer}>
+                  <LinearGradient
+                    colors={["#3B82F6", "#60A5FA"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.notificationIconGradient}
+                  >
+                    <Ionicons name="call" size={16} color="#fff" />
+                  </LinearGradient>
+                </View>
+                <View style={styles.notificationInfo}>
+                  <Text style={styles.notificationCount}>
+                    {notificationsResp?.newCalls ?? 0}
+                  </Text>
+                  <Text style={styles.notificationLabel}>
+                    {t("home.newCalls", "New Calls")}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.notificationDivider} />
+              <View style={styles.notificationItem}>
+                <View style={styles.notificationIconContainer}>
+                  <LinearGradient
+                    colors={["#10B981", "#34D399"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.notificationIconGradient}
+                  >
+                    <Ionicons name="calendar" size={16} color="#fff" />
+                  </LinearGradient>
+                </View>
+                <View style={styles.notificationInfo}>
+                  <Text style={styles.notificationCount}>
+                    {notificationsResp?.newAppointments ?? 0}
+                  </Text>
+                  <Text style={styles.notificationLabel}>
+                    {t("home.upcomingAppointments", "Upcoming")}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+        </View>
+      )}
 
       {/* Agent Card
       <View style={styles.agentCardContainer}>
@@ -382,10 +460,14 @@ export default function HomeScreen() {
               ]}
               onPress={() => setCallTypeFilter("all")}
             >
-              <Ionicons 
-                name="swap-vertical" 
-                size={14} 
-                color={callTypeFilter === "all" ? Colors.primary : Colors.textSecondary}
+              <Ionicons
+                name="swap-vertical"
+                size={14}
+                color={
+                  callTypeFilter === "all"
+                    ? Colors.primary
+                    : Colors.textSecondary
+                }
                 style={styles.filterIcon}
               />
               <Text
@@ -400,20 +482,26 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={[
                 styles.filterButton,
-                callTypeFilter === "inbound" && styles.filterButtonActiveInbound,
+                callTypeFilter === "inbound" &&
+                  styles.filterButtonActiveInbound,
               ]}
               onPress={() => setCallTypeFilter("inbound")}
             >
-              <SimpleLineIcons 
-                name="call-in" 
-                size={14} 
-                color={callTypeFilter === "inbound" ? "#10B981" : Colors.textSecondary}
+              <SimpleLineIcons
+                name="call-in"
+                size={14}
+                color={
+                  callTypeFilter === "inbound"
+                    ? "#10B981"
+                    : Colors.textSecondary
+                }
                 style={styles.filterIcon}
               />
               <Text
                 style={[
                   styles.filterButtonText,
-                  callTypeFilter === "inbound" && styles.filterButtonTextActiveInbound,
+                  callTypeFilter === "inbound" &&
+                    styles.filterButtonTextActiveInbound,
                 ]}
               >
                 {t("home.filterInbound", "Inbound")}
@@ -422,20 +510,26 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={[
                 styles.filterButton,
-                callTypeFilter === "outbound" && styles.filterButtonActiveOutbound,
+                callTypeFilter === "outbound" &&
+                  styles.filterButtonActiveOutbound,
               ]}
               onPress={() => setCallTypeFilter("outbound")}
             >
-              <SimpleLineIcons 
-                name="call-out" 
-                size={14} 
-                color={callTypeFilter === "outbound" ? "#3B82F6" : Colors.textSecondary}
+              <SimpleLineIcons
+                name="call-out"
+                size={14}
+                color={
+                  callTypeFilter === "outbound"
+                    ? "#3B82F6"
+                    : Colors.textSecondary
+                }
                 style={styles.filterIcon}
               />
               <Text
                 style={[
                   styles.filterButtonText,
-                  callTypeFilter === "outbound" && styles.filterButtonTextActiveOutbound,
+                  callTypeFilter === "outbound" &&
+                    styles.filterButtonTextActiveOutbound,
                 ]}
               >
                 {t("home.filterOutbound", "Outbound")}
@@ -445,7 +539,12 @@ export default function HomeScreen() {
 
           {/* Search Bar */}
           <View style={styles.searchContainer}>
-            <Ionicons name="search" size={18} color={Colors.textLight} style={styles.searchIcon} />
+            <Ionicons
+              name="search"
+              size={18}
+              color={Colors.textLight}
+              style={styles.searchIcon}
+            />
             <TextInput
               style={styles.searchInput}
               placeholder={t("home.searchCalls", "Search calls...")}
@@ -455,7 +554,11 @@ export default function HomeScreen() {
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery("")}>
-                <Ionicons name="close-circle" size={18} color={Colors.textLight} />
+                <Ionicons
+                  name="close-circle"
+                  size={18}
+                  color={Colors.textLight}
+                />
               </TouchableOpacity>
             )}
           </View>
@@ -573,6 +676,74 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textSecondary,
     fontWeight: "500",
+  },
+  notificationsCard: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  notificationsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+  },
+  notificationsTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: Colors.textPrimary,
+  },
+  notificationsContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+  },
+  notificationItem: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  notificationIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  notificationIconGradient: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  notificationInfo: {
+    flex: 1,
+  },
+  notificationCount: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: Colors.textPrimary,
+    marginBottom: 2,
+  },
+  notificationLabel: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    fontWeight: "500",
+  },
+  notificationDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: Colors.borderLight,
+    marginHorizontal: 16,
   },
   agentCardContainer: {
     paddingHorizontal: 20,

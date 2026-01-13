@@ -264,5 +264,17 @@
     "peakHour": "Peak call hour",
     "inboundRate": "Inbound rate",
     "completionRate": "Completion rate"
+  },
+  "subscription": {
+    "proFeature": "Pro Feature",
+    "phoneNumberProMessage": "Phone numbers are a Pro feature. Upgrade to access this feature.",
+    "upgrade": "Upgrade",
+    "free": "Free",
+    "pro": "Pro",
+    "business": "Business",
+    "enterprise": "Enterprise",
+    "currentPlan": "Current Plan",
+    "upgradeToPro": "Upgrade to Pro",
+    "upgradeToUnlock": "Upgrade to unlock this feature"
   }
 }

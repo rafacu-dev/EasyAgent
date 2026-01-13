@@ -131,6 +131,13 @@ export default function CalendarScreen() {
       queryClient.invalidateQueries({ queryKey: ["appointments-month"] });
       setShowDetailModal(false);
     },
+    onError: (error: any) => {
+      Alert.alert(
+        t("common.error", "Error"),
+        error.response?.data?.error ||
+          t("calendar.cancelFailed", "Failed to cancel appointment")
+      );
+    },
   });
 
   // Confirm appointment mutation
@@ -139,6 +146,13 @@ export default function CalendarScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments-month"] });
       setShowDetailModal(false);
+    },
+    onError: (error: any) => {
+      Alert.alert(
+        t("common.error", "Error"),
+        error.response?.data?.error ||
+          t("calendar.confirmFailed", "Failed to confirm appointment")
+      );
     },
   });
 

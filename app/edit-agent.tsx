@@ -12,6 +12,7 @@ import {
   View,
   ActivityIndicator,
   TouchableOpacity,
+  KeyboardAvoidingView,
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { apiClient } from "../utils/axios-interceptor";
@@ -84,7 +85,7 @@ export default function EditAgent() {
     setIsLoading(true);
     try {
       // Update user profile (company info)
-      await apiClient.patch("/profile/", {
+      await apiClient.patch("profile/", {
         company_name: formData.companyName,
         sector: formData.sector,
       });
@@ -149,195 +150,200 @@ export default function EditAgent() {
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      >
-        <Animated.View
-          entering={FadeInDown.delay(200).springify()}
-          style={styles.header}
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 20 }}
         >
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
+          <Animated.View
+            entering={FadeInDown.delay(200).springify()}
+            style={styles.header}
           >
-            <Ionicons name="arrow-back" size={24} color={Colors.primary} />
-          </TouchableOpacity>
-          <Text style={styles.title}>{t("editAgent.title", "Edit Agent")}</Text>
-          <Text style={styles.subtitle}>
-            {t(
-              "editAgent.subtitle",
-              "Update your agent's properties and configuration"
-            )}
-          </Text>
-        </Animated.View>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Ionicons name="arrow-back" size={24} color={Colors.primary} />
+            </TouchableOpacity>
+            <Text style={styles.title}>
+              {t("editAgent.title", "Edit Agent")}
+            </Text>
+            <Text style={styles.subtitle}>
+              {t(
+                "editAgent.subtitle",
+                "Update your agent's properties and configuration"
+              )}
+            </Text>
+          </Animated.View>
 
-        <Animated.View
-          entering={FadeInUp.delay(400).springify()}
-          style={styles.form}
-        >
-          <View style={styles.inputContainer}>
-            <View style={styles.genderContainer}>
-              <Animated.View>
-                <Pressable
-                  style={styles.genderButton}
-                  onPress={() =>
-                    setFormData({ ...formData, agentGender: "male" })
-                  }
-                >
-                  <View
-                    style={[
-                      styles.imageContainer,
-                      formData.agentGender === "male" &&
-                        styles.selectedImageContainer,
-                    ]}
+          <Animated.View
+            entering={FadeInUp.delay(400).springify()}
+            style={styles.form}
+          >
+            <View style={styles.inputContainer}>
+              <View style={styles.genderContainer}>
+                <Animated.View>
+                  <Pressable
+                    style={styles.genderButton}
+                    onPress={() =>
+                      setFormData({ ...formData, agentGender: "male" })
+                    }
                   >
-                    <Image
-                      source={require("../assets/images/agent-m.jpg")}
-                      style={styles.genderImage}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.genderText,
-                      formData.agentGender === "male" &&
-                        styles.selectedGenderText,
-                    ]}
-                  >
-                    {t("agentSetup.masculine", "Masculine")}
-                  </Text>
-                </Pressable>
-              </Animated.View>
+                    <View
+                      style={[
+                        styles.imageContainer,
+                        formData.agentGender === "male" &&
+                          styles.selectedImageContainer,
+                      ]}
+                    >
+                      <Image
+                        source={require("../assets/images/agent-m.jpg")}
+                        style={styles.genderImage}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.genderText,
+                        formData.agentGender === "male" &&
+                          styles.selectedGenderText,
+                      ]}
+                    >
+                      {t("agentSetup.masculine", "Masculine")}
+                    </Text>
+                  </Pressable>
+                </Animated.View>
 
-              <Animated.View>
-                <Pressable
-                  style={styles.genderButton}
-                  onPress={() =>
-                    setFormData({ ...formData, agentGender: "female" })
-                  }
-                >
-                  <View
-                    style={[
-                      styles.imageContainer,
-                      formData.agentGender === "female" &&
-                        styles.selectedImageContainer,
-                    ]}
+                <Animated.View>
+                  <Pressable
+                    style={styles.genderButton}
+                    onPress={() =>
+                      setFormData({ ...formData, agentGender: "female" })
+                    }
                   >
-                    <Image
-                      source={require("../assets/images/agent-f.jpg")}
-                      style={styles.genderImage}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.genderText,
-                      formData.agentGender === "female" &&
-                        styles.selectedGenderText,
-                    ]}
-                  >
-                    {t("agentSetup.feminine", "Feminine")}
-                  </Text>
-                </Pressable>
-              </Animated.View>
+                    <View
+                      style={[
+                        styles.imageContainer,
+                        formData.agentGender === "female" &&
+                          styles.selectedImageContainer,
+                      ]}
+                    >
+                      <Image
+                        source={require("../assets/images/agent-f.jpg")}
+                        style={styles.genderImage}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.genderText,
+                        formData.agentGender === "female" &&
+                          styles.selectedGenderText,
+                      ]}
+                    >
+                      {t("agentSetup.feminine", "Feminine")}
+                    </Text>
+                  </Pressable>
+                </Animated.View>
+              </View>
             </View>
-          </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>
-              {t("agentSetup.agentName", "Agent Name")}
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder={t(
-                "agentSetup.agentNamePlaceholder",
-                "Enter agent name"
-              )}
-              placeholderTextColor="#B0B0B0"
-              value={formData.agentName}
-              onChangeText={(text) =>
-                setFormData({ ...formData, agentName: text })
-              }
-            />
-          </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>
+                {t("agentSetup.agentName", "Agent Name")}
+              </Text>
+              <TextInput
+                style={styles.input}
+                placeholder={t(
+                  "agentSetup.agentNamePlaceholder",
+                  "Enter agent name"
+                )}
+                placeholderTextColor="#B0B0B0"
+                value={formData.agentName}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, agentName: text })
+                }
+              />
+            </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>
-              {t("companyInfo.companyName", "Company Name")}
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder={t(
-                "companyInfo.companyNamePlaceholder",
-                "Enter company name"
-              )}
-              placeholderTextColor="#B0B0B0"
-              value={formData.companyName}
-              onChangeText={(text) =>
-                setFormData({ ...formData, companyName: text })
-              }
-            />
-          </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>
+                {t("companyInfo.companyName", "Company Name")}
+              </Text>
+              <TextInput
+                style={styles.input}
+                placeholder={t(
+                  "companyInfo.companyNamePlaceholder",
+                  "Enter company name"
+                )}
+                placeholderTextColor="#B0B0B0"
+                value={formData.companyName}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, companyName: text })
+                }
+              />
+            </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>
-              {t("agentSetup.description", "Description")} (
-              {t("common.optional", "Optional")})
-            </Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder={t(
-                "agentSetup.descriptionPlaceholder",
-                "Describe your agent's personality..."
-              )}
-              placeholderTextColor="#B0B0B0"
-              value={formData.agentDescription}
-              onChangeText={(text) =>
-                setFormData({ ...formData, agentDescription: text })
-              }
-              multiline
-              numberOfLines={4}
-            />
-          </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>
+                {t("agentSetup.description", "Description")} (
+                {t("common.optional", "Optional")})
+              </Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder={t(
+                  "agentSetup.descriptionPlaceholder",
+                  "Describe your agent's personality..."
+                )}
+                placeholderTextColor="#B0B0B0"
+                value={formData.agentDescription}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, agentDescription: text })
+                }
+                multiline
+                numberOfLines={4}
+              />
+            </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>
-              {t("companyInfo.socialMedia", "Social Media & Web")} (
-              {t("common.optional", "Optional")})
-            </Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder={t(
-                "companyInfo.socialMediaPlaceholder",
-                "Add social media links..."
-              )}
-              placeholderTextColor="#B0B0B0"
-              value={formData.socialMediaAndWeb}
-              onChangeText={(text) =>
-                setFormData({ ...formData, socialMediaAndWeb: text })
-              }
-              multiline
-              numberOfLines={4}
-            />
-          </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>
+                {t("companyInfo.socialMedia", "Social Media & Web")} (
+                {t("common.optional", "Optional")})
+              </Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder={t(
+                  "companyInfo.socialMediaPlaceholder",
+                  "Add social media links..."
+                )}
+                placeholderTextColor="#B0B0B0"
+                value={formData.socialMediaAndWeb}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, socialMediaAndWeb: text })
+                }
+                multiline
+                numberOfLines={4}
+              />
+            </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>{t("firstLogin.sector", "Sector")}</Text>
-            <View style={styles.sectorInfo}>
-              <Ionicons name="briefcase" size={20} color={Colors.primary} />
-              <Text style={styles.sectorText}>
-                {t(`templates.${formData.sector}`, formData.sector)}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>
+                {t("firstLogin.sector", "Sector")}
+              </Text>
+              <View style={styles.sectorInfo}>
+                <Ionicons name="briefcase" size={20} color={Colors.primary} />
+                <Text style={styles.sectorText}>
+                  {t(`templates.${formData.sector}`, formData.sector)}
+                </Text>
+              </View>
+              <Text style={styles.helperText}>
+                {t(
+                  "editAgent.sectorHelper",
+                  "To change sector, create a new agent"
+                )}
               </Text>
             </View>
-            <Text style={styles.helperText}>
-              {t(
-                "editAgent.sectorHelper",
-                "To change sector, create a new agent"
-              )}
-            </Text>
-          </View>
-        </Animated.View>
-      </ScrollView>
-
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
       <Animated.View
         entering={FadeInUp.delay(600).springify()}
         style={styles.buttonContainer}

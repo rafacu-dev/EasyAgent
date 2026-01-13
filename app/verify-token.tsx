@@ -15,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Colors } from "../utils/colors";
 import { apiClient } from "@/utils/axios-interceptor";
 import { Ionicons } from "@expo/vector-icons";
+import { STORAGE_KEYS } from "@/utils/storage";
 
 export default function VerifyTokenScreen() {
   const { t } = useTranslation();
@@ -79,26 +80,35 @@ export default function VerifyTokenScreen() {
 
     setIsLoading(true);
     try {
-      const response = await apiClient.post("/auth/verify-token/", {
+      const response = await apiClient.post("auth/verify-token/", {
         email,
         token,
       });
 
-      // Save tokens
-      await AsyncStorage.setItem("authToken", response.access);
-      await AsyncStorage.setItem("refreshToken", response.refresh);
-      await AsyncStorage.setItem("user", JSON.stringify(response.user));
+      // Save tokens using constants
+      await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.access);
+      await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refresh);
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.USER,
+        JSON.stringify(response.user)
+      );
 
-      // Navigate based on whether user needs to complete setup
-      if (response.is_new_user) {
-        // New user or user without company info - go to setup
-        router.replace("/");
-      } else {
-        // Existing user with company info - go to main app
-        router.replace("/");
-      }
+      // Check user tier - redirect to paywall if free
+      const userTier = response.user?.tier || "free";
+      const isProOrAbove = ["pro", "business", "enterprise"].includes(userTier);
+
+      // if (!isProOrAbove) {
+      //   // Free user - show paywall
+      //   router.replace("/paywall/PaywallScreen");
+      // } else if (response.is_new_user) {
+      //   // New user or user without company info - go to setup
+      //   router.replace("/");
+      // } else {
+      // Existing user with company info - go to main app
+      router.replace("/");
+      // }
     } catch (error: any) {
-      console.error("Error verifying token:", error);
+      if (__DEV__) console.error("Error verifying token:", error);
       Alert.alert(
         t("common.error"),
         error.response?.data?.error || t("verifyToken.verifyFailed")
@@ -116,11 +126,11 @@ export default function VerifyTokenScreen() {
 
     setResendLoading(true);
     try {
-      await apiClient.post("/auth/request-token/", { email });
+      await apiClient.post("auth/request-token/", { email });
       setResendCountdown(60);
       Alert.alert(t("common.success"), t("verifyToken.codeSent"));
     } catch (error: any) {
-      console.error("Error resending code:", error);
+      if (__DEV__) console.error("Error resending code:", error);
       Alert.alert(
         t("common.error"),
         error.response?.data?.error || t("verifyToken.resendFailed")

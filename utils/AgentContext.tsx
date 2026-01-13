@@ -5,7 +5,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { getAgentConfig, saveAgentConfig } from "./storage";
+import { getAgentConfig, saveAgentConfig, getAuthToken } from "./storage";
 import type { AgentConfig, AgentContextType } from "./types";
 import { apiClient } from "./axios-interceptor";
 
@@ -19,20 +19,51 @@ export const AgentProvider: React.FC<{ children: ReactNode }> = ({
   const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
-  console.log(agentConfig);
+
   const loadAgentConfig = async () => {
     try {
       setIsLoading(true);
+
+      // First try to load from local storage cache
       const config = await getAgentConfig();
 
       if (config) {
-        console.log("Loaded agent config:", config);
         setAgentConfig(config);
+        setIsLoading(false);
+        return;
+      }
+
+      // No cache - check if authenticated and fetch from API
+      const authToken = await getAuthToken();
+      if (!authToken) {
+        setAgentConfig(null);
+        setIsLoading(false);
+        return;
+      }
+
+      // Fetch from API
+      const response = await apiClient.get("agents/");
+      if (response.data && response.data.length > 0) {
+        const agentData = response.data[0];
+
+        // Map API response to AgentConfig structure
+        const newConfig: AgentConfig = {
+          id: agentData.id,
+          agentName: agentData.name,
+          agentGender: agentData.agent_gender,
+          companyName: agentData.company_name,
+          sector: agentData.sector,
+          agentDescription: agentData.agent_description,
+          socialMediaAndWeb: agentData.social_media_and_web,
+        };
+
+        await saveAgentConfig(newConfig);
+        setAgentConfig(newConfig);
       } else {
         setAgentConfig(null);
       }
     } catch (error) {
-      console.error("Error loading agent config:", error);
+      if (__DEV__) console.error("Error loading agent config:", error);
       setAgentConfig(null);
     } finally {
       setIsLoading(false);
@@ -86,6 +117,7 @@ export const AgentProvider: React.FC<{ children: ReactNode }> = ({
     } else {
       setPhoneNumber(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentConfig?.id]);
 
   return (

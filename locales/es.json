@@ -264,5 +264,17 @@
     "peakHour": "Hora pico de llamadas",
     "inboundRate": "Tasa de entrantes",
     "completionRate": "Tasa de finalización"
+  },
+  "subscription": {
+    "proFeature": "Función Pro",
+    "phoneNumberProMessage": "Los números de teléfono son una función Pro. Actualiza para acceder a esta función.",
+    "upgrade": "Actualizar",
+    "free": "Gratis",
+    "pro": "Pro",
+    "business": "Negocios",
+    "enterprise": "Empresarial",
+    "currentPlan": "Plan Actual",
+    "upgradeToPro": "Actualizar a Pro",
+    "upgradeToUnlock": "Actualiza para desbloquear esta función"
   }
 }

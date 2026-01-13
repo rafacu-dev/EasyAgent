@@ -38,7 +38,7 @@ export default function LoginScreen() {
 
     setIsLoading(true);
     try {
-      await apiClient.post("/auth/request-token/", {
+      await apiClient.post("auth/request-token/", {
         email: email.toLowerCase(),
       });
       // Navigate to verify screen with email

@@ -33,7 +33,7 @@ export default function AgentSetup() {
     setIsLoading(true);
     try {
       // Create agent in Retell.ai (company info comes from user profile)
-      const response = await apiClient.post("/agents/", {
+      const response = await apiClient.post("agents/", {
         agent_name: agentName,
         agent_gender: agentGender,
         agent_description: agentDescription,

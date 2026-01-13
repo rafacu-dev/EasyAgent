@@ -12,11 +12,13 @@ import {
 import { Colors } from "../utils/colors";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { router } from "expo-router";
 import { apiClient } from "../utils/axios-interceptor";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAgent } from "../utils/AgentContext";
+import { useUser } from "../utils/UserContext";
+import { PhoneSearchHeader } from "../components/PhoneSearchHeader";
 
 interface AvailableNumber {
   phone_number: string;
@@ -33,9 +35,34 @@ interface AvailableNumber {
 export default function BuyPhoneNumberScreen() {
   const { t } = useTranslation();
   const { agentConfig, refreshPhoneNumber } = useAgent();
+  const { isProOrAbove } = useUser();
   const [areaCode, setAreaCode] = useState("");
   const [contains, setContains] = useState("");
   const [showInfoModal, setShowInfoModal] = useState(false);
+
+  // Redirect to paywall if user is not pro
+  useEffect(() => {
+    if (!isProOrAbove) {
+      Alert.alert(
+        t("subscription.proFeature", "Pro Feature"),
+        t(
+          "subscription.phoneNumberProMessage",
+          "Phone numbers are a Pro feature. Upgrade to access this feature."
+        ),
+        [
+          {
+            text: t("common.cancel", "Cancel"),
+            style: "cancel",
+            onPress: () => router.back(),
+          },
+          {
+            text: t("subscription.upgrade", "Upgrade"),
+            onPress: () => router.replace("/paywall/PaywallScreen"),
+          },
+        ]
+      );
+    }
+  }, [isProOrAbove, t]);
 
   const {
     data: numbersResp,
@@ -183,110 +210,6 @@ export default function BuyPhoneNumberScreen() {
     </View>
   );
 
-  const ListHeaderComponent = () => (
-    <>
-      {/* Search Section */}
-      <View style={styles.searchSection}>
-        <View style={styles.sectionTitleRow}>
-          <Text style={styles.sectionTitle}>
-            {t("buyPhone.searchTitle", "Search for Numbers")}
-          </Text>
-          <TouchableOpacity
-            onPress={() => setShowInfoModal(true)}
-            style={styles.infoButton}
-          >
-            <Ionicons
-              name="information-circle-outline"
-              size={24}
-              color={Colors.primary}
-            />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.searchRow}>
-          <View style={[styles.searchInputContainer, styles.searchInputHalf]}>
-            <Ionicons
-              name="location"
-              size={20}
-              color={Colors.textSecondary}
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={styles.searchInput}
-              placeholder={t(
-                "buyPhone.areaCodePlaceholder",
-                "Area code (e.g., 415)"
-              )}
-              placeholderTextColor={Colors.textLight}
-              value={areaCode}
-              onChangeText={setAreaCode}
-              keyboardType="number-pad"
-              maxLength={3}
-            />
-          </View>
-
-          <View style={[styles.searchInputContainer, styles.searchInputHalf]}>
-            <Ionicons
-              name="search"
-              size={20}
-              color={Colors.textSecondary}
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={styles.searchInput}
-              placeholder={t(
-                "buyPhone.containsPlaceholder",
-                "Contains digits (optional)"
-              )}
-              placeholderTextColor={Colors.textLight}
-              value={contains}
-              onChangeText={setContains}
-              keyboardType="number-pad"
-            />
-          </View>
-        </View>
-
-        <TouchableOpacity
-          style={styles.searchButton}
-          onPress={handleSearch}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <>
-              <Ionicons name="search" size={20} color="#fff" />
-              <Text style={styles.searchButtonText}>
-                {t("buyPhone.search", "Search Numbers")}
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Error Message */}
-      {error && (
-        <View style={styles.errorCard}>
-          <Ionicons name="alert-circle" size={24} color={Colors.error} />
-          <Text style={styles.errorText}>
-            {(error as any)?.error ||
-              t("buyPhone.searchError", "Error searching for numbers")}
-          </Text>
-        </View>
-      )}
-
-      {/* Section Title for List */}
-      {availableNumbers.length > 0 && (
-        <View style={styles.listTitleContainer}>
-          <Text style={styles.sectionTitle}>
-            {t("buyPhone.availableNumbers", "Available Numbers")} (
-            {availableNumbers.length})
-          </Text>
-        </View>
-      )}
-    </>
-  );
-
   const ListEmptyComponent = () => {
     if (isLoading) return null;
     if (error) return null;
@@ -320,12 +243,25 @@ export default function BuyPhoneNumberScreen() {
         <View style={{ width: 24 }} />
       </View>
 
-      {/* FlatList with Header */}
+      {/* Search Header - Outside FlatList */}
+      <PhoneSearchHeader
+        areaCode={areaCode}
+        setAreaCode={setAreaCode}
+        contains={contains}
+        setContains={setContains}
+        isLoading={isLoading}
+        error={error}
+        availableNumbersCount={availableNumbers.length}
+        onSearch={handleSearch}
+        onInfoPress={() => setShowInfoModal(true)}
+        t={t}
+      />
+
+      {/* Results List */}
       <FlatList
         data={availableNumbers}
         renderItem={renderNumberItem}
         keyExtractor={(item, index) => `${item.phone_number}-${index}`}
-        ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -398,85 +334,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 20,
-  },
-  errorCard: {
-    flexDirection: "row",
-    backgroundColor: Colors.error + "15",
-    marginHorizontal: 16,
-    marginTop: 0,
-    marginBottom: 12,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "flex-start",
-    gap: 12,
-  },
-  errorText: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.error,
-    lineHeight: 20,
-  },
-  searchSection: {
-    padding: 16,
-    paddingTop: 16,
-  },
-  sectionTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  infoButton: {
-    padding: 4,
-  },
-  searchRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  searchInputHalf: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: Colors.textPrimary,
-  },
-  listTitleContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-  },
-  searchInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.backgroundLight,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  inputIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    height: 48,
-    fontSize: 16,
-    color: Colors.textPrimary,
-  },
-  searchButton: {
-    flexDirection: "row",
-    backgroundColor: Colors.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 8,
-  },
-  searchButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
   },
   numberCard: {
     flexDirection: "row",
