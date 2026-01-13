@@ -3,10 +3,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
+  SectionList,
+  TextInput,
 } from "react-native";
 import { useTranslation } from "react-i18next";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, SimpleLineIcons, Octicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useMemo, useState } from "react";
 import { Colors } from "../../utils/colors";
 import { router } from "expo-router";
@@ -28,9 +30,10 @@ import NoPhoneNumber from "../../components/NoPhoneNumber";
 export default function HomeScreen() {
   const { t } = useTranslation();
   const { agentConfig, phoneNumber } = useAgent();
-  const [callTypeFilter, setCallTypeFilter] = useState<"all" | "phone" | "web">(
+  const [callTypeFilter, setCallTypeFilter] = useState<"all" | "inbound" | "outbound">(
     "all"
   );
+  const [searchQuery, setSearchQuery] = useState("");
 
   const agentDbId = agentConfig?.id ?? null;
 
@@ -45,10 +48,14 @@ export default function HomeScreen() {
   const formatDate = (timestampMs?: number) => {
     if (!timestampMs) return "";
     const d = new Date(timestampMs);
-    const year = d.getFullYear();
-    const month = `${d.getMonth() + 1}`.padStart(2, "0");
-    const day = `${d.getDate()}`.padStart(2, "0");
-    return `${year}-${month}-${day}`;
+    const days = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+    const months = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+    
+    const dayName = days[d.getDay()];
+    const day = d.getDate();
+    const monthName = months[d.getMonth()];
+    
+    return `${dayName}, ${monthName} ${day}`;
   };
 
   // Stats query
@@ -78,38 +85,64 @@ export default function HomeScreen() {
     queryKey: ["recent-calls", agentDbId, callTypeFilter],
     enabled: !!agentDbId,
     queryFn: () => {
-      const callTypeParam =
+      const directionParam =
         callTypeFilter === "all"
           ? ""
-          : `&call_type=${
-              callTypeFilter === "phone" ? "phone_call" : "web_call"
-            }`;
+          : `&direction=${callTypeFilter}`;
       return apiClient.get(
         `calls/?agent_id=${encodeURIComponent(
           String(agentDbId)
-        )}&limit=10&sort_order=descending${callTypeParam}`
+        )}&limit=10&sort_order=descending${directionParam}`
       );
     },
   });
   console.log("Recent calls response:", callsResp, statsResp);
 
-  const calls: RecentCallItem[] = useMemo(() => {
+  const callSections = useMemo(() => {
     const rawCalls: any[] = callsResp?.calls ?? [];
-    return rawCalls.map((c: any) => {
+    const callsByDate: { [key: string]: RecentCallItem[] } = {};
+
+    rawCalls.forEach((c: any) => {
       const direction = c?.direction;
       const number = direction === "inbound" ? c?.from_number : c?.to_number;
-      return {
+      const date = formatDate(c?.start_timestamp);
+      
+      const call: RecentCallItem = {
         id: c?.call_id ?? `${c?.start_timestamp ?? Math.random()}`,
         number: number ?? "Unknown",
         duration: formatDuration(c?.duration_ms),
-        date: formatDate(c?.start_timestamp),
+        date,
         status: c?.call_status ?? "",
         direction: direction ?? "unknown",
         fromNumber: c?.from_number ?? "Unknown",
         toNumber: c?.to_number ?? "Unknown",
       };
+
+      // Filter by search query
+      if (searchQuery.length > 0) {
+        const query = searchQuery.toLowerCase();
+        const matchesNumber = number?.toLowerCase().includes(query);
+        const matchesFrom = c?.from_number?.toLowerCase().includes(query);
+        const matchesTo = c?.to_number?.toLowerCase().includes(query);
+        
+        if (!matchesNumber && !matchesFrom && !matchesTo) {
+          return;
+        }
+      }
+
+      if (!callsByDate[date]) {
+        callsByDate[date] = [];
+      }
+      callsByDate[date].push(call);
     });
-  }, [callsResp]);
+
+    return Object.keys(callsByDate)
+      .sort((a, b) => b.localeCompare(a))
+      .map((date) => ({
+        title: date,
+        data: callsByDate[date],
+      }));
+  }, [callsResp, searchQuery]);
 
   const error = (statsErr || callsErr)?.message as string | undefined;
 
@@ -151,24 +184,40 @@ export default function HomeScreen() {
         router.push({ pathname: "/call-details/[id]", params: { id: item.id } })
       }
     >
-      <View
-        style={[
-          styles.callStatusDot,
-          item.status === "missed" && styles.callStatusMissed,
-        ]}
-      />
+      <View style={styles.callAvatarContainer}>
+        <LinearGradient
+          colors={[Colors.primary, '#ffc09cff']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.callAvatar}
+        >
+          <Ionicons name="person" size={20} color="#fff" />
+        </LinearGradient>
+        <View style={[
+          styles.callDirectionBadge,
+          { backgroundColor: item.direction === "inbound" ? "#10B981" : "#3B82F6" }
+        ]}>
+          <Ionicons 
+            name={item.direction === "inbound" ? "arrow-down" : "arrow-up"} 
+            size={10} 
+            color="#fff" 
+          />
+        </View>
+      </View>
       <View style={styles.callInfo}>
         <View style={styles.callNumberRow}>
-          <Text style={styles.callDirectionLabel}>
-            {item.direction === "inbound" ? "From" : "To"}:
-          </Text>
           <Text style={styles.callNumber}>{item.number}</Text>
         </View>
-        <Text style={styles.callDate}>{item.date}</Text>
+        <Text style={styles.callTime}>{item.duration}</Text>
       </View>
-      <Text style={styles.callDuration}>{item.duration}</Text>
       <Ionicons name="chevron-forward" size={16} color={Colors.textLight} />
     </TouchableOpacity>
+  );
+
+  const renderSectionHeader = ({ section }: { section: { title: string } }) => (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionHeaderText}>{section.title}</Text>
+    </View>
   );
 
   const ListHeaderComponent = () => (
@@ -183,7 +232,7 @@ export default function HomeScreen() {
         {error ? <Text style={styles.headerSubtitle}>{error}</Text> : null}
       </View>
 
-      {/* Agent Card */}
+      {/* Agent Card
       <View style={styles.agentCardContainer}>
         <TouchableOpacity
           style={styles.agentCard}
@@ -216,9 +265,9 @@ export default function HomeScreen() {
           </View>
           <Ionicons name="settings-outline" size={20} color={Colors.primary} />
         </TouchableOpacity>
-      </View>
+      </View> */}
 
-      {/* Stats Container - Only show if phone number exists */}
+      {/* Stats Container - Only show if phone number exists
       {phoneNumber && (
         <View style={styles.statsContainer}>
           {statsLoading ? (
@@ -287,12 +336,12 @@ export default function HomeScreen() {
             </>
           )}
         </View>
-      )}
+      )} */}
 
       {/* Quick Actions - Only show if phone number exists */}
       {phoneNumber && (
         <>
-          <View style={styles.quickActionsContainer}>
+          {/* <View style={styles.quickActionsContainer}>
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => router.push("/(tabs)/phone")}
@@ -322,63 +371,93 @@ export default function HomeScreen() {
                 {t("home.analytics", "Analytics")}
               </Text>
             </TouchableOpacity>
-          </View>
+          </View> */}
 
           {/* Section Title with Filter */}
           <View style={styles.callsListContainer}>
-            <Text style={styles.sectionTitle}>
-              {t("home.recentCalls", "Recent Calls")}
-            </Text>
-            <View style={styles.filterContainer}>
-              <TouchableOpacity
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                callTypeFilter === "all" && styles.filterButtonActiveAll,
+              ]}
+              onPress={() => setCallTypeFilter("all")}
+            >
+              <Ionicons 
+                name="swap-vertical" 
+                size={14} 
+                color={callTypeFilter === "all" ? Colors.primary : Colors.textSecondary}
+                style={styles.filterIcon}
+              />
+              <Text
                 style={[
-                  styles.filterButton,
-                  callTypeFilter === "all" && styles.filterButtonActive,
+                  styles.filterButtonText,
+                  callTypeFilter === "all" && styles.filterButtonTextActiveAll,
                 ]}
-                onPress={() => setCallTypeFilter("all")}
               >
-                <Text
-                  style={[
-                    styles.filterButtonText,
-                    callTypeFilter === "all" && styles.filterButtonTextActive,
-                  ]}
-                >
-                  {t("home.filterAll", "All")}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+                {t("home.filterAll", "All")}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                callTypeFilter === "inbound" && styles.filterButtonActiveInbound,
+              ]}
+              onPress={() => setCallTypeFilter("inbound")}
+            >
+              <SimpleLineIcons 
+                name="call-in" 
+                size={14} 
+                color={callTypeFilter === "inbound" ? "#10B981" : Colors.textSecondary}
+                style={styles.filterIcon}
+              />
+              <Text
                 style={[
-                  styles.filterButton,
-                  callTypeFilter === "phone" && styles.filterButtonActive,
+                  styles.filterButtonText,
+                  callTypeFilter === "inbound" && styles.filterButtonTextActiveInbound,
                 ]}
-                onPress={() => setCallTypeFilter("phone")}
               >
-                <Text
-                  style={[
-                    styles.filterButtonText,
-                    callTypeFilter === "phone" && styles.filterButtonTextActive,
-                  ]}
-                >
-                  {t("home.filterPhone", "Phone")}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+                {t("home.filterInbound", "Inbound")}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.filterButton,
+                callTypeFilter === "outbound" && styles.filterButtonActiveOutbound,
+              ]}
+              onPress={() => setCallTypeFilter("outbound")}
+            >
+              <SimpleLineIcons 
+                name="call-out" 
+                size={14} 
+                color={callTypeFilter === "outbound" ? "#3B82F6" : Colors.textSecondary}
+                style={styles.filterIcon}
+              />
+              <Text
                 style={[
-                  styles.filterButton,
-                  callTypeFilter === "web" && styles.filterButtonActive,
+                  styles.filterButtonText,
+                  callTypeFilter === "outbound" && styles.filterButtonTextActiveOutbound,
                 ]}
-                onPress={() => setCallTypeFilter("web")}
               >
-                <Text
-                  style={[
-                    styles.filterButtonText,
-                    callTypeFilter === "web" && styles.filterButtonTextActive,
-                  ]}
-                >
-                  {t("home.filterWeb", "Web")}
-                </Text>
+                {t("home.filterOutbound", "Outbound")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={18} color={Colors.textLight} style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t("home.searchCalls", "Search calls...")}
+              placeholderTextColor={Colors.textLight}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery("")}>
+                <Ionicons name="close-circle" size={18} color={Colors.textLight} />
               </TouchableOpacity>
-            </View>
+            )}
           </View>
         </>
       )}
@@ -415,7 +494,7 @@ export default function HomeScreen() {
               </View>
             ))}
           </View>
-        ) : calls.length === 0 ? (
+        ) : callSections.length === 0 ? (
           <View style={styles.callsListCard}>
             <View style={styles.emptyCallsContainer}>
               <View style={styles.emptyCallsIconContainer}>
@@ -438,12 +517,14 @@ export default function HomeScreen() {
           </View>
         ) : (
           <View style={styles.callsListCard}>
-            <FlatList
-              data={calls}
+            <SectionList
+              sections={callSections}
               renderItem={renderCallItem}
+              renderSectionHeader={renderSectionHeader}
               keyExtractor={(item) => item.id}
               showsVerticalScrollIndicator={false}
               style={styles.callsList}
+              stickySectionHeadersEnabled={false}
             />
           </View>
         )}
@@ -612,34 +693,66 @@ const styles = StyleSheet.create({
   },
   callsListContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     alignItems: "center",
     paddingHorizontal: 20,
     marginBottom: 12,
+    gap: 8,
   },
-  filterContainer: {
+  searchContainer: {
     flexDirection: "row",
-    gap: 6,
-  },
-  filterButton: {
+    alignItems: "center",
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 12,
+    marginHorizontal: 20,
+    marginBottom: 16,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: Colors.backgroundLight,
+    paddingVertical: 10,
     borderWidth: 1,
     borderColor: Colors.borderLight,
   },
-  filterButtonActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.textPrimary,
+    padding: 0,
+  },
+  filterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    backgroundColor: "transparent",
+  },
+  filterIcon: {
+    marginRight: 6,
+  },
+  filterButtonActiveAll: {
+    backgroundColor: Colors.primaryTransparent,
+  },
+  filterButtonActiveInbound: {
+    backgroundColor: "#10B98120",
+  },
+  filterButtonActiveOutbound: {
+    backgroundColor: "#3B82F620",
   },
   filterButtonText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "600",
     color: Colors.textSecondary,
   },
-  filterButtonTextActive: {
-    color: "#fff",
+  filterButtonTextActiveAll: {
+    color: Colors.primary,
+  },
+  filterButtonTextActiveInbound: {
+    color: "#10B981",
+  },
+  filterButtonTextActiveOutbound: {
+    color: "#3B82F6",
   },
   sectionTitle: {
     fontSize: 18,
@@ -654,28 +767,35 @@ const styles = StyleSheet.create({
   callItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 14,
+    paddingVertical: 8,
     marginHorizontal: 20,
     marginVertical: 6,
     backgroundColor: "#fff",
     borderRadius: 12,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
   },
-  callStatusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.statusActive,
+  callAvatarContainer: {
+    position: "relative",
     marginRight: 12,
   },
-  callStatusMissed: {
-    backgroundColor: Colors.statusMissed,
+  callAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.backgroundLight,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  callDirectionBadge: {
+    position: "absolute",
+    bottom: -2,
+    right: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#fff",
   },
   callInfo: {
     flex: 1,
@@ -700,11 +820,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textLight,
   },
+  callTime: {
+    fontSize: 12,
+    color: Colors.textLight,
+    marginTop: 2,
+  },
   callDuration: {
     fontSize: 13,
     color: Colors.textSecondary,
     marginRight: 8,
     fontWeight: "500",
+  },
+  sectionHeader: {
+    backgroundColor: Colors.background,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    marginTop: 8,
+  },
+  sectionHeaderText: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: Colors.textSecondary,
   },
   emptyCallsContainer: {
     flex: 1,

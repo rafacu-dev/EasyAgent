@@ -1,16 +1,17 @@
 // Color Theme - Business Professional with Orange Accent
 export const Colors = {
   // Primary Colors
-  primary: "#FF8C00", // Main orange
+  primary: "#ff4800ff", // Main orange
   primaryLight: "#FFA500", // Lighter orange
   primaryDark: "#E67E00", // Darker orange
+  primaryTransparent: "#ff480020",
 
   // Secondary Colors (Blue replacement)
   secondary: "#2E86C1", // Strong professional blue
   secondaryLight: "#D6EAF8", // Very light blue for backgrounds
 
   // Background Colors
-  background: "#FFF5EE", // Soft peach/cream
+  background: "#ffffffff", // Soft peach/cream
   backgroundLight: "#FFFAF5", // Very light peach
   cardBackground: "#FFFFFF", // White for cards
 

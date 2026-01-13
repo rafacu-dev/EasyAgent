@@ -16,9 +16,9 @@ export default function TabsLayout() {
           backgroundColor: Colors.cardBackground,
           borderTopWidth: 1,
           borderTopColor: Colors.border,
-          paddingBottom: 16,
+          paddingBottom: 38,
           paddingTop: 8,
-          height: 75,
+          height: 95,
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -31,7 +31,7 @@ export default function TabsLayout() {
         options={{
           title: t("tabs.home", "Home"),
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+            <Ionicons name="home-outline" size={size} color={color} />
           ),
         }}
       />
@@ -40,7 +40,7 @@ export default function TabsLayout() {
         options={{
           title: t("tabs.phone", "Phone"),
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="call" size={size} color={color} />
+            <Ionicons name="call-outline" size={size} color={color} />
           ),
         }}
       />
@@ -49,7 +49,7 @@ export default function TabsLayout() {
         options={{
           title: t("tabs.calendar", "Calendar"),
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar" size={size} color={color} />
+            <Ionicons name="calendar-outline" size={size} color={color} />
           ),
         }}
       />
@@ -58,7 +58,7 @@ export default function TabsLayout() {
         options={{
           title: t("tabs.settings", "Settings"),
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings" size={size} color={color} />
+            <Ionicons name="settings-outline" size={size} color={color} />
           ),
         }}
       />
