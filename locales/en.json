@@ -10,6 +10,11 @@
     "yes": "Yes",
     "no": "No"
   },
+  "index": {
+    "checkingAuth": "Checking authentication...",
+    "loadingAgent": "Loading agent...",
+    "redirecting": "Redirecting..."
+  },
   "login": {
     "title": "Welcome to EasyAgent",
     "subtitle": "Enter your email to sign in or create an account",
@@ -70,6 +75,7 @@
     "loading": "Loading call details...",
     "callInfo": "Call Information",
     "agent": "Agent",
+    "client": "Client",
     "from": "From",
     "to": "To",
     "duration": "Duration",

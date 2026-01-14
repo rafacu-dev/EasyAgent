@@ -10,6 +10,11 @@
     "yes": "Sí",
     "no": "No"
   },
+  "index": {
+    "checkingAuth": "Verificando autenticación...",
+    "loadingAgent": "Cargando agente...",
+    "redirecting": "Redirigiendo..."
+  },
   "login": {
     "title": "Bienvenido a EasyAgent",
     "subtitle": "Ingresa tu correo para iniciar sesión o crear una cuenta",
@@ -70,6 +75,7 @@
     "loading": "Cargando detalles de llamada...",
     "callInfo": "Información de Llamada",
     "agent": "Agente",
+    "client": "Cliente",
     "from": "De",
     "to": "Para",
     "duration": "Duración",

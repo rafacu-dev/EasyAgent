@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import FirstLoginView from "../components/FirstLoginView";
 import { useAgent } from "@/utils/AgentContext";
+import { useTranslation } from "react-i18next";
+import { Colors } from "@/utils/colors";
 
 export default function Index() {
+  const { t } = useTranslation();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const { agentConfig, isLoading: agentLoading } = useAgent();
 
@@ -22,11 +25,21 @@ export default function Index() {
     checkAuth();
   }, []);
 
+  // Navigate to home when authenticated and agent is loaded
+  useEffect(() => {
+    if (isAuthenticated && agentConfig && !agentLoading) {
+      router.replace("/(tabs)/home");
+    }
+  }, [isAuthenticated, agentConfig, agentLoading]);
+
   // Wait for auth check
   if (isAuthenticated === null) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#007AFF" />
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={styles.loadingText}>
+          {t("index.checkingAuth", "Checking authentication...")}
+        </Text>
       </View>
     );
   }
@@ -34,18 +47,23 @@ export default function Index() {
   // Wait for agent loading (AgentContext handles API fetch if no cache)
   if (agentLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#007AFF" />
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={styles.loadingText}>
+          {t("index.loadingAgent", "Loading agent...")}
+        </Text>
       </View>
     );
   }
 
-  // If authenticated and has agent, go to home
+  // If authenticated and has agent, show loading while navigating
   if (isAuthenticated && agentConfig) {
-    router.replace("/(tabs)/home");
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#007AFF" />
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={styles.loadingText}>
+          {t("index.redirecting", "Redirecting...")}
+        </Text>
       </View>
     );
   }
@@ -57,8 +75,26 @@ export default function Index() {
 
   // Fallback loading
   return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <ActivityIndicator size="large" color="#007AFF" />
+    <View style={styles.container}>
+      <ActivityIndicator size="large" color={Colors.primary} />
+      <Text style={styles.loadingText}>
+        {t("common.loading", "Loading...")}
+      </Text>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.background,
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: Colors.textSecondary,
+    marginTop: 8,
+  },
+});

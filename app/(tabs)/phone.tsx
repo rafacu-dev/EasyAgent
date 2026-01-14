@@ -17,6 +17,7 @@ import { useState } from "react";
 import { useAgent } from "../../utils/AgentContext";
 import NoPhoneNumber from "../../components/NoPhoneNumber";
 import { apiClient } from "../../utils/axios-interceptor";
+import { formatPhoneNumber } from "../../utils/formatters";
 import { Audio } from "expo-av";
 
 export default function PhoneScreen() {
@@ -139,9 +140,12 @@ export default function PhoneScreen() {
       return;
     }
 
+    // Format numbers for display and API
+    const formattedInput = formatPhoneNumber(phoneNumberInput);
+
     Alert.alert(
       t("phone.confirmCall", "Confirm Call"),
-      t("phone.confirmMessage", `Call ${phoneNumberInput}?`),
+      t("phone.confirmMessage", `Call ${formattedInput}?`),
       [
         {
           text: t("common.cancel", "Cancel"),
@@ -157,7 +161,7 @@ export default function PhoneScreen() {
                 await apiClient.post("calls/create-phone-call/", {
                   agent_id: agentConfig?.id,
                   from_number: phoneNumber,
-                  to_number: phoneNumberInput,
+                  to_number: formattedInput,
                   call_prompt: callPrompt,
                 });
                 Alert.alert(

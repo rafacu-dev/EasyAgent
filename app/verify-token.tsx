@@ -97,16 +97,16 @@ export default function VerifyTokenScreen() {
       const userTier = response.user?.tier || "free";
       const isProOrAbove = ["pro", "business", "enterprise"].includes(userTier);
 
-      // if (!isProOrAbove) {
-      //   // Free user - show paywall
-      //   router.replace("/paywall/PaywallScreen");
-      // } else if (response.is_new_user) {
-      //   // New user or user without company info - go to setup
-      //   router.replace("/");
-      // } else {
-      // Existing user with company info - go to main app
-      router.replace("/");
-      // }
+      if (!isProOrAbove) {
+        // Free user - show paywall
+        router.replace("/paywall/PaywallScreen");
+      } else if (response.is_new_user) {
+        // New user or user without company info - go to setup
+        router.replace("/");
+      } else {
+        // Existing user with company info - go to main app
+        router.replace("/");
+      }
     } catch (error: any) {
       if (__DEV__) console.error("Error verifying token:", error);
       Alert.alert(

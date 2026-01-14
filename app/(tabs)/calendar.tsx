@@ -18,33 +18,13 @@ import { useAgent } from "../../utils/AgentContext";
 import NoPhoneNumber from "../../components/NoPhoneNumber";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "../../utils/axios-interceptor";
+import type {
+  Appointment,
+  MonthResponse,
+  AppointmentStatus,
+} from "../../utils/types";
 
-// Types
-interface Appointment {
-  id: number;
-  title: string;
-  description: string;
-  date: string;
-  start_time: string;
-  end_time: string | null;
-  duration_minutes: number;
-  client_name: string;
-  client_phone: string;
-  client_email: string;
-  status: string;
-  notes: string;
-  agent: number | null;
-  agent_name: string | null;
-  created_by_agent: boolean;
-  is_past: boolean;
-}
-
-interface MonthResponse {
-  data: Appointment[];
-  appointment_dates: string[];
-}
-
-const STATUS_COLORS: { [key: string]: string } = {
+const STATUS_COLORS: { [key in AppointmentStatus]: string } = {
   scheduled: Colors.info,
   confirmed: Colors.success,
   completed: Colors.textSecondary,
@@ -70,7 +50,7 @@ export default function CalendarScreen() {
     description: "",
     date: "",
     start_time: "",
-    duration_minutes: "30",
+    duration_minutes: "",
     client_name: "",
     client_phone: "",
     client_email: "",
@@ -90,7 +70,8 @@ export default function CalendarScreen() {
           selectedDate.getMonth() + 1
         }`
       );
-      return response.data;
+      console.log("Fetched month data:", response);
+      return response;
     },
     enabled: !!phoneNumber,
   });
@@ -108,7 +89,15 @@ export default function CalendarScreen() {
   const createMutation = useMutation({
     mutationFn: (data: any) => apiClient.post("appointments/", data),
     onSuccess: () => {
+      // Refetch the current month's data immediately
       queryClient.invalidateQueries({ queryKey: ["appointments-month"] });
+      queryClient.refetchQueries({
+        queryKey: [
+          "appointments-month",
+          selectedDate.getFullYear(),
+          selectedDate.getMonth() + 1,
+        ],
+      });
       setShowAddModal(false);
       resetForm();
       Alert.alert(
@@ -157,12 +146,13 @@ export default function CalendarScreen() {
   });
 
   const resetForm = () => {
+    const currentDateStr = selectedDate.toISOString().split("T")[0];
     setFormData({
       title: "",
       description: "",
-      date: selectedDateStr,
+      date: currentDateStr,
       start_time: "",
-      duration_minutes: "30",
+      duration_minutes: "",
       client_name: "",
       client_phone: "",
       client_email: "",
@@ -184,11 +174,19 @@ export default function CalendarScreen() {
       return;
     }
 
-    createMutation.mutate({
+    const payload: any = {
       ...formData,
-      duration_minutes: parseInt(formData.duration_minutes, 10),
       agent: agentConfig?.id,
-    });
+    };
+
+    // Only include duration_minutes if it has a value
+    if (formData.duration_minutes && formData.duration_minutes.trim() !== "") {
+      payload.duration_minutes = parseInt(formData.duration_minutes, 10);
+    } else {
+      payload.duration_minutes = null;
+    }
+
+    createMutation.mutate(payload);
   };
 
   const onRefresh = useCallback(() => {
@@ -419,13 +417,30 @@ export default function CalendarScreen() {
                     },
                   ]}
                 />
+                <View style={styles.statusIcon}>
+                  <Ionicons
+                    name={
+                      appointment.status === "confirmed"
+                        ? "checkmark-circle"
+                        : appointment.status === "cancelled"
+                        ? "close-circle"
+                        : appointment.status === "completed"
+                        ? "checkmark-done-circle"
+                        : "time"
+                    }
+                    size={24}
+                    color={STATUS_COLORS[appointment.status] || Colors.info}
+                  />
+                </View>
                 <View style={styles.appointmentTime}>
                   <Text style={styles.appointmentTimeText}>
                     {formatTime(appointment.start_time)}
                   </Text>
-                  <Text style={styles.appointmentDuration}>
-                    {appointment.duration_minutes} min
-                  </Text>
+                  {appointment.duration_minutes && (
+                    <Text style={styles.appointmentDuration}>
+                      {appointment.duration_minutes} min
+                    </Text>
+                  )}
                 </View>
                 <View style={styles.appointmentDetails}>
                   <Text style={styles.appointmentTitle}>
@@ -460,7 +475,6 @@ export default function CalendarScreen() {
             style={styles.actionButton}
             onPress={() => {
               resetForm();
-              setFormData((prev) => ({ ...prev, date: selectedDateStr }));
               setShowAddModal(true);
             }}
           >
@@ -537,6 +551,7 @@ export default function CalendarScreen() {
                 onChangeText={(text) =>
                   setFormData((prev) => ({ ...prev, duration_minutes: text }))
                 }
+                placeholder="30"
                 keyboardType="numeric"
                 placeholderTextColor={Colors.textLight}
               />
@@ -683,7 +698,9 @@ export default function CalendarScreen() {
                     color={Colors.textSecondary}
                   />
                   <Text style={styles.detailText}>
-                    {selectedAppointment.duration_minutes} minutes
+                    {selectedAppointment.duration_minutes
+                      ? `${selectedAppointment.duration_minutes} minutes`
+                      : "Duration not specified"}
                   </Text>
                 </View>
 
@@ -910,11 +927,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   appointmentDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: Colors.primary,
     marginTop: 2,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
   },
   appointmentsContainer: {
     padding: 16,
@@ -972,7 +991,13 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: 4,
+    width: 5,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+  },
+  statusIcon: {
+    marginLeft: 8,
+    marginRight: 8,
   },
   appointmentTime: {
     width: 70,

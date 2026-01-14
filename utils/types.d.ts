@@ -42,3 +42,37 @@ export interface RecentCallItem {
   toNumber?: string;
   callType?: string;
 }
+
+export type AppointmentStatus =
+  | "scheduled"
+  | "confirmed"
+  | "completed"
+  | "cancelled"
+  | "no_show"
+  | "rescheduled";
+
+export interface Appointment {
+  id: number;
+  title: string;
+  description: string;
+  date: string;
+  start_time: string;
+  end_time: string | null;
+  duration_minutes: number | null;
+  client_name: string;
+  client_phone: string;
+  client_email: string;
+  status: AppointmentStatus;
+  notes: string;
+  agent: number | null;
+  agent_name: string | null;
+  created_by_agent: boolean;
+  is_past: boolean;
+}
+
+export interface MonthResponse {
+  data: Appointment[];
+  appointment_dates: string[];
+  month: number;
+  year: number;
+}
