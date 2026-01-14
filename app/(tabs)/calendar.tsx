@@ -456,7 +456,9 @@ export default function CalendarScreen() {
                         size={12}
                         color={Colors.primary}
                       />
-                      <Text style={styles.aiTagText}>AI Created</Text>
+                      <Text style={styles.aiTagText}>
+                        {t("calendar.aiCreated", "AI Created")}
+                      </Text>
                     </View>
                   )}
                 </View>
@@ -686,7 +688,8 @@ export default function CalendarScreen() {
                     color={Colors.textSecondary}
                   />
                   <Text style={styles.detailText}>
-                    {new Date(selectedAppointment.date).toLocaleDateString()} at{" "}
+                    {new Date(selectedAppointment.date).toLocaleDateString()}{" "}
+                    {t("calendar.at", "at")}{" "}
                     {formatTime(selectedAppointment.start_time)}
                   </Text>
                 </View>
@@ -699,8 +702,14 @@ export default function CalendarScreen() {
                   />
                   <Text style={styles.detailText}>
                     {selectedAppointment.duration_minutes
-                      ? `${selectedAppointment.duration_minutes} minutes`
-                      : "Duration not specified"}
+                      ? `${selectedAppointment.duration_minutes} ${t(
+                          "calendar.minutes",
+                          "minutes"
+                        )}`
+                      : t(
+                          "calendar.durationNotSpecified",
+                          "Duration not specified"
+                        )}
                   </Text>
                 </View>
 
