@@ -10,7 +10,8 @@
     "yes": "Sí",
     "no": "No",
     "save": "Guardar",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "ok": "OK"
   },
   "index": {
     "checkingAuth": "Verificando autenticación...",
@@ -63,14 +64,13 @@
     "filterOutbound": "Salientes",
     "searchCalls": "Buscar llamadas...",
     "noPhoneTitle": "Sin Número de Teléfono",
-    "noPhoneMessage": "Para acceder a llamadas y registros, primero compra un número de teléfono para tu agente",
-    "buyPhoneNumber": "Comprar Número de Teléfono",
+    "noPhoneMessage": "Para acceder a llamadas y registros, primero obtén un número de teléfono para tu agente",
+    "getPhoneNumber": "Obtener Número de Teléfono",
     "noNumber": "Sin número asignado",
     "number": "Número",
     "featureInbound": "Recibir llamadas entrantes",
     "featureOutbound": "Hacer llamadas salientes",
-    "featureRecording": "Grabación y transcripciones",
-    "pricingInfo": "Desde $2.00/mes"
+    "featureRecording": "Grabación y transcripciones"
   },
   "callDetails": {
     "title": "Detalles de Llamada",
@@ -108,6 +108,12 @@
     "agentInstructions": "Instrucciones para el Agente IA",
     "promptPlaceholder": "Ej: Programar una cita para la próxima semana...",
     "promptRequired": "Por favor ingresa instrucciones para el agente",
+    "recording": "🔴 Grabando...",
+    "permissionDenied": "Permiso Denegado",
+    "microphonePermission": "Se requiere acceso al micrófono",
+    "recordingFailed": "Error al iniciar grabación",
+    "info": "Información",
+    "speechToTextInfo": "Grabación de voz completada. La conversión de voz a texto se implementará con tu API backend.",
     "infoTitle": "Modos de Llamada",
     "agentModeInfo": "Tu agente IA hará la llamada y seguirá las instrucciones que proporciones. Perfecto para programación automatizada de citas, seguimientos de clientes y más.",
     "manualModeInfo": "Realiza una llamada directa donde hablas personalmente usando tu número de teléfono configurado.",
@@ -120,8 +126,12 @@
     "agentCallInitiated": "Llamada del agente IA iniciada exitosamente",
     "callFailed": "Error al iniciar llamada",
     "noPhoneTitle": "Sin Número de Teléfono",
-    "noPhoneMessage": "Para acceder a llamadas y registros, primero compra un número de teléfono para tu agente",
-    "buyPhoneNumber": "Comprar Número de Teléfono"
+    "noPhoneMessage": "Para acceder a llamadas y registros, primero obtén un número de teléfono para tu agente",
+    "getPhoneNumber": "Obtener Número de Teléfono",
+    "featureInbound": "Recibir llamadas entrantes",
+    "featureOutbound": "Realizar llamadas salientes",
+    "featureRecording": "Grabación y transcripción de llamadas",
+    "modalClose": "Cerrar"
   },
   "calendar": {
     "title": "Calendario",
@@ -132,8 +142,11 @@
     "addAppointment": "Agregar Cita",
     "syncCalendar": "Sincronizar con Calendario",
     "noPhoneTitle": "Sin Número de Teléfono",
-    "noPhoneMessage": "Para acceder a llamadas y registros, primero compra un número de teléfono para tu agente",
-    "buyPhoneNumber": "Comprar Número de Teléfono",
+    "noPhoneMessage": "Para acceder a llamadas y registros, primero obtén un número de teléfono para tu agente",
+    "getPhoneNumber": "Obtener Número de Teléfono",
+    "featureInbound": "Recibir llamadas entrantes",
+    "featureOutbound": "Realizar llamadas salientes",
+    "featureRecording": "Grabación y transcripción de llamadas",
     "success": "Éxito",
     "appointmentCreated": "Cita creada exitosamente",
     "cancelFailed": "Error al cancelar la cita",
@@ -148,11 +161,16 @@
     "clientName": "Nombre del Cliente",
     "clientNamePlaceholder": "Nombre del cliente",
     "clientPhone": "Teléfono del Cliente",
+    "clientPhonePlaceholder": "+1234567890",
     "clientEmail": "Email del Cliente",
+    "clientEmailPlaceholder": "email@ejemplo.com",
     "description": "Descripción",
     "descriptionPlaceholder": "Detalles de la cita...",
     "notes": "Notas",
     "notesPlaceholder": "Notas adicionales...",
+    "datePlaceholder": "AAAA-MM-DD",
+    "timePlaceholder": "HH:MM (ej: 14:30)",
+    "durationPlaceholder": "30",
     "createdByAgent": "Creada por el Agente IA durante una llamada",
     "cancelAppointment": "Cancelar",
     "confirmAppointment": "Confirmar",
@@ -183,7 +201,11 @@
     "deleteAgentMessage": "Esto eliminará permanentemente tu agente. Esta acción no se puede deshacer.",
     "logout": "Cerrar Sesión",
     "logoutTitle": "Cerrar Sesión",
-    "logoutMessage": "¿Estás seguro de que quieres cerrar sesión?"
+    "logoutMessage": "¿Estás seguro de que quieres cerrar sesión?",
+    "reports": "Reportes",
+    "analytics": "Estadísticas del uso del agente",
+    "callHistory": "Historial de llamadas",
+    "subscription": "Administrar suscripción"
   },
   "welcome": {
     "title": "¡Bienvenido a EasyAgent!",
@@ -231,6 +253,27 @@
   },
   "firstLogin": {
     "sector": "Sector"
+  },
+  "getPhone": {
+    "title": "Obtener Número de Teléfono",
+    "infoTitle": "Sobre los Números de Teléfono",
+    "info": "Selecciona un número de teléfono para habilitar llamadas y grabaciones con tu agente IA. Los números de teléfono están incluidos en tu suscripción Pro.",
+    "filterTitle": "Filtrar Números",
+    "areaCodePlaceholder": "Código de área",
+    "containsPlaceholder": "Contiene dígitos",
+    "applyFilters": "Aplicar Filtros",
+    "loadError": "Error al cargar números de teléfono",
+    "availableNumbers": "Números Disponibles",
+    "noNumbers": "No se encontraron números",
+    "filterToFind": "Usa los filtros arriba para encontrar números específicos",
+    "select": "Seleccionar",
+    "confirmTitle": "Confirmar Selección",
+    "confirmMessage": "¿Estás seguro de que quieres obtener",
+    "obtain": "Obtener Número",
+    "success": "¡Éxito!",
+    "obtainSuccess": "¡Número de teléfono obtenido y vinculado a tu agente exitosamente!",
+    "error": "Error",
+    "obtainError": "Error al obtener el número de teléfono"
   },
   "buyPhone": {
     "title": "Comprar Número de Teléfono",
@@ -298,6 +341,20 @@
     "peakHour": "Hora pico de llamadas",
     "inboundRate": "Tasa de entrantes",
     "completionRate": "Tasa de finalización"
+  },
+  "paywall": {
+    "initializationError": "Error de Inicialización",
+    "ok": "OK",
+    "purchaseSuccessTitle": "¡Éxito!",
+    "purchaseSuccessMessage": "Suscripción activada exitosamente",
+    "purchaseError": "Error de Compra",
+    "purchasesRestoredTitle": "Compras Restauradas",
+    "purchasesRestoredMessage": "Tus compras anteriores han sido restauradas exitosamente",
+    "noPurchasesFound": "No se Encontraron Compras",
+    "noPurchasesMessage": "No se encontraron compras anteriores para tu cuenta",
+    "restoreError": "Error al restaurar compras",
+    "annual": "Anual",
+    "monthly": "Mensual"
   },
   "subscription": {
     "proFeature": "Función Pro",

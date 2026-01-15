@@ -13,11 +13,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { clearStorage, clearAuthData } from "../../utils/storage";
 import { router } from "expo-router";
-import { useAgent } from "@/utils/AgentContext";
+import { useAgentQuery } from "@/utils/hooks";
 
 export default function SettingsScreen() {
   const { t, i18n } = useTranslation();
-  const { agentConfig } = useAgent();
+  const { data: agentConfig } = useAgentQuery();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
 

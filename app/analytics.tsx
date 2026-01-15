@@ -11,7 +11,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { Colors } from "../utils/colors";
-import { useAgent } from "../utils/AgentContext";
+import { useAgentQuery } from "../utils/hooks";
 import { apiClient } from "../utils/axios-interceptor";
 import { useQuery } from "@tanstack/react-query";
 
@@ -19,7 +19,7 @@ const { width } = Dimensions.get("window");
 
 export default function AnalyticsScreen() {
   const { t } = useTranslation();
-  const { agentConfig } = useAgent();
+  const { data: agentConfig } = useAgentQuery();
   const agentDbId = agentConfig?.id ?? null;
 
   const {

@@ -10,7 +10,8 @@
     "yes": "Yes",
     "no": "No",
     "save": "Save",
-    "close": "Close"
+    "close": "Close",
+    "ok": "OK"
   },
   "index": {
     "checkingAuth": "Checking authentication...",
@@ -63,14 +64,13 @@
     "filterOutbound": "Outbound",
     "searchCalls": "Search calls...",
     "noPhoneTitle": "No Phone Number",
-    "noPhoneMessage": "To access calls and records, first buy a phone number for your agent",
-    "buyPhoneNumber": "Buy Phone Number",
+    "noPhoneMessage": "To access calls and records, first get a phone number for your agent",
+    "getPhoneNumber": "Get Phone Number",
     "noNumber": "No number assigned",
     "number": "Number",
     "featureInbound": "Receive inbound calls",
     "featureOutbound": "Make outbound calls",
-    "featureRecording": "Call recording & transcripts",
-    "pricingInfo": "Starting at $2.00/month"
+    "featureRecording": "Call recording & transcripts"
   },
   "callDetails": {
     "title": "Call Details",
@@ -108,6 +108,12 @@
     "agentInstructions": "Instructions for AI Agent",
     "promptPlaceholder": "E.g., Schedule an appointment for next week...",
     "promptRequired": "Please enter instructions for the agent",
+    "recording": "🔴 Recording...",
+    "permissionDenied": "Permission Denied",
+    "microphonePermission": "Microphone access is required",
+    "recordingFailed": "Failed to start recording",
+    "info": "Info",
+    "speechToTextInfo": "Voice recording completed. Speech-to-text will be implemented with your backend API.",
     "infoTitle": "Call Modes",
     "agentModeInfo": "Your AI agent will make the call and follow the instructions you provide. Perfect for automated appointment scheduling, customer follow-ups, and more.",
     "manualModeInfo": "Make a direct call where you speak personally using your configured phone number.",
@@ -120,8 +126,12 @@
     "agentCallInitiated": "AI agent call initiated successfully",
     "callFailed": "Failed to initiate call",
     "noPhoneTitle": "No Phone Number",
-    "noPhoneMessage": "To access calls and records, first buy a phone number for your agent",
-    "buyPhoneNumber": "Buy Phone Number"
+    "noPhoneMessage": "To access calls and records, first get a phone number for your agent",
+    "getPhoneNumber": "Get Phone Number",
+    "featureInbound": "Receive inbound calls",
+    "featureOutbound": "Make outbound calls",
+    "featureRecording": "Call recording & transcripts",
+    "modalClose": "Close"
   },
   "calendar": {
     "title": "Calendar",
@@ -132,8 +142,11 @@
     "addAppointment": "Add Appointment",
     "syncCalendar": "Sync with Calendar",
     "noPhoneTitle": "No Phone Number",
-    "noPhoneMessage": "To access calls and records, first buy a phone number for your agent",
-    "buyPhoneNumber": "Buy Phone Number",
+    "noPhoneMessage": "To access calls and records, first get a phone number for your agent",
+    "getPhoneNumber": "Get Phone Number",
+    "featureInbound": "Receive inbound calls",
+    "featureOutbound": "Make outbound calls",
+    "featureRecording": "Call recording & transcripts",
     "success": "Success",
     "appointmentCreated": "Appointment created successfully",
     "cancelFailed": "Failed to cancel appointment",
@@ -148,11 +161,16 @@
     "clientName": "Client Name",
     "clientNamePlaceholder": "Client's name",
     "clientPhone": "Client Phone",
+    "clientPhonePlaceholder": "+1234567890",
     "clientEmail": "Client Email",
+    "clientEmailPlaceholder": "email@example.com",
     "description": "Description",
     "descriptionPlaceholder": "Appointment details...",
     "notes": "Notes",
     "notesPlaceholder": "Additional notes...",
+    "datePlaceholder": "YYYY-MM-DD",
+    "timePlaceholder": "HH:MM (e.g., 14:30)",
+    "durationPlaceholder": "30",
     "createdByAgent": "Created by AI Agent during a call",
     "cancelAppointment": "Cancel",
     "confirmAppointment": "Confirm",
@@ -183,7 +201,11 @@
     "deleteAgentMessage": "This will permanently delete your agent. This action cannot be undone.",
     "logout": "Logout",
     "logoutTitle": "Logout",
-    "logoutMessage": "Are you sure you want to logout?"
+    "logoutMessage": "Are you sure you want to logout?",
+    "reports": "Reports",
+    "analytics": "Agent Usage Analytics",
+    "callHistory": "Call History",
+    "subscription": "Manage Subscription"
   },
   "welcome": {
     "title": "Welcome to EasyAgent!",
@@ -231,6 +253,27 @@
   },
   "firstLogin": {
     "sector": "Sector"
+  },
+  "getPhone": {
+    "title": "Get Phone Number",
+    "infoTitle": "About Phone Numbers",
+    "info": "Select a phone number to enable calls and recordings with your AI agent. Phone numbers are included with your Pro subscription.",
+    "filterTitle": "Filter Numbers",
+    "areaCodePlaceholder": "Area code",
+    "containsPlaceholder": "Contains digits",
+    "applyFilters": "Apply Filters",
+    "loadError": "Error loading phone numbers",
+    "availableNumbers": "Available Numbers",
+    "noNumbers": "No numbers found",
+    "filterToFind": "Use the filters above to find specific phone numbers",
+    "select": "Select",
+    "confirmTitle": "Confirm Selection",
+    "confirmMessage": "Are you sure you want to obtain",
+    "obtain": "Obtain Number",
+    "success": "Success!",
+    "obtainSuccess": "Phone number obtained and linked to your agent successfully!",
+    "error": "Error",
+    "obtainError": "Failed to obtain phone number"
   },
   "buyPhone": {
     "title": "Buy Phone Number",
@@ -298,6 +341,20 @@
     "peakHour": "Peak call hour",
     "inboundRate": "Inbound rate",
     "completionRate": "Completion rate"
+  },
+  "paywall": {
+    "initializationError": "Initialization Error",
+    "ok": "OK",
+    "purchaseSuccessTitle": "Success!",
+    "purchaseSuccessMessage": "Subscription activated successfully",
+    "purchaseError": "Purchase Error",
+    "purchasesRestoredTitle": "Purchases Restored",
+    "purchasesRestoredMessage": "Your previous purchases have been restored successfully",
+    "noPurchasesFound": "No Purchases Found",
+    "noPurchasesMessage": "No previous purchases were found for your account",
+    "restoreError": "Failed to restore purchases",
+    "annual": "Annual",
+    "monthly": "Monthly"
   },
   "subscription": {
     "proFeature": "Pro Feature",

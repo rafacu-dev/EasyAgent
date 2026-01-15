@@ -1,22 +1,47 @@
 import Constants from "expo-constants";
 import { Stack } from "expo-router";
 import "../utils/i18n"; // Initialize i18n
-import { AgentProvider } from "../utils/AgentContext";
-import { UserProvider } from "../utils/UserContext";
 import { Colors } from "../utils/colors";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { queryClient } from "../utils/queryClient";
 import { useEffect, useRef } from "react";
 import { AppState, AppStateStatus } from "react-native";
-import { saveLastLogin } from "../utils/storage";
+import { saveLastLogin, getAuthToken } from "../utils/storage";
 
-export default function RootLayout() {
+function AppStateHandler({ children }: { children: React.ReactNode }) {
   const appState = useRef(AppState.currentState);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const subscription = AppState.addEventListener(
       "change",
-      (nextAppState: AppStateStatus) => {
+      async (nextAppState: AppStateStatus) => {
+        // When app becomes active from background, refresh user and agent data
+        if (
+          appState.current.match(/inactive|background/) &&
+          nextAppState === "active"
+        ) {
+          try {
+            const authToken = await getAuthToken();
+            if (authToken) {
+              // Invalidate and refetch all queries to get latest data
+              await queryClient.invalidateQueries({
+                queryKey: ["userProfile"],
+              });
+              await queryClient.invalidateQueries({ queryKey: ["agent"] });
+              await queryClient.invalidateQueries({
+                queryKey: ["phoneNumbers"],
+              });
+
+              if (__DEV__)
+                console.log("Refreshed user and agent data on app open");
+            }
+          } catch (error) {
+            if (__DEV__)
+              console.error("Error refreshing data on app open:", error);
+          }
+        }
+
         // When app goes to background or inactive, save current time as last login
         if (
           appState.current === "active" &&
@@ -34,23 +59,25 @@ export default function RootLayout() {
     return () => {
       subscription.remove();
     };
-  }, []);
+  }, [queryClient]);
 
+  return <>{children}</>;
+}
+
+export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
-      <UserProvider>
-        <AgentProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: {
-                paddingTop: Constants.statusBarHeight,
-                backgroundColor: Colors.background,
-              },
-            }}
-          />
-        </AgentProvider>
-      </UserProvider>
+      <AppStateHandler>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: {
+              paddingTop: Constants.statusBarHeight,
+              backgroundColor: Colors.background,
+            },
+          }}
+        />
+      </AppStateHandler>
     </QueryClientProvider>
   );
 }

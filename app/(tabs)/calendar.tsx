@@ -14,7 +14,7 @@ import { Colors } from "../../utils/colors";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useCallback } from "react";
-import { useAgent } from "../../utils/AgentContext";
+import { useAgentQuery, useAgentPhoneNumber } from "../../utils/hooks";
 import NoPhoneNumber from "../../components/NoPhoneNumber";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "../../utils/axios-interceptor";
@@ -35,7 +35,8 @@ const STATUS_COLORS: { [key in AppointmentStatus]: string } = {
 
 export default function CalendarScreen() {
   const { t } = useTranslation();
-  const { phoneNumber, agentConfig } = useAgent();
+  const { data: agentConfig } = useAgentQuery();
+  const { phoneNumber } = useAgentPhoneNumber(agentConfig?.id);
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);
@@ -527,7 +528,7 @@ export default function CalendarScreen() {
                 onChangeText={(text) =>
                   setFormData((prev) => ({ ...prev, date: text }))
                 }
-                placeholder="YYYY-MM-DD"
+                placeholder={t("calendar.datePlaceholder", "YYYY-MM-DD")}
                 placeholderTextColor={Colors.textLight}
               />
 
@@ -540,7 +541,10 @@ export default function CalendarScreen() {
                 onChangeText={(text) =>
                   setFormData((prev) => ({ ...prev, start_time: text }))
                 }
-                placeholder="HH:MM (e.g., 14:30)"
+                placeholder={t(
+                  "calendar.timePlaceholder",
+                  "HH:MM (e.g., 14:30)"
+                )}
                 placeholderTextColor={Colors.textLight}
               />
 
@@ -553,7 +557,7 @@ export default function CalendarScreen() {
                 onChangeText={(text) =>
                   setFormData((prev) => ({ ...prev, duration_minutes: text }))
                 }
-                placeholder="30"
+                placeholder={t("calendar.durationPlaceholder", "30")}
                 keyboardType="numeric"
                 placeholderTextColor={Colors.textLight}
               />
@@ -583,7 +587,10 @@ export default function CalendarScreen() {
                 onChangeText={(text) =>
                   setFormData((prev) => ({ ...prev, client_phone: text }))
                 }
-                placeholder="+1234567890"
+                placeholder={t(
+                  "calendar.clientPhonePlaceholder",
+                  "+1234567890"
+                )}
                 keyboardType="phone-pad"
                 placeholderTextColor={Colors.textLight}
               />
@@ -597,7 +604,10 @@ export default function CalendarScreen() {
                 onChangeText={(text) =>
                   setFormData((prev) => ({ ...prev, client_email: text }))
                 }
-                placeholder="email@example.com"
+                placeholder={t(
+                  "calendar.clientEmailPlaceholder",
+                  "email@example.com"
+                )}
                 keyboardType="email-address"
                 placeholderTextColor={Colors.textLight}
               />

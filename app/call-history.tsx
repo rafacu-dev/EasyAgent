@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useState, useMemo, useEffect } from "react";
 import { Colors } from "../utils/colors";
-import { useAgent } from "../utils/AgentContext";
+import { useAgentQuery } from "../utils/hooks";
 import { apiClient } from "../utils/axios-interceptor";
 import { useQuery } from "@tanstack/react-query";
 import type { RecentCallItem } from "../utils/types";
@@ -22,7 +22,7 @@ import { formatDuration, formatDateTime } from "../utils/formatters";
 
 export default function CallHistoryScreen() {
   const { t, i18n } = useTranslation();
-  const { agentConfig } = useAgent();
+  const { data: agentConfig } = useAgentQuery();
   const agentDbId = agentConfig?.id ?? null;
 
   const [callTypeFilter, setCallTypeFilter] = useState<"all" | "phone" | "web">(

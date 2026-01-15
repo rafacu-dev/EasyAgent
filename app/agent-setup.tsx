@@ -16,12 +16,12 @@ import {
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { apiClient } from "../utils/axios-interceptor";
 import { Colors } from "../utils/colors";
-import { useAgent } from "../utils/AgentContext";
+import { useUpdateAgentMutation } from "../utils/hooks";
 
 export default function AgentSetup() {
   const { t } = useTranslation();
   const params = useLocalSearchParams();
-  const { updateAgentConfig } = useAgent();
+  const updateAgentMutation = useUpdateAgentMutation();
   const [agentName, setAgentName] = useState("Alex");
   const [agentGender, setAgentGender] = useState<"male" | "female">("male");
   const [agentDescription, setAgentDescription] = useState("");
@@ -41,7 +41,7 @@ export default function AgentSetup() {
       });
 
       if (response.data && response.data.id) {
-        await updateAgentConfig({
+        const newConfig = {
           id: response.data.id,
           sector: params.sector as string,
           companyName: params.companyName as string,
@@ -49,13 +49,16 @@ export default function AgentSetup() {
           agentGender: agentGender,
           agentName: agentName,
           agentDescription: agentDescription,
-        });
+        };
+        await updateAgentMutation.mutateAsync(newConfig);
       }
 
       router.replace("/(tabs)/home");
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || String(error);
-      Alert.alert("Error", errorMessage, [{ text: "OK" }]);
+      Alert.alert(t("common.error", "Error"), errorMessage, [
+        { text: t("common.ok", "OK") },
+      ]);
     } finally {
       setIsLoading(false);
     }

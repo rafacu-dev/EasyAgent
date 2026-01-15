@@ -18,11 +18,14 @@ import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { apiClient } from "../utils/axios-interceptor";
 import { Colors } from "../utils/colors";
 import { Ionicons } from "@expo/vector-icons";
-import { useAgent } from "../utils/AgentContext";
+import { useAgentQuery, useUpdateAgentMutation } from "../utils/hooks";
+import type { AgentConfig } from "../utils/types";
 
 export default function EditAgent() {
   const { t } = useTranslation();
-  const { agentConfig, updateAgentConfig } = useAgent();
+  const { data: agentConfig, isLoading: isLoadingData } = useAgentQuery();
+  const updateAgentMutation = useUpdateAgentMutation();
+
   const [formData, setFormData] = useState({
     agentName: agentConfig?.agentName || "",
     agentGender: (agentConfig?.agentGender || "male") as "male" | "female",
@@ -33,43 +36,20 @@ export default function EditAgent() {
     agentId: agentConfig?.id,
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingData, setIsLoadingData] = useState(true);
 
   useEffect(() => {
-    loadAgentData();
-  }, [agentConfig]);
-
-  const loadAgentData = async () => {
-    try {
-      if (agentConfig) {
-        setFormData({
-          agentName: agentConfig.agentName || "",
-          agentGender: agentConfig.agentGender || "male",
-          agentDescription: agentConfig.agentDescription || "",
-          sector: agentConfig.sector || "",
-          companyName: agentConfig.companyName || "",
-          socialMediaAndWeb: agentConfig.socialMediaAndWeb || "",
-          agentId: agentConfig.id,
-        });
-      } else {
-        Alert.alert(
-          t("common.error", "Error"),
-          t("editAgent.noAgent", "No agent configuration found"),
-          [
-            {
-              text: "OK",
-              onPress: () => router.back(),
-            },
-          ]
-        );
-      }
-    } catch (error) {
-      console.error("Error loading agent config:", error);
-      Alert.alert(t("common.error", "Error"), String(error));
-    } finally {
-      setIsLoadingData(false);
+    if (agentConfig) {
+      setFormData({
+        agentName: agentConfig.agentName || "",
+        agentGender: agentConfig.agentGender || "male",
+        agentDescription: agentConfig.agentDescription || "",
+        sector: agentConfig.sector || "",
+        companyName: agentConfig.companyName || "",
+        socialMediaAndWeb: agentConfig.socialMediaAndWeb || "",
+        agentId: agentConfig.id,
+      });
     }
-  };
+  }, [agentConfig]);
 
   const handleUpdate = async () => {
     if (isLoading) return;
@@ -90,16 +70,8 @@ export default function EditAgent() {
         sector: formData.sector,
       });
 
-      // Update agent via API
-      await apiClient.put(`/agents/${formData.agentId}/`, {
-        name: formData.agentName,
-        agent_gender: formData.agentGender,
-        agent_description: formData.agentDescription,
-        social_media_and_web: formData.socialMediaAndWeb,
-      });
-
-      // Update context and local storage
-      await updateAgentConfig({
+      // Update agent via mutation
+      const updatedConfig: AgentConfig = {
         id: formData.agentId,
         sector: formData.sector,
         companyName: formData.companyName,
@@ -107,7 +79,9 @@ export default function EditAgent() {
         agentGender: formData.agentGender,
         agentName: formData.agentName,
         agentDescription: formData.agentDescription,
-      });
+      };
+
+      await updateAgentMutation.mutateAsync(updatedConfig);
 
       Alert.alert(
         t("common.success", "Success"),

@@ -36,11 +36,11 @@ export function PhoneSearchHeader({
 }: PhoneSearchHeaderProps) {
   return (
     <>
-      {/* Search Section */}
+      {/* Filter Section */}
       <View style={styles.searchSection}>
         <View style={styles.sectionTitleRow}>
           <Text style={styles.sectionTitle}>
-            {t("buyPhone.searchTitle", "Search for Numbers")}
+            {t("getPhone.filterTitle", "Filter Numbers")}
           </Text>
           <TouchableOpacity onPress={onInfoPress} style={styles.infoButton}>
             <Ionicons
@@ -61,10 +61,7 @@ export function PhoneSearchHeader({
             />
             <TextInput
               style={styles.searchInput}
-              placeholder={t(
-                "buyPhone.areaCodePlaceholder",
-                "Area code (e.g., 415)"
-              )}
+              placeholder={t("getPhone.areaCodePlaceholder", "Area code")}
               placeholderTextColor={Colors.textLight}
               value={areaCode}
               onChangeText={setAreaCode}
@@ -81,10 +78,7 @@ export function PhoneSearchHeader({
             />
             <TextInput
               style={styles.searchInput}
-              placeholder={t(
-                "buyPhone.containsPlaceholder",
-                "Contains digits (optional)"
-              )}
+              placeholder={t("getPhone.containsPlaceholder", "Contains digits")}
               placeholderTextColor={Colors.textLight}
               value={contains}
               onChangeText={setContains}
@@ -102,9 +96,9 @@ export function PhoneSearchHeader({
             <ActivityIndicator size="small" color="#fff" />
           ) : (
             <>
-              <Ionicons name="search" size={20} color="#fff" />
+              <Ionicons name="funnel" size={20} color="#fff" />
               <Text style={styles.searchButtonText}>
-                {t("buyPhone.search", "Search Numbers")}
+                {t("getPhone.applyFilters", "Apply Filters")}
               </Text>
             </>
           )}
@@ -117,7 +111,7 @@ export function PhoneSearchHeader({
           <Ionicons name="alert-circle" size={24} color={Colors.error} />
           <Text style={styles.errorText}>
             {error?.error ||
-              t("buyPhone.searchError", "Error searching for numbers")}
+              t("getPhone.loadError", "Error loading phone numbers")}
           </Text>
         </View>
       )}
@@ -126,7 +120,7 @@ export function PhoneSearchHeader({
       {availableNumbersCount > 0 && (
         <View style={styles.listTitleContainer}>
           <Text style={styles.sectionTitle}>
-            {t("buyPhone.availableNumbers", "Available Numbers")} (
+            {t("getPhone.availableNumbers", "Available Numbers")} (
             {availableNumbersCount})
           </Text>
         </View>

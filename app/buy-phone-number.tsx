@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  TextInput,
   Modal,
 } from "react-native";
 import { Colors } from "../utils/colors";
@@ -15,9 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import { router } from "expo-router";
 import { apiClient } from "../utils/axios-interceptor";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAgent } from "../utils/AgentContext";
-import { useUser } from "../utils/UserContext";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAgentQuery, useUserQuery } from "../utils/hooks";
 import { PhoneSearchHeader } from "../components/PhoneSearchHeader";
 
 interface AvailableNumber {
@@ -34,8 +32,9 @@ interface AvailableNumber {
 
 export default function BuyPhoneNumberScreen() {
   const { t } = useTranslation();
-  const { agentConfig, refreshPhoneNumber } = useAgent();
-  const { isProOrAbove } = useUser();
+  const { data: agentConfig } = useAgentQuery();
+  const { isProOrAbove } = useUserQuery();
+  const queryClient = useQueryClient();
   const [areaCode, setAreaCode] = useState("");
   const [contains, setContains] = useState("");
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -81,7 +80,8 @@ export default function BuyPhoneNumberScreen() {
 
       return apiClient.post("phone-numbers/search-available/", payload);
     },
-    enabled: false, // Only fetch when user clicks search
+    enabled: isProOrAbove, // Auto-load when user has pro access
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
   const availableNumbers: AvailableNumber[] =
@@ -96,38 +96,46 @@ export default function BuyPhoneNumberScreen() {
       });
     },
     onSuccess: async () => {
+      // Invalidate and refetch all related queries
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["phoneNumbers"] }),
+        queryClient.invalidateQueries({ queryKey: ["agent"] }),
+        queryClient.invalidateQueries({ queryKey: ["userProfile"] }),
+      ]);
+
       Alert.alert(
-        t("buyPhone.success", "Success!"),
+        t("getPhone.success", "Success!"),
         t(
-          "buyPhone.purchaseSuccess",
-          "Phone number purchased and linked to your agent successfully!"
+          "getPhone.obtainSuccess",
+          "Phone number obtained and linked to your agent successfully!"
         ),
         [
           {
             text: t("common.ok", "OK"),
             onPress: () => {
-              refreshPhoneNumber();
-              router.back();
+              // Redirect to home after successful purchase
+              router.replace("/(tabs)/home");
             },
           },
         ]
       );
     },
     onError: (error: any) => {
-      Alert.alert(
-        t("buyPhone.error", "Error"),
+      const errorMessage =
+        error?.response?.data?.error ||
+        error?.message ||
         error?.error ||
-          t("buyPhone.purchaseError", "Failed to purchase phone number")
-      );
+        t("getPhone.obtainError", "Failed to obtain phone number");
+      Alert.alert(t("getPhone.error", "Error"), errorMessage);
     },
   });
 
   const handlePurchase = (phoneNumber: string) => {
     Alert.alert(
-      t("buyPhone.confirmTitle", "Confirm Purchase"),
+      t("getPhone.confirmTitle", "Confirm Selection"),
       t(
-        "buyPhone.confirmMessage",
-        `This number will cost $2.00. Are you sure you want to purchase ${phoneNumber}?`
+        "getPhone.confirmMessage",
+        `Are you sure you want to obtain ${phoneNumber} for your agent?`
       ),
       [
         {
@@ -135,7 +143,7 @@ export default function BuyPhoneNumberScreen() {
           style: "cancel",
         },
         {
-          text: t("buyPhone.purchase", "Purchase"),
+          text: t("getPhone.obtain", "Obtain Number"),
           style: "default",
           onPress: () => purchaseMutation.mutate(phoneNumber),
         },
@@ -200,9 +208,9 @@ export default function BuyPhoneNumberScreen() {
           <ActivityIndicator size="small" color="#fff" />
         ) : (
           <>
-            <Ionicons name="card" size={16} color="#fff" />
+            <Ionicons name="checkmark-circle" size={16} color="#fff" />
             <Text style={styles.buyButtonText}>
-              {t("buyPhone.buy", "$2.00")}
+              {t("getPhone.select", "Select")}
             </Text>
           </>
         )}
@@ -218,12 +226,12 @@ export default function BuyPhoneNumberScreen() {
       <View style={styles.emptyState}>
         <Ionicons name="call-outline" size={64} color={Colors.textLight} />
         <Text style={styles.emptyStateText}>
-          {t("buyPhone.noNumbers", "No numbers found")}
+          {t("getPhone.noNumbers", "No numbers found")}
         </Text>
         <Text style={styles.emptyStateSubtext}>
           {t(
-            "buyPhone.searchToFind",
-            "Use the search above to find available phone numbers"
+            "getPhone.filterToFind",
+            "Use the filters above to find specific phone numbers"
           )}
         </Text>
       </View>
@@ -238,7 +246,7 @@ export default function BuyPhoneNumberScreen() {
           <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          {t("buyPhone.title", "Buy Phone Number")}
+          {t("getPhone.title", "Get Phone Number")}
         </Text>
         <View style={{ width: 24 }} />
       </View>
@@ -291,12 +299,12 @@ export default function BuyPhoneNumberScreen() {
               </TouchableOpacity>
             </View>
             <Text style={styles.modalTitle}>
-              {t("buyPhone.infoTitle", "About Phone Numbers")}
+              {t("getPhone.infoTitle", "About Phone Numbers")}
             </Text>
             <Text style={styles.modalText}>
               {t(
-                "buyPhone.info",
-                "Purchase a phone number to enable calls and recordings with your AI agent. Each number costs $2.00."
+                "getPhone.info",
+                "Select a phone number to enable calls and recordings with your AI agent. Phone numbers are included with your Pro subscription."
               )}
             </Text>
             <TouchableOpacity

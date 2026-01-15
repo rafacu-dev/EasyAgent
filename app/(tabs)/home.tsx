@@ -12,7 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useMemo, useState } from "react";
 import { Colors } from "../../utils/colors";
 import { router } from "expo-router";
-import { useAgent } from "../../utils/AgentContext";
+import { useAgentQuery, useAgentPhoneNumber } from "../../utils/hooks";
 import { apiClient } from "../../utils/axios-interceptor";
 import { useQuery } from "@tanstack/react-query";
 import { getLastLogin } from "../../utils/storage";
@@ -31,7 +31,10 @@ import { formatDuration, formatDateWithWeekday } from "../../utils/formatters";
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
-  const { agentConfig, phoneNumber } = useAgent();
+  const { data: agentConfig, isLoading: isLoadingAgent } = useAgentQuery();
+  const { phoneNumber, isLoading: isLoadingPhone } = useAgentPhoneNumber(
+    agentConfig?.id
+  );
   const [callTypeFilter, setCallTypeFilter] = useState<
     "all" | "inbound" | "outbound"
   >("all");
@@ -566,6 +569,22 @@ export default function HomeScreen() {
       )}
     </>
   );
+
+  // Loading state - wait for both agent config and phone number
+  if (isLoadingAgent || isLoadingPhone || !agentConfig) {
+    return (
+      <View style={styles.container}>
+        <ListHeaderComponent />
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <Text style={{ color: Colors.textSecondary }}>
+            {t("home.loading", "Loading...")}
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   // No phone number view
   if (!phoneNumber) {

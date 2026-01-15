@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 import { Colors } from "../utils/colors";
-import { useUser } from "../utils/UserContext";
+import { useUserQuery } from "../utils/hooks";
 
 interface NoPhoneNumberProps {
   variant?: "simple" | "detailed";
@@ -15,7 +15,7 @@ export default function NoPhoneNumber({
   translationPrefix = "home",
 }: NoPhoneNumberProps) {
   const { t } = useTranslation();
-  const { isProOrAbove } = useUser();
+  const { isProOrAbove } = useUserQuery();
 
   const handleBuyPhoneNumber = () => {
     if (!isProOrAbove) {
@@ -102,13 +102,9 @@ export default function NoPhoneNumber({
         >
           <Ionicons name="add-circle" size={20} color="#fff" />
           <Text style={styles.buyButtonText}>
-            {t(`${translationPrefix}.buyPhoneNumber`, "Buy Phone Number")}
+            {t(`${translationPrefix}.getPhoneNumber`, "Get Phone Number")}
           </Text>
         </TouchableOpacity>
-
-        <Text style={styles.pricingText}>
-          {t(`${translationPrefix}.pricingInfo`, "Starting at $2.00/month")}
-        </Text>
       </View>
     );
   }
@@ -132,7 +128,7 @@ export default function NoPhoneNumber({
       >
         <Ionicons name="add-circle" size={20} color="#fff" />
         <Text style={styles.buyButtonTextSimple}>
-          {t(`${translationPrefix}.buyPhoneNumber`, "Buy Phone Number")}
+          {t(`${translationPrefix}.getPhoneNumber`, "Get Phone Number")}
         </Text>
       </TouchableOpacity>
     </View>

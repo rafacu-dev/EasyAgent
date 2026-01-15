@@ -3,14 +3,14 @@ import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import FirstLoginView from "../components/FirstLoginView";
-import { useAgent } from "@/utils/AgentContext";
+import { useAgentQuery } from "@/utils/hooks";
 import { useTranslation } from "react-i18next";
 import { Colors } from "@/utils/colors";
 
 export default function Index() {
   const { t } = useTranslation();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const { agentConfig, isLoading: agentLoading } = useAgent();
+  const { data: agentConfig, isLoading: agentLoading } = useAgentQuery();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -44,7 +44,7 @@ export default function Index() {
     );
   }
 
-  // Wait for agent loading (AgentContext handles API fetch if no cache)
+  // Wait for agent loading (React Query handles API fetch and caching)
   if (agentLoading) {
     return (
       <View style={styles.container}>

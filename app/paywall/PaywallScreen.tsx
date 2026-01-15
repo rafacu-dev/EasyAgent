@@ -71,9 +71,11 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
       try {
         getOfferings();
       } catch (error) {
-        Alert.alert("Initialization Error", JSON.stringify(error), [
-          { text: "OK", onPress: () => onClose() },
-        ]);
+        Alert.alert(
+          t("paywall.initializationError", "Initialization Error"),
+          JSON.stringify(error),
+          [{ text: t("paywall.ok", "OK"), onPress: () => onClose() }]
+        );
         setLoading(false);
       }
     };
