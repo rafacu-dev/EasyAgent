@@ -13,8 +13,12 @@ import {
 import { Colors } from "../../utils/colors";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
-import { useAgentQuery, useAgentPhoneNumber } from "../../utils/hooks";
+import { useState, useCallback } from "react";
+import {
+  useAgentQuery,
+  useAgentPhoneNumber,
+  useVoiceCall,
+} from "../../utils/hooks";
 import NoPhoneNumber from "../../components/NoPhoneNumber";
 import { apiClient } from "../../utils/axios-interceptor";
 import { formatPhoneNumber } from "../../utils/formatters";
@@ -34,9 +38,31 @@ export default function PhoneScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
 
-  const handleDigitPress = (digit: string) => {
-    setPhoneNumberInput((prev) => prev + digit);
-  };
+  // Voice SDK hook for direct calls
+  const {
+    isSDKAvailable,
+    callState,
+    formattedDuration,
+    makeCall,
+    hangUp,
+    toggleMute,
+    toggleHold,
+    sendDigits,
+  } = useVoiceCall({
+    fromNumber: phoneNumber || null,
+  });
+
+  const handleDigitPress = useCallback(
+    (digit: string) => {
+      // If in a call, send DTMF digit
+      if (callState.isConnected) {
+        sendDigits(digit);
+      } else {
+        setPhoneNumberInput((prev) => prev + digit);
+      }
+    },
+    [callState.isConnected, sendDigits]
+  );
 
   const handleBackspace = () => {
     setPhoneNumberInput((prev) => prev.slice(0, -1));
@@ -176,19 +202,26 @@ export default function PhoneScreen() {
                     "AI agent call initiated successfully"
                   )
                 );
+                setPhoneNumberInput("");
+                setCallPrompt("");
               } else {
-                // Direct call via call forwarding
-                await apiClient.post("calls/forward/initiate/", {
-                  from_number: phoneNumber,
-                  destination_number: formattedInput,
-                });
-                Alert.alert(
-                  t("phone.success", "Success"),
-                  t("phone.directCallInitiated", "Connecting your call...")
-                );
+                // Direct call via Voice SDK
+                if (isSDKAvailable) {
+                  const success = await makeCall(formattedInput);
+                  if (success) {
+                    // Don't clear inputs yet - show in-call UI
+                  }
+                } else {
+                  // Fallback: Voice SDK not available
+                  Alert.alert(
+                    t("phone.sdkNotAvailable", "Voice Calling Unavailable"),
+                    t(
+                      "phone.sdkNotAvailableMessage",
+                      "Direct calling requires native modules. Please use AI Agent mode or rebuild the app with native support."
+                    )
+                  );
+                }
               }
-              setPhoneNumberInput("");
-              setCallPrompt("");
             } catch (error: any) {
               Alert.alert(
                 t("phone.error", "Error"),
@@ -221,272 +254,361 @@ export default function PhoneScreen() {
     );
   }
 
-  // Main phone UI
-  return (
+  // In-Call UI - show when call is connecting or connected
+  if (callState.isConnecting || callState.isConnected) {
+    return (
       <View style={styles.container}>
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={{ flexGrow: 0 }}
-        >
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>{t("phone.title", "Phone")}</Text>
-          </View>
-
-          {/* Call Mode Switch */}
-          <View style={styles.switchContainer}>
-            <View style={styles.switchLabelRow}>
-              <Text style={styles.switchLabel}>
-                {isAgentMode
-                  ? t("phone.agentMode", "AI Agent Call")
-                  : t("phone.manualMode", "Direct Call")}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setShowInfoModal(true)}
-                style={styles.infoButton}
-              >
-                <Ionicons
-                  name="information-circle-outline"
-                  size={20}
-                  color={Colors.primary}
-                />
-              </TouchableOpacity>
-            </View>
-            <Switch
-              value={isAgentMode}
-              onValueChange={setIsAgentMode}
-              trackColor={{ false: Colors.borderLight, true: Colors.primary }}
-              thumbColor="#fff"
-              style={{
-                width: 40,
-                height: 20,
-                transform: [{ scaleX: 0.9 }, { scaleY: 0.8 }],
-              }}
-            />
-          </View>
-
-          {/* Agent Prompt Input (conditional) */}
-          {isAgentMode && (
-            <View style={styles.promptContainer}>
-              <View style={styles.promptHeaderRow}>
-                <Text style={styles.promptLabel}>
-                  {t("phone.agentInstructions", "Instructions for AI Agent")}
-                </Text>
-                <TouchableOpacity
-                  style={[
-                    styles.microphoneButton,
-                    isRecording && styles.microphoneButtonActive,
-                  ]}
-                  onPress={toggleRecording}
-                >
-                  <Ionicons
-                    name={isRecording ? "stop-circle" : "mic"}
-                    size={20}
-                    color={isRecording ? "#fff" : Colors.primary}
-                  />
-                </TouchableOpacity>
-              </View>
-              <TextInput
-                style={styles.promptInput}
-                placeholder={t(
-                  "phone.promptPlaceholder",
-                  "E.g., Schedule an appointment for next week..."
-                )}
-                placeholderTextColor={Colors.textLight}
-                value={callPrompt}
-                onChangeText={setCallPrompt}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
-              {isRecording && (
-                <Text style={styles.recordingIndicator}>
-                  {t("phone.recording", "🔴 Recording...")}
-                </Text>
-              )}
-            </View>
-          )}
-
-          {/* Phone Number Display */}
-          <View style={styles.displayContainer}>
-            {phoneNumberInput.length === 0 && (
-              <Text style={styles.placeholderText}>
-                {t("phone.enterNumber", "Enter Phone Number")}
-              </Text>
+        <View style={styles.inCallContainer}>
+          {/* Call Status */}
+          <View style={styles.inCallHeader}>
+            <Text style={styles.inCallStatus}>
+              {callState.isConnecting
+                ? t("phone.connecting", "Connecting...")
+                : t("phone.inCall", "In Call")}
+            </Text>
+            <Text style={styles.inCallNumber}>
+              {callState.remoteParty || phoneNumberInput}
+            </Text>
+            {callState.isConnected && (
+              <Text style={styles.inCallDuration}>{formattedDuration}</Text>
             )}
-            <TextInput
+          </View>
+
+          {/* Call Controls */}
+          <View style={styles.inCallControls}>
+            <TouchableOpacity
               style={[
-                styles.displayText,
-                phoneNumberInput.length === 0 && styles.displayTextEmpty,
+                styles.inCallButton,
+                callState.isMuted && styles.inCallButtonActive,
               ]}
-              value={phoneNumberInput}
-              onChangeText={setPhoneNumberInput}
-              placeholder=""
-              placeholderTextColor={Colors.textLight}
-              keyboardType="phone-pad"
-              selectTextOnFocus
-              maxLength={20}
-              autoCorrect={false}
-              autoCapitalize="none"
-              textAlign="center"
-              returnKeyType="done"
-            />
-            {phoneNumberInput.length > 0 && (
-              <TouchableOpacity
-                onPress={handleClear}
-                style={styles.clearButton}
-              >
-                <Ionicons name="close-circle" size={24} color={Colors.error} />
-              </TouchableOpacity>
-            )}
-          </View>
-        </ScrollView>
-
-        {/* Custom Dial Pad */}
-        <View style={styles.dialPad}>
-          <View style={styles.dialRow}>
-            {["1", "2", "3"].map((digit) => (
-              <TouchableOpacity
-                key={digit}
-                style={styles.dialButton}
-                onPress={() => handleDigitPress(digit)}
-              >
-                <Text style={styles.dialButtonText}>{digit}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View style={styles.dialRow}>
-            {["4", "5", "6"].map((digit) => (
-              <TouchableOpacity
-                key={digit}
-                style={styles.dialButton}
-                onPress={() => handleDigitPress(digit)}
-              >
-                <Text style={styles.dialButtonText}>{digit}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View style={styles.dialRow}>
-            {["7", "8", "9"].map((digit) => (
-              <TouchableOpacity
-                key={digit}
-                style={styles.dialButton}
-                onPress={() => handleDigitPress(digit)}
-              >
-                <Text style={styles.dialButtonText}>{digit}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View style={styles.dialRow}>
-            <TouchableOpacity
-              style={styles.dialButton}
-              onPress={() => handleDigitPress("*")}
-            >
-              <Text style={styles.dialButtonText}>*</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.dialButton}
-              onPress={() => handleDigitPress("0")}
-            >
-              <Text style={styles.dialButtonText}>0</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.dialButton}
-              onPress={() => handleDigitPress("#")}
-            >
-              <Text style={styles.dialButtonText}>#</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.dialRow}>
-            <TouchableOpacity
-              style={styles.dialButton}
-              onPress={() => handleDigitPress("+")}
-            >
-              <Text style={styles.dialButtonText}>+</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.dialButton, styles.callButtonDial]}
-              onPress={handleMakeCall}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Ionicons name="call" size={28} color="#fff" />
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.dialButton}
-              onPress={handleBackspace}
+              onPress={toggleMute}
+              disabled={!callState.isConnected}
             >
               <Ionicons
-                name="backspace-outline"
-                size={24}
-                color={Colors.textPrimary}
+                name={callState.isMuted ? "mic-off" : "mic"}
+                size={28}
+                color={callState.isMuted ? "#fff" : Colors.textPrimary}
+              />
+              <Text
+                style={[
+                  styles.inCallButtonLabel,
+                  callState.isMuted && styles.inCallButtonLabelActive,
+                ]}
+              >
+                {t("phone.mute", "Mute")}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.inCallButton,
+                callState.isOnHold && styles.inCallButtonActive,
+              ]}
+              onPress={toggleHold}
+              disabled={!callState.isConnected}
+            >
+              <Ionicons
+                name={callState.isOnHold ? "play" : "pause"}
+                size={28}
+                color={callState.isOnHold ? "#fff" : Colors.textPrimary}
+              />
+              <Text
+                style={[
+                  styles.inCallButtonLabel,
+                  callState.isOnHold && styles.inCallButtonLabelActive,
+                ]}
+              >
+                {t("phone.hold", "Hold")}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.inCallButton}
+              onPress={() => {
+                // Toggle dialpad for DTMF
+                Alert.alert(
+                  t("phone.dialpad", "Dialpad"),
+                  t("phone.dialpadInfo", "Use the dialpad to send DTMF tones")
+                );
+              }}
+              disabled={!callState.isConnected}
+            >
+              <Ionicons name="keypad" size={28} color={Colors.textPrimary} />
+              <Text style={styles.inCallButtonLabel}>
+                {t("phone.keypad", "Keypad")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Hang Up Button */}
+          <TouchableOpacity style={styles.hangUpButton} onPress={hangUp}>
+            <Ionicons name="call" size={32} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Main phone UI
+  return (
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={{ flexGrow: 0 }}
+      >
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>{t("phone.title", "Phone")}</Text>
+        </View>
+
+        {/* Call Mode Switch */}
+        <View style={styles.switchContainer}>
+          <View style={styles.switchLabelRow}>
+            <Text style={styles.switchLabel}>
+              {isAgentMode
+                ? t("phone.agentMode", "AI Agent Call")
+                : t("phone.manualMode", "Direct Call")}
+            </Text>
+            <TouchableOpacity
+              onPress={() => setShowInfoModal(true)}
+              style={styles.infoButton}
+            >
+              <Ionicons
+                name="information-circle-outline"
+                size={20}
+                color={Colors.primary}
               />
             </TouchableOpacity>
           </View>
+          <Switch
+            value={isAgentMode}
+            onValueChange={setIsAgentMode}
+            trackColor={{ false: Colors.borderLight, true: Colors.primary }}
+            thumbColor="#fff"
+            style={{
+              width: 40,
+              height: 20,
+              transform: [{ scaleX: 0.9 }, { scaleY: 0.8 }],
+            }}
+          />
         </View>
 
-        {/* Info Modal */}
-        <Modal
-          visible={showInfoModal}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShowInfoModal(false)}
-        >
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setShowInfoModal(false)}
-          >
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Ionicons
-                  name="information-circle"
-                  size={32}
-                  color={Colors.primary}
-                />
-                <Text style={styles.modalTitle}>
-                  {t("phone.infoTitle", "Call Modes")}
-                </Text>
-              </View>
-              <View style={styles.modalBody}>
-                <View style={styles.infoSection}>
-                  <Text style={styles.infoSectionTitle}>
-                    {t("phone.agentMode", "AI Agent Call")}
-                  </Text>
-                  <Text style={styles.infoSectionText}>
-                    {t(
-                      "phone.agentModeInfo",
-                      "Your AI agent will make the call and follow the instructions you provide. Perfect for automated appointment scheduling, customer follow-ups, and more."
-                    )}
-                  </Text>
-                </View>
-                <View style={styles.infoSection}>
-                  <Text style={styles.infoSectionTitle}>
-                    {t("phone.manualMode", "Direct Call")}
-                  </Text>
-                  <Text style={styles.infoSectionText}>
-                    {t(
-                      "phone.manualModeInfo",
-                      "Make a direct call where you speak personally using your configured phone number."
-                    )}
-                  </Text>
-                </View>
-              </View>
+        {/* Agent Prompt Input (conditional) */}
+        {isAgentMode && (
+          <View style={styles.promptContainer}>
+            <View style={styles.promptHeaderRow}>
+              <Text style={styles.promptLabel}>
+                {t("phone.agentInstructions", "Instructions for AI Agent")}
+              </Text>
               <TouchableOpacity
-                style={styles.modalCloseButton}
-                onPress={() => setShowInfoModal(false)}
+                style={[
+                  styles.microphoneButton,
+                  isRecording && styles.microphoneButtonActive,
+                ]}
+                onPress={toggleRecording}
               >
-                <Text style={styles.modalCloseButtonText}>
-                  {t("phone.modalClose", "Close")}
-                </Text>
+                <Ionicons
+                  name={isRecording ? "stop-circle" : "mic"}
+                  size={20}
+                  color={isRecording ? "#fff" : Colors.primary}
+                />
               </TouchableOpacity>
             </View>
+            <TextInput
+              style={styles.promptInput}
+              placeholder={t(
+                "phone.promptPlaceholder",
+                "E.g., Schedule an appointment for next week..."
+              )}
+              placeholderTextColor={Colors.textLight}
+              value={callPrompt}
+              onChangeText={setCallPrompt}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+            {isRecording && (
+              <Text style={styles.recordingIndicator}>
+                {t("phone.recording", "🔴 Recording...")}
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* Phone Number Display */}
+        <View style={styles.displayContainer}>
+          {phoneNumberInput.length === 0 && (
+            <Text style={styles.placeholderText}>
+              {t("phone.enterNumber", "Enter Phone Number")}
+            </Text>
+          )}
+          <TextInput
+            style={[
+              styles.displayText,
+              phoneNumberInput.length === 0 && styles.displayTextEmpty,
+            ]}
+            value={phoneNumberInput}
+            onChangeText={setPhoneNumberInput}
+            placeholder=""
+            placeholderTextColor={Colors.textLight}
+            keyboardType="phone-pad"
+            selectTextOnFocus
+            maxLength={20}
+            autoCorrect={false}
+            autoCapitalize="none"
+            textAlign="center"
+            returnKeyType="done"
+          />
+          {phoneNumberInput.length > 0 && (
+            <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
+              <Ionicons name="close-circle" size={24} color={Colors.error} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Custom Dial Pad */}
+      <View style={styles.dialPad}>
+        <View style={styles.dialRow}>
+          {["1", "2", "3"].map((digit) => (
+            <TouchableOpacity
+              key={digit}
+              style={styles.dialButton}
+              onPress={() => handleDigitPress(digit)}
+            >
+              <Text style={styles.dialButtonText}>{digit}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={styles.dialRow}>
+          {["4", "5", "6"].map((digit) => (
+            <TouchableOpacity
+              key={digit}
+              style={styles.dialButton}
+              onPress={() => handleDigitPress(digit)}
+            >
+              <Text style={styles.dialButtonText}>{digit}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={styles.dialRow}>
+          {["7", "8", "9"].map((digit) => (
+            <TouchableOpacity
+              key={digit}
+              style={styles.dialButton}
+              onPress={() => handleDigitPress(digit)}
+            >
+              <Text style={styles.dialButtonText}>{digit}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={styles.dialRow}>
+          <TouchableOpacity
+            style={styles.dialButton}
+            onPress={() => handleDigitPress("*")}
+          >
+            <Text style={styles.dialButtonText}>*</Text>
           </TouchableOpacity>
-        </Modal>
+          <TouchableOpacity
+            style={styles.dialButton}
+            onPress={() => handleDigitPress("0")}
+          >
+            <Text style={styles.dialButtonText}>0</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dialButton}
+            onPress={() => handleDigitPress("#")}
+          >
+            <Text style={styles.dialButtonText}>#</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.dialRow}>
+          <TouchableOpacity
+            style={styles.dialButton}
+            onPress={() => handleDigitPress("+")}
+          >
+            <Text style={styles.dialButtonText}>+</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.dialButton, styles.callButtonDial]}
+            onPress={handleMakeCall}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="call" size={28} color="#fff" />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.dialButton} onPress={handleBackspace}>
+            <Ionicons
+              name="backspace-outline"
+              size={24}
+              color={Colors.textPrimary}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
-    );
+
+      {/* Info Modal */}
+      <Modal
+        visible={showInfoModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowInfoModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowInfoModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Ionicons
+                name="information-circle"
+                size={32}
+                color={Colors.primary}
+              />
+              <Text style={styles.modalTitle}>
+                {t("phone.infoTitle", "Call Modes")}
+              </Text>
+            </View>
+            <View style={styles.modalBody}>
+              <View style={styles.infoSection}>
+                <Text style={styles.infoSectionTitle}>
+                  {t("phone.agentMode", "AI Agent Call")}
+                </Text>
+                <Text style={styles.infoSectionText}>
+                  {t(
+                    "phone.agentModeInfo",
+                    "Your AI agent will make the call and follow the instructions you provide. Perfect for automated appointment scheduling, customer follow-ups, and more."
+                  )}
+                </Text>
+              </View>
+              <View style={styles.infoSection}>
+                <Text style={styles.infoSectionTitle}>
+                  {t("phone.manualMode", "Direct Call")}
+                </Text>
+                <Text style={styles.infoSectionText}>
+                  {t(
+                    "phone.manualModeInfo",
+                    "Make a direct call where you speak personally using your configured phone number."
+                  )}
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowInfoModal(false)}
+            >
+              <Text style={styles.modalCloseButtonText}>
+                {t("phone.modalClose", "Close")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -718,5 +840,79 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#fff",
+  },
+  // In-Call UI Styles
+  inCallContainer: {
+    flex: 1,
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 60,
+    paddingHorizontal: 24,
+    backgroundColor: Colors.background,
+  },
+  inCallHeader: {
+    alignItems: "center",
+    gap: 8,
+  },
+  inCallStatus: {
+    fontSize: 16,
+    color: Colors.textSecondary,
+    fontWeight: "500",
+  },
+  inCallNumber: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: Colors.textPrimary,
+    marginTop: 8,
+  },
+  inCallDuration: {
+    fontSize: 20,
+    color: Colors.primary,
+    fontWeight: "600",
+    marginTop: 16,
+  },
+  inCallControls: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    width: "100%",
+    paddingHorizontal: 16,
+  },
+  inCallButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#fff",
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  inCallButtonActive: {
+    backgroundColor: Colors.primary,
+  },
+  inCallButtonLabel: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 4,
+  },
+  inCallButtonLabelActive: {
+    color: "#fff",
+  },
+  hangUpButton: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.error,
+    justifyContent: "center",
+    alignItems: "center",
+    transform: [{ rotate: "135deg" }],
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
 });
