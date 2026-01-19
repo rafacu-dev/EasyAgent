@@ -2,7 +2,7 @@
   "expo": {
     "name": "EasyAgent",
     "slug": "EasyAgent",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "easyagent",
@@ -13,10 +13,7 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "EasyAgent needs microphone access to make voice calls",
-        "UIBackgroundModes": [
-          "audio",
-          "voip"
-        ]
+        "UIBackgroundModes": ["audio", "voip", "audio", "voip"]
       },
       "entitlements": {
         "aps-environment": "development"
@@ -33,6 +30,8 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
@@ -70,6 +69,14 @@
       "eas": {
         "projectId": "5a7204d1-9095-4611-8382-fa10bcee4403"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/5a7204d1-9095-4611-8382-fa10bcee4403",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
     }
   }
 }

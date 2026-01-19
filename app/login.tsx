@@ -14,6 +14,7 @@ import { router } from "expo-router";
 import { Colors } from "../utils/colors";
 import { apiClient } from "@/utils/axios-interceptor";
 import { Ionicons } from "@expo/vector-icons";
+import { BaseUrl } from "@/utils/constants";
 
 export default function LoginScreen() {
   const { t } = useTranslation();

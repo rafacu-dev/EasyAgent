@@ -13,11 +13,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { clearStorage, clearAuthData } from "../../utils/storage";
 import { router } from "expo-router";
-import { useAgentQuery } from "@/utils/hooks";
+import { useAgentQuery, useAgentPhoneNumber } from "@/utils/hooks";
 
 export default function SettingsScreen() {
   const { t, i18n } = useTranslation();
   const { data: agentConfig } = useAgentQuery();
+  const { phoneNumber } = useAgentPhoneNumber(agentConfig?.id);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
@@ -105,6 +106,12 @@ export default function SettingsScreen() {
                 <Text style={styles.agentCompany}>
                   {agentConfig?.companyName || t("settings.company", "Company")}
                 </Text>
+                {phoneNumber && (
+                  <View style={styles.agentPhoneRow}>
+                    <Ionicons name="call" size={14} color={Colors.primary} />
+                    <Text style={styles.agentPhone}>{phoneNumber}</Text>
+                  </View>
+                )}
               </View>
             </View>
           </View>
@@ -116,6 +123,17 @@ export default function SettingsScreen() {
             <Ionicons name="settings-outline" size={24} color="#666" />
             <Text style={styles.settingItemText}>
               {t("settings.editAgent", "Edit Agent Settings")}
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color="#ccc" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => router.push("/call-forwarding" as any)}
+          >
+            <Ionicons name="git-branch-outline" size={24} color="#666" />
+            <Text style={styles.settingItemText}>
+              {t("settings.callForwarding", "Call Forwarding")}
             </Text>
             <Ionicons name="chevron-forward" size={20} color="#ccc" />
           </TouchableOpacity>
@@ -323,6 +341,17 @@ const styles = StyleSheet.create({
   agentCompany: {
     fontSize: 14,
     color: Colors.textSecondary,
+  },
+  agentPhoneRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6,
+    gap: 6,
+  },
+  agentPhone: {
+    fontSize: 13,
+    color: Colors.primary,
+    fontWeight: "600",
   },
   settingItem: {
     backgroundColor: Colors.cardBackground,

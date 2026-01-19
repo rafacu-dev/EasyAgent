@@ -1,0 +1,656 @@
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import { Colors } from "../utils/colors";
+import { useTranslation } from "react-i18next";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useAgentQuery, usePhoneNumbersQuery } from "@/utils/hooks";
+import * as Clipboard from "expo-clipboard";
+import { US_CARRIERS } from "../utils/constants";
+import type { USCarrier } from "../utils/types.d";
+
+interface CarrierCardProps {
+  carrier: USCarrier;
+  twilioNumber: string;
+  onCopy: (code: string, label: string) => void;
+  t: ReturnType<typeof useTranslation>["t"];
+  expanded: boolean;
+  onToggle: () => void;
+}
+
+function CarrierCard({
+  carrier,
+  twilioNumber,
+  onCopy,
+  t,
+  expanded,
+  onToggle,
+}: CarrierCardProps) {
+  const formatCode = (code: string) => {
+    const cleanNumber = twilioNumber.replace(/\D/g, "");
+    return code.replace("{number}", cleanNumber);
+  };
+
+  return (
+    <View style={styles.carrierCard}>
+      <TouchableOpacity style={styles.carrierHeader} onPress={onToggle}>
+        <View style={styles.carrierInfo}>
+          <Text style={styles.carrierLogo}>{carrier.logo}</Text>
+          <Text style={styles.carrierName}>{carrier.name}</Text>
+        </View>
+        <Ionicons
+          name={expanded ? "chevron-up" : "chevron-down"}
+          size={20}
+          color={Colors.textSecondary}
+        />
+      </TouchableOpacity>
+
+      {expanded && (
+        <View style={styles.carrierContent}>
+          {/* Activate All Calls */}
+          <View style={styles.codeSection}>
+            <Text style={styles.codeLabel}>
+              {t("callForwarding.forwardAll", "Forward All Calls")}
+            </Text>
+            <TouchableOpacity
+              style={styles.codeContainer}
+              onPress={() =>
+                onCopy(
+                  formatCode(carrier.activateAll),
+                  t("callForwarding.forwardAll", "Forward All Calls")
+                )
+              }
+            >
+              <Text style={styles.codeText}>
+                {formatCode(carrier.activateAll)}
+              </Text>
+              <Ionicons name="copy-outline" size={18} color={Colors.primary} />
+            </TouchableOpacity>
+            <Text style={styles.codeHint}>
+              {t(
+                "callForwarding.forwardAllHint",
+                "Dial this code to forward all incoming calls"
+              )}
+            </Text>
+          </View>
+
+          {/* Deactivate */}
+          <View style={styles.codeSection}>
+            <Text style={styles.codeLabel}>
+              {t("callForwarding.deactivate", "Deactivate Forwarding")}
+            </Text>
+            <TouchableOpacity
+              style={styles.codeContainer}
+              onPress={() =>
+                onCopy(
+                  carrier.deactivate,
+                  t("callForwarding.deactivate", "Deactivate Forwarding")
+                )
+              }
+            >
+              <Text style={styles.codeText}>{carrier.deactivate}</Text>
+              <Ionicons name="copy-outline" size={18} color={Colors.primary} />
+            </TouchableOpacity>
+            <Text style={styles.codeHint}>
+              {t(
+                "callForwarding.deactivateHint",
+                "Dial this code to stop call forwarding"
+              )}
+            </Text>
+          </View>
+
+          {/* Forward on No Answer */}
+          <View style={styles.codeSection}>
+            <Text style={styles.codeLabel}>
+              {t("callForwarding.noAnswer", "Forward When No Answer")}
+            </Text>
+            <TouchableOpacity
+              style={styles.codeContainer}
+              onPress={() =>
+                onCopy(
+                  formatCode(carrier.activateNoAnswer),
+                  t("callForwarding.noAnswer", "Forward When No Answer")
+                )
+              }
+            >
+              <Text style={styles.codeText}>
+                {formatCode(carrier.activateNoAnswer)}
+              </Text>
+              <Ionicons name="copy-outline" size={18} color={Colors.primary} />
+            </TouchableOpacity>
+            <Text style={styles.codeHint}>
+              {t(
+                "callForwarding.noAnswerHint",
+                "Forward calls only when you don't answer"
+              )}
+            </Text>
+          </View>
+
+          {/* Forward on Busy */}
+          <View style={styles.codeSection}>
+            <Text style={styles.codeLabel}>
+              {t("callForwarding.busy", "Forward When Busy")}
+            </Text>
+            <TouchableOpacity
+              style={styles.codeContainer}
+              onPress={() =>
+                onCopy(
+                  formatCode(carrier.activateBusy),
+                  t("callForwarding.busy", "Forward When Busy")
+                )
+              }
+            >
+              <Text style={styles.codeText}>
+                {formatCode(carrier.activateBusy)}
+              </Text>
+              <Ionicons name="copy-outline" size={18} color={Colors.primary} />
+            </TouchableOpacity>
+            <Text style={styles.codeHint}>
+              {t(
+                "callForwarding.busyHint",
+                "Forward calls only when your line is busy"
+              )}
+            </Text>
+          </View>
+
+          {/* Carrier Notes */}
+          <View style={styles.notesSection}>
+            <Ionicons
+              name="information-circle-outline"
+              size={16}
+              color={Colors.textSecondary}
+            />
+            <Text style={styles.notesText}>
+              {t(
+                carrier.notes,
+                "Dial these codes from your phone's dialer app. Some carriers may require calling customer service to enable call forwarding."
+              )}
+            </Text>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
+export default function CallForwardingScreen() {
+  const { t } = useTranslation();
+  const { data: agentConfig } = useAgentQuery();
+  const { data: phoneNumbers } = usePhoneNumbersQuery();
+
+  // Get the phone number associated with the agent
+  const phoneNumberData = phoneNumbers?.find(
+    (pn) => pn.agent === Number(agentConfig?.id)
+  );
+  const twilioNumber = phoneNumberData?.phone_number || "";
+
+  const [expandedCarrier, setExpandedCarrier] = React.useState<string | null>(
+    null
+  );
+
+  const handleCopy = async (code: string, label: string) => {
+    await Clipboard.setStringAsync(code);
+    Alert.alert(
+      t("common.success", "Success"),
+      t("callForwarding.codeCopied", "{{label}} code copied to clipboard", {
+        label,
+      })
+    );
+  };
+
+  const copyTwilioNumber = async () => {
+    await Clipboard.setStringAsync(twilioNumber);
+    Alert.alert(
+      t("common.success", "Success"),
+      t("callForwarding.numberCopied", "Phone number copied to clipboard")
+    );
+  };
+
+  if (!twilioNumber) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {t("callForwarding.title", "Call Forwarding")}
+          </Text>
+        </View>
+        <View style={styles.noPhoneContainer}>
+          <Ionicons
+            name="call-outline"
+            size={64}
+            color={Colors.textSecondary}
+          />
+          <Text style={styles.noPhoneTitle}>
+            {t("callForwarding.noPhoneTitle", "No Phone Number")}
+          </Text>
+          <Text style={styles.noPhoneMessage}>
+            {t(
+              "callForwarding.noPhoneMessage",
+              "You need a phone number to set up call forwarding"
+            )}
+          </Text>
+          <TouchableOpacity
+            style={styles.getPhoneButton}
+            onPress={() => router.push("/buy-phone-number")}
+          >
+            <Text style={styles.getPhoneButtonText}>
+              {t("callForwarding.getPhoneNumber", "Get Phone Number")}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>
+          {t("callForwarding.title", "Call Forwarding")}
+        </Text>
+      </View>
+
+      <ScrollView style={styles.scrollView}>
+        {/* Info Banner */}
+        <View style={styles.infoBanner}>
+          <Ionicons
+            name="information-circle"
+            size={24}
+            color={Colors.primary}
+          />
+          <Text style={styles.infoBannerText}>
+            {t(
+              "callForwarding.infoBanner",
+              "Forward calls from your personal phone to your AI agent. When someone calls your personal number, the call will be handled by your AI agent."
+            )}
+          </Text>
+        </View>
+
+        {/* Your Twilio Number */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            {t("callForwarding.yourAgentNumber", "Your AI Agent Number")}
+          </Text>
+          <TouchableOpacity
+            style={styles.numberCard}
+            onPress={copyTwilioNumber}
+          >
+            <View style={styles.numberInfo}>
+              <Ionicons name="call" size={24} color={Colors.primary} />
+              <Text style={styles.numberText}>{twilioNumber}</Text>
+            </View>
+            <Ionicons name="copy-outline" size={20} color={Colors.primary} />
+          </TouchableOpacity>
+          <Text style={styles.sectionHint}>
+            {t(
+              "callForwarding.numberHint",
+              "This is the number you'll forward calls to"
+            )}
+          </Text>
+        </View>
+
+        {/* How it works */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            {t("callForwarding.howItWorks", "How It Works")}
+          </Text>
+          <View style={styles.stepsCard}>
+            <View style={styles.step}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>1</Text>
+              </View>
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>
+                  {t("callForwarding.step1Title", "Find Your Carrier")}
+                </Text>
+                <Text style={styles.stepDescription}>
+                  {t(
+                    "callForwarding.step1Description",
+                    "Select your mobile carrier from the list below"
+                  )}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.step}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>2</Text>
+              </View>
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>
+                  {t("callForwarding.step2Title", "Dial the Code")}
+                </Text>
+                <Text style={styles.stepDescription}>
+                  {t(
+                    "callForwarding.step2Description",
+                    "Open your phone's dialer and dial the forwarding code"
+                  )}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.step}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>3</Text>
+              </View>
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>
+                  {t("callForwarding.step3Title", "Confirm Activation")}
+                </Text>
+                <Text style={styles.stepDescription}>
+                  {t(
+                    "callForwarding.step3Description",
+                    "You'll hear a confirmation tone or receive a message"
+                  )}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Carrier Instructions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            {t("callForwarding.selectCarrier", "Select Your Carrier")}
+          </Text>
+          {US_CARRIERS.map((carrier) => (
+            <CarrierCard
+              key={carrier.id}
+              carrier={carrier}
+              twilioNumber={twilioNumber}
+              onCopy={handleCopy}
+              t={t}
+              expanded={expandedCarrier === carrier.id}
+              onToggle={() =>
+                setExpandedCarrier(
+                  expandedCarrier === carrier.id ? null : carrier.id
+                )
+              }
+            />
+          ))}
+        </View>
+
+        {/* Need Help */}
+        <View style={styles.helpSection}>
+          <Ionicons
+            name="help-circle-outline"
+            size={24}
+            color={Colors.textSecondary}
+          />
+          <Text style={styles.helpText}>
+            {t(
+              "callForwarding.needHelp",
+              "If these codes don't work, contact your carrier's customer service. Some plans may require additional features to enable call forwarding."
+            )}
+          </Text>
+        </View>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    paddingTop: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.textPrimary,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  infoBanner: {
+    flexDirection: "row",
+    backgroundColor: Colors.primaryLight || "#E8F4FD",
+    padding: 16,
+    margin: 16,
+    borderRadius: 12,
+    gap: 12,
+  },
+  infoBannerText: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.textPrimary,
+    lineHeight: 20,
+  },
+  section: {
+    padding: 16,
+    paddingTop: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: Colors.textPrimary,
+    marginBottom: 12,
+  },
+  sectionHint: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    marginTop: 8,
+  },
+  numberCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: Colors.cardBackground,
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  numberInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  numberText: {
+    fontSize: 38,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+  },
+  stepsCard: {
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  step: {
+    flexDirection: "row",
+    marginBottom: 16,
+  },
+  stepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  stepNumberText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  stepContent: {
+    flex: 1,
+  },
+  stepTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  stepDescription: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+  },
+  carrierCard: {
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+    overflow: "hidden",
+  },
+  carrierHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+  },
+  carrierInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  carrierLogo: {
+    fontSize: 24,
+  },
+  carrierName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+  },
+  carrierContent: {
+    padding: 16,
+    paddingTop: 0,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+  },
+  codeSection: {
+    marginBottom: 16,
+  },
+  codeLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+    marginBottom: 8,
+  },
+  codeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: Colors.backgroundLight || "#F5F5F5",
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  codeText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.primary,
+    fontFamily: "monospace",
+  },
+  codeHint: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 4,
+  },
+  notesSection: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginTop: 8,
+    padding: 12,
+    backgroundColor: Colors.backgroundLight || "#F5F5F5",
+    borderRadius: 8,
+  },
+  notesText: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 18,
+  },
+  helpSection: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    margin: 16,
+    padding: 16,
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 12,
+  },
+  helpText: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+  },
+  noPhoneContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 32,
+  },
+  noPhoneTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.textPrimary,
+    marginTop: 16,
+  },
+  noPhoneMessage: {
+    fontSize: 16,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  getPhoneButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  getPhoneButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+});

@@ -76,3 +76,24 @@ export interface MonthResponse {
   month: number;
   year: number;
 }
+
+// Phone number data from API
+export interface PhoneNumberData {
+  id: number;
+  phone_number: string;
+  friendly_name: string;
+  agent: number | null;
+  status: string;
+}
+
+// US Carrier type for call forwarding
+export interface USCarrier {
+  id: string;
+  name: string;
+  logo: string;
+  activateAll: string;
+  deactivate: string;
+  activateNoAnswer: string;
+  activateBusy: string;
+  notes: string;
+}

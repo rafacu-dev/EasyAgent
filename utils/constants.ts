@@ -1,4 +1,5 @@
-export const BaseUrl = "http://10.173.217.160:8000/api/";
+export const BaseUrl =
+  "https://coeternally-pedatifid-elana.ngrok-free.dev/api/";
 //export const BaseUrl = "https://apieasyinvoice.onrender.com"
 
 // Centralized storage keys to avoid typos and ensure consistency
@@ -10,3 +11,107 @@ export const STORAGE_KEYS = {
   PHONE_NUMBER: "phoneNumber",
   RETELL_AGENT_ID: "retellAgentId",
 } as const;
+
+// US Carrier call forwarding codes
+export const US_CARRIERS = [
+  {
+    id: "att",
+    name: "AT&T",
+    logo: "📱",
+    activateAll: "*21*{number}#",
+    deactivate: "#21#",
+    activateNoAnswer: "*61*{number}*11*30#",
+    activateBusy: "*67*{number}#",
+    notes: "callForwarding.attNotes",
+  },
+  {
+    id: "verizon",
+    name: "Verizon",
+    logo: "📱",
+    activateAll: "*72{number}",
+    deactivate: "*73",
+    activateNoAnswer: "*71{number}",
+    activateBusy: "*90{number}",
+    notes: "callForwarding.verizonNotes",
+  },
+  {
+    id: "tmobile",
+    name: "T-Mobile",
+    logo: "📱",
+    activateAll: "**21*{number}#",
+    deactivate: "##21#",
+    activateNoAnswer: "**61*{number}**30#",
+    activateBusy: "**67*{number}#",
+    notes: "callForwarding.tmobileNotes",
+  },
+  {
+    id: "sprint",
+    name: "Sprint / T-Mobile",
+    logo: "📱",
+    activateAll: "*72{number}",
+    deactivate: "*720",
+    activateNoAnswer: "*73{number}",
+    activateBusy: "*74{number}",
+    notes: "callForwarding.sprintNotes",
+  },
+  {
+    id: "uscellular",
+    name: "US Cellular",
+    logo: "📱",
+    activateAll: "*72{number}",
+    deactivate: "*73",
+    activateNoAnswer: "*92{number}",
+    activateBusy: "*90{number}",
+    notes: "callForwarding.uscellularNotes",
+  },
+  {
+    id: "cricket",
+    name: "Cricket Wireless",
+    logo: "📱",
+    activateAll: "*21*{number}#",
+    deactivate: "#21#",
+    activateNoAnswer: "*61*{number}#",
+    activateBusy: "*67*{number}#",
+    notes: "callForwarding.cricketNotes",
+  },
+  {
+    id: "metro",
+    name: "Metro by T-Mobile",
+    logo: "📱",
+    activateAll: "**21*{number}#",
+    deactivate: "##21#",
+    activateNoAnswer: "**61*{number}#",
+    activateBusy: "**67*{number}#",
+    notes: "callForwarding.metroNotes",
+  },
+  {
+    id: "boost",
+    name: "Boost Mobile",
+    logo: "📱",
+    activateAll: "*72{number}",
+    deactivate: "*73",
+    activateNoAnswer: "*92{number}",
+    activateBusy: "*90{number}",
+    notes: "callForwarding.boostNotes",
+  },
+  {
+    id: "visible",
+    name: "Visible",
+    logo: "📱",
+    activateAll: "*72{number}",
+    deactivate: "*73",
+    activateNoAnswer: "*71{number}",
+    activateBusy: "*90{number}",
+    notes: "callForwarding.visibleNotes",
+  },
+  {
+    id: "googlefi",
+    name: "Google Fi",
+    logo: "📱",
+    activateAll: "*21*{number}#",
+    deactivate: "#21#",
+    activateNoAnswer: "*61*{number}#",
+    activateBusy: "*67*{number}#",
+    notes: "callForwarding.googlefiNotes",
+  },
+] as const;

@@ -113,18 +113,18 @@ export const formatPhoneNumber = (phoneNumber?: string): string => {
   }
   // Format US numbers
   if (phoneNumber.length === 10) {
-    return `(+1 ${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(
+    return `+1${phoneNumber.slice(0, 3)}${phoneNumber.slice(
       3,
       6
-    )}-${phoneNumber.slice(6)}`;
+    )}${phoneNumber.slice(6)}`;
   }
 
   // Format with country code
   if (phoneNumber.length === 11 && phoneNumber.startsWith("1")) {
-    return `+1 (${phoneNumber.slice(1, 4)}) ${phoneNumber.slice(
+    return `+1${phoneNumber.slice(1, 4)}${phoneNumber.slice(
       4,
       7
-    )}-${phoneNumber.slice(7)}`;
+    )}${phoneNumber.slice(7)}`;
   }
 
   // Return original if can't format
