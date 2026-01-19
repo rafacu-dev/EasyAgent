@@ -148,7 +148,11 @@
     "dialpad": "Dialpad",
     "dialpadInfo": "Use the dialpad to send DTMF tones",
     "sdkNotAvailable": "Voice Calling Unavailable",
-    "sdkNotAvailableMessage": "Direct calling requires native modules. Please use AI Agent mode or rebuild the app with native support."
+    "sdkNotAvailableMessage": "Direct calling requires native modules. Please use AI Agent mode or rebuild the app with native support.",
+    "transcribing": "Transcribing audio...",
+    "transcribingAudio": "Transcribing audio...",
+    "noTranscription": "No speech detected in the recording",
+    "transcriptionFailed": "Failed to transcribe audio"
   },
   "calendar": {
     "title": "Calendar",

@@ -38,6 +38,7 @@ export default function PhoneScreen() {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
 
   // Voice SDK hook for direct calls
@@ -118,16 +119,62 @@ export default function PhoneScreen() {
     const uri = recording.getURI();
     setRecording(null);
 
-    if (__DEV__) console.log("Recording URI:", uri);
+    if (__DEV__) console.log("Recording stopped, URI:", uri);
 
-    // Placeholder: In production, send audio to speech-to-text API
-    Alert.alert(
-      t("phone.info", "Info"),
-      t(
-        "phone.speechToTextInfo",
-        "Voice recording completed. Speech-to-text will be implemented with your backend API."
-      )
-    );
+    if (!uri) {
+      Alert.alert(
+        t("phone.error", "Error"),
+        t("phone.recordingFailed", "Failed to save recording")
+      );
+      return;
+    }
+
+    // Send audio to backend for transcription
+    setIsTranscribing(true);
+    try {
+      const formData = new FormData();
+      formData.append("audio", {
+        uri: uri,
+        type: "audio/m4a",
+        name: "recording.m4a",
+      } as any);
+
+      if (__DEV__) console.log("Sending audio to backend for transcription...");
+
+      const response = await apiClient.post("transcribe/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (__DEV__) {
+        console.log("Transcription response:", response.data);
+        console.log("Method used:", response.data?.method);
+        console.log("Transcription:", response.data?.transcription);
+      }
+
+      const transcription = response.data?.transcription || "";
+      if (transcription) {
+        // Append to existing prompt or set new one
+        setCallPrompt((prev) =>
+          prev ? `${prev} ${transcription}` : transcription
+        );
+      } else {
+        Alert.alert(
+          t("phone.info", "Info"),
+          t("phone.noTranscription", "No speech detected in the recording")
+        );
+      }
+    } catch (error: any) {
+      console.error("Transcription error:", error);
+      Alert.alert(
+        t("phone.error", "Error"),
+        error.response?.data?.error ||
+          t("phone.transcriptionFailed", "Failed to transcribe audio")
+      );
+    } finally {
+      setIsTranscribing(false);
+    }
   };
 
   const toggleRecording = async () => {
@@ -413,33 +460,52 @@ export default function PhoneScreen() {
                   style={[
                     styles.microphoneButton,
                     isRecording && styles.microphoneButtonActive,
+                    isTranscribing && styles.microphoneButtonDisabled,
                   ]}
                   onPress={toggleRecording}
+                  disabled={isTranscribing}
                 >
-                  <Ionicons
-                    name={isRecording ? "stop-circle" : "mic"}
-                    size={20}
-                    color={isRecording ? "#fff" : Colors.primary}
-                  />
+                  {isTranscribing ? (
+                    <ActivityIndicator size="small" color={Colors.primary} />
+                  ) : (
+                    <Ionicons
+                      name={isRecording ? "stop-circle" : "mic"}
+                      size={20}
+                      color={isRecording ? "#fff" : Colors.primary}
+                    />
+                  )}
                 </TouchableOpacity>
               </View>
               <TextInput
                 style={styles.promptInput}
-                placeholder={t(
-                  "phone.promptPlaceholder",
-                  "E.g., Schedule an appointment for next week..."
-                )}
+                placeholder={
+                  isTranscribing
+                    ? t("phone.transcribing", "Transcribing audio...")
+                    : t(
+                        "phone.promptPlaceholder",
+                        "E.g., Schedule an appointment for next week..."
+                      )
+                }
                 placeholderTextColor={Colors.textLight}
                 value={callPrompt}
                 onChangeText={setCallPrompt}
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
+                editable={!isTranscribing}
               />
               {isRecording && (
                 <Text style={styles.recordingIndicator}>
                   {t("phone.recording", "🔴 Recording...")}
                 </Text>
+              )}
+              {isTranscribing && (
+                <View style={styles.transcribingIndicator}>
+                  <ActivityIndicator size="small" color={Colors.primary} />
+                  <Text style={styles.transcribingText}>
+                    {t("phone.transcribingAudio", "Transcribing audio...")}
+                  </Text>
+                </View>
               )}
             </View>
           )}
@@ -751,12 +817,27 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.error,
     borderColor: Colors.error,
   },
+  microphoneButtonDisabled: {
+    opacity: 0.5,
+  },
   recordingIndicator: {
     fontSize: 12,
     color: Colors.error,
     fontWeight: "600",
     marginTop: 8,
     textAlign: "center",
+  },
+  transcribingIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+    gap: 8,
+  },
+  transcribingText: {
+    fontSize: 12,
+    color: Colors.primary,
+    fontWeight: "600",
   },
   promptInput: {
     fontSize: 14,
