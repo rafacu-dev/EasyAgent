@@ -148,7 +148,11 @@
     "dialpad": "Teclado",
     "dialpadInfo": "Usa el teclado para enviar tonos DTMF",
     "sdkNotAvailable": "Llamadas de Voz No Disponibles",
-    "sdkNotAvailableMessage": "Las llamadas directas requieren módulos nativos. Por favor usa el modo Agente IA o reconstruye la aplicación con soporte nativo."
+    "sdkNotAvailableMessage": "Las llamadas directas requieren módulos nativos. Por favor usa el modo Agente IA o reconstruye la aplicación con soporte nativo.",
+    "transcribing": "Transcribiendo audio...",
+    "transcribingAudio": "Transcribiendo audio...",
+    "noTranscription": "No se detectó voz en la grabación",
+    "transcriptionFailed": "Error al transcribir el audio"
   },
   "calendar": {
     "title": "Calendario",
