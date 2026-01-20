@@ -128,8 +128,8 @@ export default function BuyPhoneNumberScreen() {
           {
             text: t("common.ok", "OK"),
             onPress: () => {
-              // Redirect to home after successful purchase
-              router.replace("/(tabs)/home");
+              // Redirect to call forwarding setup after successful purchase
+              router.replace("/call-forwarding");
             },
           },
         ]

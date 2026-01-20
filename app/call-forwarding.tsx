@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Linking,
 } from "react-native";
 import { Colors } from "../utils/colors";
 import { useTranslation } from "react-i18next";
@@ -19,7 +20,7 @@ import type { USCarrier } from "../utils/types.d";
 interface CarrierCardProps {
   carrier: USCarrier;
   twilioNumber: string;
-  onCopy: (code: string, label: string) => void;
+  onDial: (code: string, label: string) => void;
   t: ReturnType<typeof useTranslation>["t"];
   expanded: boolean;
   onToggle: () => void;
@@ -28,7 +29,7 @@ interface CarrierCardProps {
 function CarrierCard({
   carrier,
   twilioNumber,
-  onCopy,
+  onDial,
   t,
   expanded,
   onToggle,
@@ -62,7 +63,7 @@ function CarrierCard({
             <TouchableOpacity
               style={styles.codeContainer}
               onPress={() =>
-                onCopy(
+                onDial(
                   formatCode(carrier.activateAll),
                   t("callForwarding.forwardAll", "Forward All Calls")
                 )
@@ -71,7 +72,7 @@ function CarrierCard({
               <Text style={styles.codeText}>
                 {formatCode(carrier.activateAll)}
               </Text>
-              <Ionicons name="copy-outline" size={18} color={Colors.primary} />
+              <Ionicons name="call-outline" size={18} color={Colors.primary} />
             </TouchableOpacity>
             <Text style={styles.codeHint}>
               {t(
@@ -89,14 +90,14 @@ function CarrierCard({
             <TouchableOpacity
               style={styles.codeContainer}
               onPress={() =>
-                onCopy(
+                onDial(
                   carrier.deactivate,
                   t("callForwarding.deactivate", "Deactivate Forwarding")
                 )
               }
             >
               <Text style={styles.codeText}>{carrier.deactivate}</Text>
-              <Ionicons name="copy-outline" size={18} color={Colors.primary} />
+              <Ionicons name="call-outline" size={18} color={Colors.primary} />
             </TouchableOpacity>
             <Text style={styles.codeHint}>
               {t(
@@ -114,7 +115,7 @@ function CarrierCard({
             <TouchableOpacity
               style={styles.codeContainer}
               onPress={() =>
-                onCopy(
+                onDial(
                   formatCode(carrier.activateNoAnswer),
                   t("callForwarding.noAnswer", "Forward When No Answer")
                 )
@@ -123,7 +124,7 @@ function CarrierCard({
               <Text style={styles.codeText}>
                 {formatCode(carrier.activateNoAnswer)}
               </Text>
-              <Ionicons name="copy-outline" size={18} color={Colors.primary} />
+              <Ionicons name="call-outline" size={18} color={Colors.primary} />
             </TouchableOpacity>
             <Text style={styles.codeHint}>
               {t(
@@ -141,7 +142,7 @@ function CarrierCard({
             <TouchableOpacity
               style={styles.codeContainer}
               onPress={() =>
-                onCopy(
+                onDial(
                   formatCode(carrier.activateBusy),
                   t("callForwarding.busy", "Forward When Busy")
                 )
@@ -150,7 +151,7 @@ function CarrierCard({
               <Text style={styles.codeText}>
                 {formatCode(carrier.activateBusy)}
               </Text>
-              <Ionicons name="copy-outline" size={18} color={Colors.primary} />
+              <Ionicons name="call-outline" size={18} color={Colors.primary} />
             </TouchableOpacity>
             <Text style={styles.codeHint}>
               {t(
@@ -195,13 +196,47 @@ export default function CallForwardingScreen() {
     null
   );
 
-  const handleCopy = async (code: string, label: string) => {
-    await Clipboard.setStringAsync(code);
+  const handleDial = async (code: string, label: string) => {
     Alert.alert(
-      t("common.success", "Success"),
-      t("callForwarding.codeCopied", "{{label}} code copied to clipboard", {
-        label,
-      })
+      t("callForwarding.dialConfirm", "Dial Code?"),
+      t(
+        "callForwarding.dialMessage",
+        "Do you want to dial {{code}} to activate {{label}}?",
+        { code, label }
+      ),
+      [
+        {
+          text: t("common.cancel", "Cancel"),
+          style: "cancel",
+        },
+        {
+          text: t("callForwarding.dial", "Dial"),
+          onPress: async () => {
+            try {
+              const url = `tel:${code}`;
+              const canOpen = await Linking.canOpenURL(url);
+              if (canOpen) {
+                await Linking.openURL(url);
+                router.push("/(tabs)/home");
+              } else {
+                Alert.alert(
+                  t("common.error", "Error"),
+                  t(
+                    "callForwarding.cannotDial",
+                    "Unable to open dialer on this device"
+                  )
+                );
+              }
+            } catch (error) {
+              console.log("Dialing error:", error);
+              Alert.alert(
+                t("common.error", "Error"),
+                t("callForwarding.dialError", "Failed to dial code")
+              );
+            }
+          },
+        },
+      ]
     );
   };
 
@@ -375,7 +410,7 @@ export default function CallForwardingScreen() {
               key={carrier.id}
               carrier={carrier}
               twilioNumber={twilioNumber}
-              onCopy={handleCopy}
+              onDial={handleDial}
               t={t}
               expanded={expandedCarrier === carrier.id}
               onToggle={() =>
