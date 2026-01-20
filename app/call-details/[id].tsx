@@ -37,11 +37,10 @@ interface AgentInfo {
 }
 
 export default function CallDetailsScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [isAnalysisExpanded, setIsAnalysisExpanded] = useState(false);
   const [isTranscriptExpanded, setIsTranscriptExpanded] = useState(false);
-  const currentLocale = i18n.language;
 
   const { data, isLoading } = useQuery<
     CallDetails | { call?: CallDetails; agent?: AgentInfo } | undefined
@@ -104,10 +103,6 @@ export default function CallDetailsScreen() {
     }
   };
 
-  const formatCallDateTime = (timestampMs?: number) => {
-    return formatDateTime(timestampMs, currentLocale) || "—";
-  };
-
   const estimateCost = (ms?: number) => {
     if (!ms || ms <= 0) return "$0.00";
     const minutes = Math.ceil(ms / 60000);
@@ -121,7 +116,7 @@ export default function CallDetailsScreen() {
   const parseTranscript = (transcript?: string) => {
     if (!transcript) return [];
 
-    const messages: Array<{ role: "agent" | "client"; text: string }> = [];
+    const messages: { role: "agent" | "client"; text: string }[] = [];
     const lines = transcript.split("\n");
 
     let currentRole: "agent" | "client" | null = null;

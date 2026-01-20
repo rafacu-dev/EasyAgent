@@ -27,6 +27,7 @@ import {
   onAppointmentScheduled,
   scheduleAppointmentReminder,
 } from "../notifications/notificationHelpers";
+import type { AppointmentNotificationData } from "../notifications/easyAgentNotifications";
 
 const STATUS_COLORS: { [key in AppointmentStatus]: string } = {
   scheduled: Colors.info,
@@ -109,22 +110,24 @@ export default function CalendarScreen() {
       // Send notifications for new appointment
       const appointmentData = response?.data || response;
       if (appointmentData) {
-        onAppointmentScheduled({
-          appointmentId: appointmentData.id,
-          clientName: appointmentData.client_name || formData.client_name,
-          appointmentDate: appointmentData.date || formData.date,
-          appointmentTime: appointmentData.start_time || formData.start_time,
-        }).catch((err) =>
+        const notificationPayload: AppointmentNotificationData = {
+          id: String(appointmentData.id),
+          date: appointmentData.date || formData.date,
+          time: appointmentData.start_time || formData.start_time,
+          client_name: appointmentData.client_name || formData.client_name,
+        };
+        onAppointmentScheduled(notificationPayload).catch((err) =>
           console.error("Failed to send appointment notification:", err)
         );
 
         // Schedule reminder notification if appointment has a valid date/time
         if (appointmentData.date && appointmentData.start_time) {
           scheduleAppointmentReminder({
-            appointmentId: appointmentData.id,
-            clientName: appointmentData.client_name || formData.client_name,
-            appointmentDate: appointmentData.date,
-            appointmentTime: appointmentData.start_time,
+            id: String(appointmentData.id),
+            date: new Date(
+              appointmentData.date + "T" + appointmentData.start_time
+            ),
+            client_name: appointmentData.client_name || formData.client_name,
           }).catch((err) =>
             console.error("Failed to schedule appointment reminder:", err)
           );

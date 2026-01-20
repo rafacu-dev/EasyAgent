@@ -55,8 +55,8 @@ export default function AgentSetup() {
 
         // Send notification for new agent
         onAgentCreated({
-          agentName: agentName,
-          agentId: response.data.id,
+          name: agentName,
+          id: response.data.id,
         }).catch((err) =>
           console.error("Failed to send agent creation notification:", err)
         );

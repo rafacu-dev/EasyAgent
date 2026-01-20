@@ -108,8 +108,9 @@ export default function BuyPhoneNumberScreen() {
       const phoneNumberData = response?.data || response;
       if (phoneNumberData?.phone_number) {
         onPhoneNumberAdded({
-          phoneNumber: phoneNumberData.phone_number,
-          friendlyName:
+          id: phoneNumberData.id || phoneNumberData.phone_number, // fallback to phone_number if id missing
+          phone_number: phoneNumberData.phone_number,
+          friendly_name:
             phoneNumberData.friendly_name ||
             `${agentConfig?.companyName || "Agent"} Number`,
         }).catch((err) =>

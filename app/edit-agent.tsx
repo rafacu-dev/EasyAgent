@@ -86,8 +86,8 @@ export default function EditAgent() {
 
       // Send notification for agent update
       onAgentUpdated({
-        agentName: formData.agentName,
-        agentId: formData.agentId,
+        name: formData.agentName,
+        id: formData.agentId,
       }).catch((err) =>
         console.error("Failed to send agent update notification:", err)
       );
