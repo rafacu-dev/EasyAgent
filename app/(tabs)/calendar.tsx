@@ -23,6 +23,11 @@ import type {
   MonthResponse,
   AppointmentStatus,
 } from "../../utils/types";
+import {
+  onAppointmentScheduled,
+  scheduleAppointmentReminder,
+} from "../notifications/notificationHelpers";
+import type { AppointmentNotificationData } from "../notifications/easyAgentNotifications";
 
 const STATUS_COLORS: { [key in AppointmentStatus]: string } = {
   scheduled: Colors.info,
@@ -89,7 +94,7 @@ export default function CalendarScreen() {
   // Create appointment mutation
   const createMutation = useMutation({
     mutationFn: (data: any) => apiClient.post("appointments/", data),
-    onSuccess: () => {
+    onSuccess: (response) => {
       // Refetch the current month's data immediately
       queryClient.invalidateQueries({ queryKey: ["appointments-month"] });
       queryClient.refetchQueries({
@@ -101,6 +106,34 @@ export default function CalendarScreen() {
       });
       setShowAddModal(false);
       resetForm();
+
+      // Send notifications for new appointment
+      const appointmentData = response?.data || response;
+      if (appointmentData) {
+        const notificationPayload: AppointmentNotificationData = {
+          id: String(appointmentData.id),
+          date: appointmentData.date || formData.date,
+          time: appointmentData.start_time || formData.start_time,
+          client_name: appointmentData.client_name || formData.client_name,
+        };
+        onAppointmentScheduled(notificationPayload).catch((err) =>
+          console.error("Failed to send appointment notification:", err)
+        );
+
+        // Schedule reminder notification if appointment has a valid date/time
+        if (appointmentData.date && appointmentData.start_time) {
+          scheduleAppointmentReminder({
+            id: String(appointmentData.id),
+            date: new Date(
+              appointmentData.date + "T" + appointmentData.start_time
+            ),
+            client_name: appointmentData.client_name || formData.client_name,
+          }).catch((err) =>
+            console.error("Failed to schedule appointment reminder:", err)
+          );
+        }
+      }
+
       Alert.alert(
         t("calendar.success", "Success"),
         t("calendar.appointmentCreated", "Appointment created successfully")

@@ -92,7 +92,6 @@ export default function CallHistoryScreen() {
   const {
     data: callsResp,
     isLoading,
-    error,
     refetch,
   } = useQuery({
     queryKey: [
@@ -151,6 +150,7 @@ export default function CallHistoryScreen() {
       // First load or filter change
       setAllCalls(newCalls);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newCalls, paginationKey]);
 
   // Use allCalls as the final list

@@ -20,6 +20,7 @@ import { Colors } from "../utils/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useAgentQuery, useUpdateAgentMutation } from "../utils/hooks";
 import type { AgentConfig } from "../utils/types";
+import { onAgentUpdated } from "./notifications/notificationHelpers";
 
 export default function EditAgent() {
   const { t } = useTranslation();
@@ -82,6 +83,14 @@ export default function EditAgent() {
       };
 
       await updateAgentMutation.mutateAsync(updatedConfig);
+
+      // Send notification for agent update
+      onAgentUpdated({
+        name: formData.agentName,
+        id: formData.agentId,
+      }).catch((err) =>
+        console.error("Failed to send agent update notification:", err)
+      );
 
       Alert.alert(
         t("common.success", "Success"),

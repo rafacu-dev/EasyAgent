@@ -9,6 +9,7 @@ import { AppState, AppStateStatus, Platform } from "react-native";
 import { saveLastLogin, getAuthToken } from "../utils/storage";
 import * as Updates from "expo-updates";
 import Purchases, { LOG_LEVEL } from "react-native-purchases";
+import NotificationProvider from "./notifications/NotificationProvider";
 
 function AppStateHandler({ children }: { children: React.ReactNode }) {
   const appState = useRef(AppState.currentState);
@@ -161,15 +162,17 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppStateHandler>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: {
-              paddingTop: Constants.statusBarHeight,
-              backgroundColor: Colors.background,
-            },
-          }}
-        />
+        <NotificationProvider>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: {
+                paddingTop: Constants.statusBarHeight,
+                backgroundColor: Colors.background,
+              },
+            }}
+          />
+        </NotificationProvider>
       </AppStateHandler>
     </QueryClientProvider>
   );
