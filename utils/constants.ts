@@ -1,5 +1,5 @@
 export const BaseUrl =
-  "http://192.168.0.155:8000/api/";
+  "https://apieasyagent.onrender.com/api/";
 
 // Centralized storage keys to avoid typos and ensure consistency
 export const STORAGE_KEYS = {
