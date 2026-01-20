@@ -5,9 +5,10 @@ import { Colors } from "../utils/colors";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { queryClient } from "../utils/queryClient";
 import { useEffect, useRef } from "react";
-import { AppState, AppStateStatus } from "react-native";
+import { AppState, AppStateStatus, Platform } from "react-native";
 import { saveLastLogin, getAuthToken } from "../utils/storage";
 import * as Updates from "expo-updates";
+import Purchases, { LOG_LEVEL } from "react-native-purchases";
 
 function AppStateHandler({ children }: { children: React.ReactNode }) {
   const appState = useRef(AppState.currentState);
@@ -105,6 +106,58 @@ function AppStateHandler({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    const initializePurchases = async () => {
+      Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+      if (Platform.OS === "ios") {
+        Purchases.configure({
+          apiKey: Constants.expoConfig?.extra?.rcApplApiKey,
+        });
+      } else if (Platform.OS === "android") {
+        Purchases.configure({
+          apiKey: Constants.expoConfig?.extra?.rcGooglApiKey,
+        });
+      }
+    };
+
+    initializePurchases();
+  }, []);
+
+  useEffect(() => {
+    const initializeFacebookSDK = async () => {
+      // No ejecutar en Expo Go
+      const isExpoGo = Constants.appOwnership === "expo";
+      if (isExpoGo) {
+        return;
+      }
+
+      try {
+        // Importación dinámica solo cuando no está en Expo Go
+        const { requestTrackingPermissionsAsync } = await import(
+          "expo-tracking-transparency"
+        );
+        const { Settings } = await import("react-native-fbsdk-next");
+
+        // 1️⃣ PEDIR PERMISO (ATT) - Usando la librería oficial de Expo
+        if (Platform.OS === "ios") {
+          const { status } = await requestTrackingPermissionsAsync();
+          console.log("Tracking status:", status);
+
+          // Habilitar tracking de anunciantes después del permiso ATT
+          await Settings.setAdvertiserTrackingEnabled(status === "granted");
+        }
+
+        // 2️⃣ INICIALIZAR FACEBOOK SDK
+        await Settings.initializeSDK();
+        console.log("✅ Facebook SDK initialized successfully");
+      } catch (error) {
+        console.error("Error initializing Facebook SDK:", error);
+      }
+    };
+
+    initializeFacebookSDK();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AppStateHandler>

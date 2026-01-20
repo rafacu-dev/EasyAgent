@@ -93,14 +93,8 @@ export default function VerifyTokenScreen() {
         JSON.stringify(response.user)
       );
 
-      // Check user tier - redirect to paywall if free
-      const userTier = response.user?.tier || "free";
-      const isProOrAbove = ["pro", "business", "enterprise"].includes(userTier);
-
-      if (!isProOrAbove) {
-        // Free user - show paywall
-        router.replace("/paywall/PaywallScreen");
-      } else if (response.is_new_user) {
+      // Redirect based on user status
+      if (response.is_new_user) {
         // New user or user without company info - go to setup
         router.replace("/");
       } else {

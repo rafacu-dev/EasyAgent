@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
+import { View, ActivityIndicator, Text, StyleSheet, Image } from "react-native";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Updates from "expo-updates";
 import FirstLoginView from "../components/FirstLoginView";
 import { useAgentQuery } from "@/utils/hooks";
 import { useTranslation } from "react-i18next";
@@ -10,7 +11,49 @@ import { Colors } from "@/utils/colors";
 export default function Index() {
   const { t } = useTranslation();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isCheckingUpdates, setIsCheckingUpdates] = useState(true);
+  const [updateStatus, setUpdateStatus] = useState<string>("");
   const { data: agentConfig, isLoading: agentLoading } = useAgentQuery();
+
+  // Check for updates on mount
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      const startTime = Date.now();
+      const minimumSplashDuration = 3000; // 3 seconds
+      
+      try {
+        if (!__DEV__) {
+          setUpdateStatus(t("index.checkingUpdates", "Buscando actualizaciones..."));
+          
+          const update = await Updates.checkForUpdateAsync();
+          
+          if (update.isAvailable) {
+            setUpdateStatus(t("index.downloadingUpdate", "Descargando actualización..."));
+            await Updates.fetchUpdateAsync();
+            
+            setUpdateStatus(t("index.applyingUpdate", "Aplicando actualización..."));
+            await Updates.reloadAsync();
+            // Si llegamos aquí, la app se reinició con la nueva versión
+          }
+        }
+      } catch (error) {
+        console.error("Error checking for updates:", error);
+        // Continue with normal flow even if update check fails
+      } finally {
+        // Ensure splash screen shows for at least 3 seconds
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = minimumSplashDuration - elapsedTime;
+        
+        if (remainingTime > 0) {
+          await new Promise(resolve => setTimeout(resolve, remainingTime));
+        }
+        
+        setIsCheckingUpdates(false);
+      }
+    };
+
+    checkForUpdates();
+  }, [t]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -22,8 +65,11 @@ export default function Index() {
       }
     };
 
-    checkAuth();
-  }, []);
+    // Only check auth after updates are checked
+    if (!isCheckingUpdates) {
+      checkAuth();
+    }
+  }, [isCheckingUpdates]);
 
   // Navigate to home when authenticated and agent is loaded
   useEffect(() => {
@@ -31,6 +77,21 @@ export default function Index() {
       router.replace("/(tabs)/home");
     }
   }, [isAuthenticated, agentConfig, agentLoading]);
+
+  // Show splash screen while checking updates
+  if (isCheckingUpdates) {
+    return (
+      <View style={styles.splashContainer}>
+        <Image
+          source={require("../assets/images/icon.png")}
+          style={styles.splashIcon}
+          resizeMode="contain"
+        />
+        <ActivityIndicator size="large" color={Colors.primary} style={styles.loader} />
+        <Text style={styles.updateText}>{updateStatus}</Text>
+      </View>
+    );
+  }
 
   // Wait for auth check
   if (isAuthenticated === null) {
@@ -85,6 +146,26 @@ export default function Index() {
 }
 
 const styles = StyleSheet.create({
+  splashContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.background,
+  },
+  splashIcon: {
+    width: 150,
+    height: 150,
+    marginBottom: 30,
+  },
+  loader: {
+    marginTop: 20,
+  },
+  updateText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginTop: 16,
+    textAlign: "center",
+  },
   container: {
     flex: 1,
     justifyContent: "center",

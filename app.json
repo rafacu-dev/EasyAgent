@@ -13,7 +13,17 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "EasyAgent needs microphone access to make voice calls",
-        "UIBackgroundModes": ["audio", "voip", "audio", "voip"]
+        "UIBackgroundModes": [
+          "audio",
+          "voip",
+          "audio",
+          "voip",
+          "audio",
+          "voip",
+          "audio",
+          "voip"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       },
       "entitlements": {
         "aps-environment": "development"
@@ -56,7 +66,16 @@
       ],
       "expo-localization",
       "@react-native-community/datetimepicker",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "YOUR_FACEBOOK_APP_ID",
+          "clientToken": "YOUR_FACEBOOK_CLIENT_TOKEN",
+          "displayName": "EasyAgent"
+        }
+      ],
+      "expo-tracking-transparency"
     ],
     "experiments": {
       "typedRoutes": true,
