@@ -25,6 +25,7 @@ import NoPhoneNumber from "../../components/NoPhoneNumber";
 import { apiClient } from "../../utils/axios-interceptor";
 import { formatPhoneNumber } from "../../utils/formatters";
 import { Audio } from "expo-av";
+import { transcribeAudio, getTextFromResult } from "../../utils/transcription";
 
 export default function PhoneScreen() {
   const { t } = useTranslation();
@@ -132,14 +133,43 @@ export default function PhoneScreen() {
     // Send audio to backend for transcription
     setIsTranscribing(true);
     try {
+      // Option 1: Use the utility function (recommended)
+      const result = await transcribeAudio({
+        audioUri: uri,
+        language: "es", // Spanish by default
+        translate: false, // Set to true for translation
+        // targetLanguage: "en", // Only needed if translate is true
+      });
+
+      const text = getTextFromResult(result);
+
+      if (__DEV__) {
+        console.log("Transcription result:", result);
+        console.log("Method used:", result.method);
+        console.log("Text:", text);
+      }
+
+      if (text) {
+        // Append to existing prompt or set new one
+        setCallPrompt((prev) => (prev ? `${prev} ${text}` : text));
+      } else {
+        Alert.alert(
+          t("phone.info", "Info"),
+          t("phone.noTranscription", "No speech detected in the recording")
+        );
+      }
+
+      /* Option 2: Direct API call (alternative)
       const formData = new FormData();
       formData.append("audio", {
         uri: uri,
         type: "audio/m4a",
         name: "recording.m4a",
       } as any);
-
-      if (__DEV__) console.log("Sending audio to backend for transcription...");
+      
+      formData.append("language", "es");
+      // formData.append("translate", "false");
+      // formData.append("target_language", "en");
 
       const response = await apiClient.post("transcribe/", formData, {
         headers: {
@@ -147,29 +177,18 @@ export default function PhoneScreen() {
         },
       });
 
-      if (__DEV__) {
-        console.log("Transcription response:", response.data);
-        console.log("Method used:", response.data?.method);
-        console.log("Transcription:", response.data?.transcription);
-      }
-
-      const transcription = response.data?.transcription || "";
+      const transcription = response.data?.data?.transcription || response.data?.data?.translation || "";
       if (transcription) {
-        // Append to existing prompt or set new one
         setCallPrompt((prev) =>
           prev ? `${prev} ${transcription}` : transcription
         );
-      } else {
-        Alert.alert(
-          t("phone.info", "Info"),
-          t("phone.noTranscription", "No speech detected in the recording")
-        );
       }
+      */
     } catch (error: any) {
       console.error("Transcription error:", error);
       Alert.alert(
         t("phone.error", "Error"),
-        error.response?.data?.error ||
+        error.message ||
           t("phone.transcriptionFailed", "Failed to transcribe audio")
       );
     } finally {
