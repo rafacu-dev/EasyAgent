@@ -17,6 +17,7 @@ import { apiClient } from "../utils/axios-interceptor";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAgentQuery, useUserQuery } from "../utils/hooks";
 import { PhoneSearchHeader } from "../components/PhoneSearchHeader";
+import { onPhoneNumberAdded } from "./notifications/notificationHelpers";
 
 interface AvailableNumber {
   phone_number: string;
@@ -95,13 +96,26 @@ export default function BuyPhoneNumberScreen() {
         friendly_name: `${agentConfig?.companyName || "Agent"} Number`,
       });
     },
-    onSuccess: async () => {
+    onSuccess: async (response) => {
       // Invalidate and refetch all related queries
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["phoneNumbers"] }),
         queryClient.invalidateQueries({ queryKey: ["agent"] }),
         queryClient.invalidateQueries({ queryKey: ["userProfile"] }),
       ]);
+
+      // Send notification for new phone number
+      const phoneNumberData = response?.data || response;
+      if (phoneNumberData?.phone_number) {
+        onPhoneNumberAdded({
+          phoneNumber: phoneNumberData.phone_number,
+          friendlyName:
+            phoneNumberData.friendly_name ||
+            `${agentConfig?.companyName || "Agent"} Number`,
+        }).catch((err) =>
+          console.error("Failed to send phone number notification:", err)
+        );
+      }
 
       Alert.alert(
         t("getPhone.success", "Success!"),

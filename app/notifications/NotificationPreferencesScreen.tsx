@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,29 +7,41 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
-} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNotifications } from './useNotifications';
-import { useTranslation } from 'react-i18next';
+  ActivityIndicator,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNotifications } from "./useNotifications";
+import { useTranslation } from "react-i18next";
+import {
+  getNotificationPreferences,
+  updateNotificationPreferences,
+  sendTestNotification,
+} from "./easyAgentNotifications";
 
 interface NotificationPreferences {
   enabled: boolean;
-  calls: boolean;
-  appointments: boolean;
-  reminders: boolean;
+  call_completed: boolean;
+  appointment_scheduled: boolean;
+  agent_updated: boolean;
+  phone_number_added: boolean;
+  system: boolean;
 }
 
 const defaultPreferences: NotificationPreferences = {
   enabled: true,
-  calls: true,
-  appointments: true,
-  reminders: true,
+  call_completed: true,
+  appointment_scheduled: true,
+  agent_updated: true,
+  phone_number_added: true,
+  system: true,
 };
 
 const NotificationPreferencesScreen: React.FC = () => {
   const { t } = useTranslation();
-  const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
+  const [preferences, setPreferences] =
+    useState<NotificationPreferences>(defaultPreferences);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const { expoPushToken } = useNotifications();
 
   useEffect(() => {
@@ -38,53 +50,74 @@ const NotificationPreferencesScreen: React.FC = () => {
 
   const loadPreferences = async (): Promise<void> => {
     try {
-      const savedPreferences = await AsyncStorage.getItem('notification_preferences');
+      // First load from local storage
+      const savedPreferences = await AsyncStorage.getItem(
+        "notification_preferences"
+      );
       if (savedPreferences) {
         const parsed = JSON.parse(savedPreferences);
         setPreferences({ ...defaultPreferences, ...parsed });
       }
+
+      // Then try to sync from server
+      const serverPrefs = await getNotificationPreferences();
+      if (serverPrefs && serverPrefs.length > 0) {
+        const prefsMap: Record<string, boolean> = {};
+        serverPrefs.forEach((pref) => {
+          prefsMap[pref.notification_type] = pref.is_enabled;
+        });
+        const merged = { ...defaultPreferences, ...prefsMap };
+        setPreferences(merged);
+        await AsyncStorage.setItem(
+          "notification_preferences",
+          JSON.stringify(merged)
+        );
+      }
     } catch (error) {
-      console.error('Error loading notification preferences:', error);
+      console.error("Error loading notification preferences:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const savePreferences = async (newPreferences: NotificationPreferences): Promise<void> => {
+  const savePreferences = async (
+    newPreferences: NotificationPreferences
+  ): Promise<void> => {
     try {
-      await AsyncStorage.setItem('notification_preferences', JSON.stringify(newPreferences));
+      await AsyncStorage.setItem(
+        "notification_preferences",
+        JSON.stringify(newPreferences)
+      );
       setPreferences(newPreferences);
-      
-      // Optionally, send preferences to server
+
+      // Sync with server
       await syncPreferencesWithServer(newPreferences);
     } catch (error) {
-      console.error('Error saving notification preferences:', error);
-      Alert.alert(t('common.error'), t('notifications.preferencesError'));
+      console.error("Error saving notification preferences:", error);
+      Alert.alert(t("common.error"), t("notifications.preferencesError"));
     }
   };
 
-  const syncPreferencesWithServer = async (prefs: NotificationPreferences): Promise<void> => {
+  const syncPreferencesWithServer = async (
+    prefs: NotificationPreferences
+  ): Promise<void> => {
     try {
       if (!expoPushToken) {
-        console.warn('No push token available for syncing preferences');
+        console.warn("No push token available for syncing preferences");
         return;
       }
 
-      // Here you would implement the call to your API to sync preferences
-      // const response = await fetch('/notifications/preferences', {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     token: expoPushToken,
-      //     preferences: prefs,
-      //   }),
-      // });
-      
-      console.log('Syncing preferences with server:', prefs);
+      setIsSyncing(true);
+
+      // Filter out the 'enabled' key and send EasyAgent notification types
+      const { enabled, ...notificationPrefs } = prefs;
+      await updateNotificationPreferences(notificationPrefs);
+
+      console.log("✅ Preferences synced with server");
     } catch (error) {
-      console.error('Error syncing preferences with server:', error);
+      console.error("Error syncing preferences with server:", error);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -99,36 +132,56 @@ const NotificationPreferencesScreen: React.FC = () => {
   const testNotification = async (): Promise<void> => {
     try {
       if (!expoPushToken) {
-        Alert.alert(t('common.error'), 'No push token available');
+        Alert.alert(t("common.error"), "No push token available");
         return;
       }
 
-      // Send test notification
       Alert.alert(
-        'Test Notification',
-        'A test notification will be sent in 3 seconds',
+        t("notifications.testNotification", "Test Notification"),
+        t(
+          "notifications.testNotificationMessage",
+          "A test notification will be sent to your device."
+        ),
         [
-          { text: t('common.cancel'), style: 'cancel' },
+          { text: t("common.cancel"), style: "cancel" },
           {
-            text: t('common.submit'),
-            onPress: () => {
-              // Here you would implement the call to your API to send a test notification
-              setTimeout(() => {
-                Alert.alert('Info', 'Test notification sent successfully');
-              }, 3000);
+            text: t("common.submit"),
+            onPress: async () => {
+              setIsSyncing(true);
+              const success = await sendTestNotification();
+              setIsSyncing(false);
+
+              if (success) {
+                Alert.alert(
+                  t("common.success"),
+                  t(
+                    "notifications.testNotificationSent",
+                    "Test notification sent!"
+                  )
+                );
+              } else {
+                Alert.alert(
+                  t("common.error"),
+                  t(
+                    "notifications.testNotificationFailed",
+                    "Failed to send test notification"
+                  )
+                );
+              }
             },
           },
         ]
       );
     } catch (error) {
-      console.error('Error sending test notification:', error);
+      console.error("Error sending test notification:", error);
+      setIsSyncing(false);
     }
   };
 
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>{t('notifications.loadingPreferences')}</Text>
+        <Text>{t("notifications.loadingPreferences")}</Text>
       </View>
     );
   }
@@ -136,87 +189,160 @@ const NotificationPreferencesScreen: React.FC = () => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>{t('notifications.preferences')}</Text>
+        <Text style={styles.title}>{t("notifications.preferences")}</Text>
         <Text style={styles.subtitle}>
-          {t('notifications.customizeNotifications')}
+          {t("notifications.customizeNotifications")}
         </Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('notifications.pushNotifications')}</Text>
-        
+        <Text style={styles.sectionTitle}>
+          {t("notifications.pushNotifications")}
+        </Text>
+
         <View style={styles.preferenceItem}>
           <View style={styles.preferenceContent}>
-            <Text style={styles.preferenceLabel}>Enable Notifications</Text>
+            <Text style={styles.preferenceLabel}>
+              {t("notifications.enableNotifications", "Enable Notifications")}
+            </Text>
             <Text style={styles.preferenceDescription}>
-              Allow app to send push notifications
+              {t(
+                "notifications.enableDescription",
+                "Allow app to send push notifications"
+              )}
             </Text>
           </View>
           <Switch
             value={preferences.enabled}
-            onValueChange={() => togglePreference('enabled')}
-            trackColor={{ false: '#767577', true: '#8d36ff' }}
-            thumbColor={preferences.enabled ? '#ffffff' : '#f4f3f4'}
+            onValueChange={() => togglePreference("enabled")}
+            trackColor={{ false: "#767577", true: "#8d36ff" }}
+            thumbColor={preferences.enabled ? "#ffffff" : "#f4f3f4"}
           />
         </View>
 
         <View style={styles.preferenceItem}>
           <View style={styles.preferenceContent}>
-            <Text style={styles.preferenceLabel}>Calls</Text>
+            <Text style={styles.preferenceLabel}>
+              {t("notifications.calls", "Call Notifications")}
+            </Text>
             <Text style={styles.preferenceDescription}>
-              Notifications about incoming calls and messages
+              {t(
+                "notifications.callsDescription",
+                "Notifications when calls are completed"
+              )}
             </Text>
           </View>
           <Switch
-            value={preferences.calls}
-            onValueChange={() => togglePreference('calls')}
-            trackColor={{ false: '#767577', true: '#8d36ff' }}
-            thumbColor={preferences.calls ? '#ffffff' : '#f4f3f4'}
+            value={preferences.call_completed}
+            onValueChange={() => togglePreference("call_completed")}
+            trackColor={{ false: "#767577", true: "#8d36ff" }}
+            thumbColor={preferences.call_completed ? "#ffffff" : "#f4f3f4"}
+            disabled={!preferences.enabled}
           />
         </View>
 
         <View style={styles.preferenceItem}>
           <View style={styles.preferenceContent}>
-            <Text style={styles.preferenceLabel}>Appointments</Text>
+            <Text style={styles.preferenceLabel}>
+              {t("notifications.appointments", "Appointments")}
+            </Text>
             <Text style={styles.preferenceDescription}>
-              Notifications about scheduled appointments
+              {t(
+                "notifications.appointmentsDescription",
+                "Notifications about scheduled appointments"
+              )}
             </Text>
           </View>
           <Switch
-            value={preferences.appointments}
-            onValueChange={() => togglePreference('appointments')}
-            trackColor={{ false: '#767577', true: '#8d36ff' }}
-            thumbColor={preferences.appointments ? '#ffffff' : '#f4f3f4'}
+            value={preferences.appointment_scheduled}
+            onValueChange={() => togglePreference("appointment_scheduled")}
+            trackColor={{ false: "#767577", true: "#8d36ff" }}
+            thumbColor={
+              preferences.appointment_scheduled ? "#ffffff" : "#f4f3f4"
+            }
+            disabled={!preferences.enabled}
           />
         </View>
 
         <View style={styles.preferenceItem}>
           <View style={styles.preferenceContent}>
-            <Text style={styles.preferenceLabel}>Reminders</Text>
+            <Text style={styles.preferenceLabel}>
+              {t("notifications.agentUpdates", "Agent Updates")}
+            </Text>
             <Text style={styles.preferenceDescription}>
-              General reminders and alerts
+              {t(
+                "notifications.agentUpdatesDescription",
+                "Notifications when your agent is updated"
+              )}
             </Text>
           </View>
           <Switch
-            value={preferences.reminders}
-            onValueChange={() => togglePreference('reminders')}
-            trackColor={{ false: '#767577', true: '#8d36ff' }}
-            thumbColor={preferences.reminders ? '#ffffff' : '#f4f3f4'}
+            value={preferences.agent_updated}
+            onValueChange={() => togglePreference("agent_updated")}
+            trackColor={{ false: "#767577", true: "#8d36ff" }}
+            thumbColor={preferences.agent_updated ? "#ffffff" : "#f4f3f4"}
+            disabled={!preferences.enabled}
+          />
+        </View>
+
+        <View style={styles.preferenceItem}>
+          <View style={styles.preferenceContent}>
+            <Text style={styles.preferenceLabel}>
+              {t("notifications.phoneNumbers", "Phone Numbers")}
+            </Text>
+            <Text style={styles.preferenceDescription}>
+              {t(
+                "notifications.phoneNumbersDescription",
+                "Notifications when phone numbers are added"
+              )}
+            </Text>
+          </View>
+          <Switch
+            value={preferences.phone_number_added}
+            onValueChange={() => togglePreference("phone_number_added")}
+            trackColor={{ false: "#767577", true: "#8d36ff" }}
+            thumbColor={preferences.phone_number_added ? "#ffffff" : "#f4f3f4"}
+            disabled={!preferences.enabled}
+          />
+        </View>
+
+        <View style={styles.preferenceItem}>
+          <View style={styles.preferenceContent}>
+            <Text style={styles.preferenceLabel}>
+              {t("notifications.system", "System Notifications")}
+            </Text>
+            <Text style={styles.preferenceDescription}>
+              {t(
+                "notifications.systemDescription",
+                "General system notifications and alerts"
+              )}
+            </Text>
+          </View>
+          <Switch
+            value={preferences.system}
+            onValueChange={() => togglePreference("system")}
+            trackColor={{ false: "#767577", true: "#8d36ff" }}
+            thumbColor={preferences.system ? "#ffffff" : "#f4f3f4"}
+            disabled={!preferences.enabled}
           />
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('notifications.deviceInformation')}</Text>
+        <Text style={styles.sectionTitle}>
+          {t("notifications.deviceInformation")}
+        </Text>
         <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>{t('notifications.tokenStatus')}</Text>
+          <Text style={styles.infoLabel}>{t("notifications.tokenStatus")}</Text>
           <Text style={styles.infoValue}>
-            {expoPushToken ? t('notifications.registered') : t('notifications.notAvailable')}
+            {expoPushToken
+              ? t("notifications.registered")
+              : t("notifications.notAvailable")}
           </Text>
         </View>
         {expoPushToken && (
           <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>{t('notifications.token')}</Text>
+            <Text style={styles.infoLabel}>{t("notifications.token")}</Text>
             <Text style={styles.infoValueSmall} numberOfLines={2}>
               {expoPushToken}
             </Text>
@@ -225,8 +351,18 @@ const NotificationPreferencesScreen: React.FC = () => {
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.testButton} onPress={testNotification}>
-          <Text style={styles.testButtonText}>{t('notifications.sendTestNotification')}</Text>
+        <TouchableOpacity
+          style={[styles.testButton, isSyncing && styles.testButtonDisabled]}
+          onPress={testNotification}
+          disabled={isSyncing}
+        >
+          {isSyncing ? (
+            <ActivityIndicator color="white" size="small" />
+          ) : (
+            <Text style={styles.testButtonText}>
+              {t("notifications.sendTestNotification")}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -236,47 +372,47 @@ const NotificationPreferencesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   header: {
     padding: 20,
-    backgroundColor: '#8d36ff',
+    backgroundColor: "#8d36ff",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
+    fontWeight: "bold",
+    color: "white",
     marginBottom: 5,
   },
   subtitle: {
     fontSize: 16,
-    color: 'white',
+    color: "white",
     opacity: 0.9,
   },
   section: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     marginVertical: 10,
     paddingVertical: 15,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
     paddingHorizontal: 20,
     marginBottom: 15,
   },
   preferenceItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: "#f0f0f0",
   },
   preferenceContent: {
     flex: 1,
@@ -284,50 +420,55 @@ const styles = StyleSheet.create({
   },
   preferenceLabel: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
+    fontWeight: "500",
+    color: "#333",
     marginBottom: 3,
   },
   preferenceDescription: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     lineHeight: 20,
   },
   infoItem: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
   infoLabel: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
+    fontWeight: "500",
+    color: "#333",
     width: 120,
   },
   infoValue: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
     flex: 1,
   },
   infoValueSmall: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
     flex: 1,
-    fontFamily: 'monospace',
+    fontFamily: "monospace",
   },
   actions: {
     padding: 20,
   },
   testButton: {
-    backgroundColor: '#8d36ff',
+    backgroundColor: "#8d36ff",
     padding: 15,
     borderRadius: 10,
-    alignItems: 'center',
+    alignItems: "center",
+    minHeight: 50,
+    justifyContent: "center",
+  },
+  testButtonDisabled: {
+    backgroundColor: "#b985ff",
   },
   testButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
 

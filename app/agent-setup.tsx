@@ -17,6 +17,7 @@ import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { apiClient } from "../utils/axios-interceptor";
 import { Colors } from "../utils/colors";
 import { useUpdateAgentMutation } from "../utils/hooks";
+import { onAgentCreated } from "./notifications/notificationHelpers";
 
 export default function AgentSetup() {
   const { t } = useTranslation();
@@ -51,6 +52,14 @@ export default function AgentSetup() {
           agentDescription: agentDescription,
         };
         await updateAgentMutation.mutateAsync(newConfig);
+
+        // Send notification for new agent
+        onAgentCreated({
+          agentName: agentName,
+          agentId: response.data.id,
+        }).catch((err) =>
+          console.error("Failed to send agent creation notification:", err)
+        );
       }
 
       router.replace("/(tabs)/home");
