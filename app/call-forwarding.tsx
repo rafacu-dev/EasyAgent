@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
+  Image,
 } from "react-native";
 import { Colors } from "../utils/colors";
 import { useTranslation } from "react-i18next";
@@ -43,7 +44,7 @@ function CarrierCard({
     <View style={styles.carrierCard}>
       <TouchableOpacity style={styles.carrierHeader} onPress={onToggle}>
         <View style={styles.carrierInfo}>
-          <Text style={styles.carrierLogo}>{carrier.logo}</Text>
+          <Image source={carrier.logo} style={styles.carrierLogo} />
           <Text style={styles.carrierName}>{carrier.name}</Text>
         </View>
         <Ionicons
@@ -197,47 +198,27 @@ export default function CallForwardingScreen() {
   );
 
   const handleDial = async (code: string, label: string) => {
-    Alert.alert(
-      t("callForwarding.dialConfirm", "Dial Code?"),
-      t(
-        "callForwarding.dialMessage",
-        "Do you want to dial {{code}} to activate {{label}}?",
-        { code, label }
-      ),
-      [
-        {
-          text: t("common.cancel", "Cancel"),
-          style: "cancel",
-        },
-        {
-          text: t("callForwarding.dial", "Dial"),
-          onPress: async () => {
-            try {
-              const url = `tel:${code}`;
-              const canOpen = await Linking.canOpenURL(url);
-              if (canOpen) {
-                await Linking.openURL(url);
-                router.push("/(tabs)/home");
-              } else {
-                Alert.alert(
-                  t("common.error", "Error"),
-                  t(
-                    "callForwarding.cannotDial",
-                    "Unable to open dialer on this device"
-                  )
-                );
-              }
-            } catch (error) {
-              console.log("Dialing error:", error);
-              Alert.alert(
-                t("common.error", "Error"),
-                t("callForwarding.dialError", "Failed to dial code")
-              );
-            }
-          },
-        },
-      ]
-    );
+    try {
+      const url = `tel:${code}`;
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert(
+          t("common.error", "Error"),
+          t(
+            "callForwarding.cannotDial",
+            "Unable to open dialer on this device"
+          )
+        );
+      }
+    } catch (error) {
+      console.log("Dialing error:", error);
+      Alert.alert(
+        t("common.error", "Error"),
+        t("callForwarding.dialError", "Failed to dial code")
+      );
+    }
   };
 
   const copyTwilioNumber = async () => {
@@ -470,7 +451,7 @@ const styles = StyleSheet.create({
   },
   infoBanner: {
     flexDirection: "row",
-    backgroundColor: Colors.primaryLight || "#E8F4FD",
+    backgroundColor: "#fdf1e8",
     padding: 16,
     margin: 16,
     borderRadius: 12,
@@ -585,7 +566,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   carrierLogo: {
-    fontSize: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    resizeMode: 'contain' as const,
   },
   carrierName: {
     fontSize: 16,
@@ -595,8 +579,6 @@ const styles = StyleSheet.create({
   carrierContent: {
     padding: 16,
     paddingTop: 0,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
   },
   codeSection: {
     marginBottom: 16,

@@ -16,7 +16,7 @@ export const US_CARRIERS = [
   {
     id: "att",
     name: "AT&T",
-    logo: "📱",
+    logo: require("../assets/images/operators/att.jpg"),
     activateAll: "*21*{number}#",
     deactivate: "#21#",
     activateNoAnswer: "*61*{number}*11*30#",
@@ -26,7 +26,7 @@ export const US_CARRIERS = [
   {
     id: "verizon",
     name: "Verizon",
-    logo: "📱",
+    logo: require("../assets/images/operators/verizon.jpg"),
     activateAll: "*72{number}",
     deactivate: "*73",
     activateNoAnswer: "*71{number}",
@@ -36,7 +36,7 @@ export const US_CARRIERS = [
   {
     id: "tmobile",
     name: "T-Mobile",
-    logo: "📱",
+    logo: require("../assets/images/operators/tmobile.jpg"),
     activateAll: "**21*{number}#",
     deactivate: "##21#",
     activateNoAnswer: "**61*{number}**30#",
@@ -46,7 +46,7 @@ export const US_CARRIERS = [
   {
     id: "sprint",
     name: "Sprint / T-Mobile",
-    logo: "📱",
+    logo: require("../assets/images/operators/sprint.jpg"),
     activateAll: "*72{number}",
     deactivate: "*720",
     activateNoAnswer: "*73{number}",
@@ -56,7 +56,7 @@ export const US_CARRIERS = [
   {
     id: "uscellular",
     name: "US Cellular",
-    logo: "📱",
+    logo: require("../assets/images/operators/uscellular.jpg"),
     activateAll: "*72{number}",
     deactivate: "*73",
     activateNoAnswer: "*92{number}",
@@ -66,7 +66,7 @@ export const US_CARRIERS = [
   {
     id: "cricket",
     name: "Cricket Wireless",
-    logo: "📱",
+    logo: require("../assets/images/operators/cricket.jpg"),
     activateAll: "*21*{number}#",
     deactivate: "#21#",
     activateNoAnswer: "*61*{number}#",
@@ -76,7 +76,7 @@ export const US_CARRIERS = [
   {
     id: "metro",
     name: "Metro by T-Mobile",
-    logo: "📱",
+    logo: require("../assets/images/operators/metro.jpg"),
     activateAll: "**21*{number}#",
     deactivate: "##21#",
     activateNoAnswer: "**61*{number}#",
@@ -86,7 +86,7 @@ export const US_CARRIERS = [
   {
     id: "boost",
     name: "Boost Mobile",
-    logo: "📱",
+    logo: require("../assets/images/operators/boost.jpg"),
     activateAll: "*72{number}",
     deactivate: "*73",
     activateNoAnswer: "*92{number}",
@@ -96,7 +96,7 @@ export const US_CARRIERS = [
   {
     id: "visible",
     name: "Visible",
-    logo: "📱",
+    logo: require("../assets/images/operators/visible.jpg"),
     activateAll: "*72{number}",
     deactivate: "*73",
     activateNoAnswer: "*71{number}",
@@ -106,7 +106,7 @@ export const US_CARRIERS = [
   {
     id: "googlefi",
     name: "Google Fi",
-    logo: "📱",
+    logo: require("../assets/images/operators/googlefi.jpg"),
     activateAll: "*21*{number}#",
     deactivate: "#21#",
     activateNoAnswer: "*61*{number}#",
