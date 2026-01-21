@@ -58,7 +58,7 @@ export default function EditAgent() {
     if (!formData.agentId) {
       Alert.alert(
         t("common.error", "Error"),
-        t("editAgent.noAgentId", "Agent ID not found. Cannot update.")
+        t("editAgent.noAgentId", "Agent ID not found. Cannot update."),
       );
       return;
     }
@@ -89,7 +89,7 @@ export default function EditAgent() {
         name: formData.agentName,
         id: formData.agentId,
       }).catch((err) =>
-        console.error("Failed to send agent update notification:", err)
+        console.error("Failed to send agent update notification:", err),
       );
 
       Alert.alert(
@@ -100,7 +100,7 @@ export default function EditAgent() {
             text: "OK",
             onPress: () => router.back(),
           },
-        ]
+        ],
       );
     } catch (error: any) {
       console.error("Error updating agent:", error);
@@ -154,7 +154,7 @@ export default function EditAgent() {
             <Text style={styles.subtitle}>
               {t(
                 "editAgent.subtitle",
-                "Update your agent's properties and configuration"
+                "Update your agent's properties and configuration",
               )}
             </Text>
           </Animated.View>
@@ -237,7 +237,7 @@ export default function EditAgent() {
                 style={styles.input}
                 placeholder={t(
                   "agentSetup.agentNamePlaceholder",
-                  "Enter agent name"
+                  "Enter agent name",
                 )}
                 placeholderTextColor="#B0B0B0"
                 value={formData.agentName}
@@ -255,7 +255,7 @@ export default function EditAgent() {
                 style={styles.input}
                 placeholder={t(
                   "companyInfo.companyNamePlaceholder",
-                  "Enter company name"
+                  "Enter company name",
                 )}
                 placeholderTextColor="#B0B0B0"
                 value={formData.companyName}
@@ -274,7 +274,7 @@ export default function EditAgent() {
                 style={[styles.input, styles.textArea]}
                 placeholder={t(
                   "agentSetup.descriptionPlaceholder",
-                  "Describe your agent's personality..."
+                  "Describe your agent's personality...",
                 )}
                 placeholderTextColor="#B0B0B0"
                 value={formData.agentDescription}
@@ -295,7 +295,7 @@ export default function EditAgent() {
                 style={[styles.input, styles.textArea]}
                 placeholder={t(
                   "companyInfo.socialMediaPlaceholder",
-                  "Add social media links..."
+                  "Add social media links...",
                 )}
                 placeholderTextColor="#B0B0B0"
                 value={formData.socialMediaAndWeb}
@@ -320,7 +320,7 @@ export default function EditAgent() {
               <Text style={styles.helperText}>
                 {t(
                   "editAgent.sectorHelper",
-                  "To change sector, create a new agent"
+                  "To change sector, create a new agent",
                 )}
               </Text>
             </View>

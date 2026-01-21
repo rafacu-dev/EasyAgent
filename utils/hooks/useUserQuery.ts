@@ -27,7 +27,7 @@ export const useUserQuery = () => {
 
   const user = query.data ?? null;
   const tier: UserTier = user?.tier ?? "pro";
-  const isProOrAbove = true;
+  const isProOrAbove = false;
   const isBusinessOrAbove = ["business", "enterprise"].includes(tier);
 
   // Helper to update cache (used after login)

@@ -36,7 +36,7 @@ export default function VerifyTokenScreen() {
     if (resendCountdown > 0) {
       const timer = setTimeout(
         () => setResendCountdown(resendCountdown - 1),
-        1000
+        1000,
       );
       return () => clearTimeout(timer);
     }
@@ -44,8 +44,43 @@ export default function VerifyTokenScreen() {
 
   const handleCodeChange = (value: string, index: number) => {
     // Only allow digits
-    const digit = value.replace(/[^0-9]/g, "").slice(-1);
+    const digitsOnly = value.replace(/[^0-9]/g, "");
 
+    // Handle paste of multiple digits (6-digit code)
+    if (digitsOnly.length >= 6) {
+      const newCode = digitsOnly.slice(0, 6).split("");
+      setCode(newCode);
+
+      // Blur current input and auto-submit
+      inputRefs.current[index]?.blur();
+      handleVerifyToken(newCode.join(""));
+      return;
+    }
+
+    // Handle paste of partial code (2-5 digits)
+    if (digitsOnly.length > 1) {
+      const newCode = [...code];
+      const digits = digitsOnly.slice(0, 6).split("");
+
+      // Fill from current index
+      digits.forEach((digit, i) => {
+        if (index + i < 6) {
+          newCode[index + i] = digit;
+        }
+      });
+
+      setCode(newCode);
+
+      // Focus the next empty input or last filled
+      const lastFilledIndex = Math.min(index + digits.length - 1, 5);
+      if (lastFilledIndex < 5) {
+        inputRefs.current[lastFilledIndex + 1]?.focus();
+      }
+      return;
+    }
+
+    // Handle single digit input
+    const digit = digitsOnly.slice(-1);
     const newCode = [...code];
     newCode[index] = digit;
     setCode(newCode);
@@ -90,7 +125,7 @@ export default function VerifyTokenScreen() {
       await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refresh);
       await AsyncStorage.setItem(
         STORAGE_KEYS.USER,
-        JSON.stringify(response.user)
+        JSON.stringify(response.user),
       );
 
       // Redirect based on user status
@@ -105,7 +140,7 @@ export default function VerifyTokenScreen() {
       if (__DEV__) console.error("Error verifying token:", error);
       Alert.alert(
         t("common.error"),
-        error.response?.data?.error || t("verifyToken.verifyFailed")
+        error.response?.data?.error || t("verifyToken.verifyFailed"),
       );
       // Clear code on error
       setCode(["", "", "", "", "", ""]);
@@ -127,7 +162,7 @@ export default function VerifyTokenScreen() {
       if (__DEV__) console.error("Error resending code:", error);
       Alert.alert(
         t("common.error"),
-        error.response?.data?.error || t("verifyToken.resendFailed")
+        error.response?.data?.error || t("verifyToken.resendFailed"),
       );
     } finally {
       setResendLoading(false);
@@ -255,7 +290,6 @@ export default function VerifyTokenScreen() {
                 handleKeyPress(nativeEvent.key, index)
               }
               keyboardType="number-pad"
-              maxLength={1}
               editable={!isLoading}
               selectTextOnFocus
             />
