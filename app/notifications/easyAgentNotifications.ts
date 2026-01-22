@@ -56,11 +56,10 @@ export interface PhoneNumberNotificationData {
 // ============================================================================
 
 export const NOTIFICATION_TYPES = {
+  CALL_RECEIVED: "call_received",
   CALL_COMPLETED: "call_completed",
   APPOINTMENT_SCHEDULED: "appointment_scheduled",
-  AGENT_UPDATED: "agent_updated",
-  PHONE_NUMBER_ADDED: "phone_number_added",
-  SYSTEM: "system",
+  APPOINTMENT_REMINDER: "appointment_reminder",
 } as const;
 
 export type NotificationType =
@@ -71,35 +70,10 @@ export type NotificationType =
 // ============================================================================
 
 /**
- * Notify when a call is completed
- */
-export const notifyCallCompleted = async (
-  callData: CallNotificationData
-): Promise<boolean> => {
-  try {
-    const response = await apiClient.post("notifications/call/completed/", {
-      call_id: callData.call_id,
-      to_number: callData.to_number,
-      duration: callData.duration,
-      status: callData.status,
-    });
-
-    console.log("✅ Call completed notification sent:", response.data);
-    return response.data?.success ?? true;
-  } catch (error: any) {
-    console.error(
-      "❌ Failed to send call notification:",
-      error.response?.data || error.message
-    );
-    return false;
-  }
-};
-
-/**
  * Notify when an appointment is scheduled
  */
 export const notifyAppointmentScheduled = async (
-  appointmentData: AppointmentNotificationData
+  appointmentData: AppointmentNotificationData,
 ): Promise<boolean> => {
   try {
     const response = await apiClient.post(
@@ -109,7 +83,7 @@ export const notifyAppointmentScheduled = async (
         date: appointmentData.date,
         time: appointmentData.time,
         client_name: appointmentData.client_name,
-      }
+      },
     );
 
     console.log("✅ Appointment notification sent:", response.data);
@@ -117,55 +91,7 @@ export const notifyAppointmentScheduled = async (
   } catch (error: any) {
     console.error(
       "❌ Failed to send appointment notification:",
-      error.response?.data || error.message
-    );
-    return false;
-  }
-};
-
-/**
- * Notify when an agent is created or updated
- */
-export const notifyAgentUpdated = async (
-  agentData: AgentNotificationData
-): Promise<boolean> => {
-  try {
-    const response = await apiClient.post("notifications/agent/updated/", {
-      agent_id: agentData.id,
-      name: agentData.name,
-      status: agentData.status,
-    });
-
-    console.log("✅ Agent update notification sent:", response.data);
-    return response.data?.success ?? true;
-  } catch (error: any) {
-    console.error(
-      "❌ Failed to send agent notification:",
-      error.response?.data || error.message
-    );
-    return false;
-  }
-};
-
-/**
- * Notify when a phone number is added
- */
-export const notifyPhoneNumberAdded = async (
-  phoneData: PhoneNumberNotificationData
-): Promise<boolean> => {
-  try {
-    const response = await apiClient.post("notifications/phone-number/added/", {
-      phone_number_id: phoneData.id,
-      phone_number: phoneData.phone_number,
-      friendly_name: phoneData.friendly_name,
-    });
-
-    console.log("✅ Phone number notification sent:", response.data);
-    return response.data?.success ?? true;
-  } catch (error: any) {
-    console.error(
-      "❌ Failed to send phone number notification:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     return false;
   }
@@ -187,7 +113,7 @@ export const getNotificationPreferences = async (): Promise<
   } catch (error: any) {
     console.error(
       "❌ Failed to get preferences:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     return null;
   }
@@ -197,7 +123,7 @@ export const getNotificationPreferences = async (): Promise<
  * Update notification preferences on server
  */
 export const updateNotificationPreferences = async (
-  preferences: Record<string, boolean>
+  preferences: Record<string, boolean>,
 ): Promise<boolean> => {
   try {
     // Convert to array format expected by backend
@@ -205,7 +131,7 @@ export const updateNotificationPreferences = async (
       ([type, enabled]) => ({
         notification_type: type,
         is_enabled: enabled,
-      })
+      }),
     );
 
     const response = await apiClient.post("notifications/preferences/", {
@@ -217,7 +143,7 @@ export const updateNotificationPreferences = async (
   } catch (error: any) {
     console.error(
       "❌ Failed to update preferences:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     return false;
   }
@@ -227,11 +153,10 @@ export const updateNotificationPreferences = async (
  * Get default preferences for EasyAgent
  */
 export const getDefaultPreferences = (): Record<string, boolean> => ({
+  [NOTIFICATION_TYPES.CALL_RECEIVED]: true,
   [NOTIFICATION_TYPES.CALL_COMPLETED]: true,
   [NOTIFICATION_TYPES.APPOINTMENT_SCHEDULED]: true,
-  [NOTIFICATION_TYPES.AGENT_UPDATED]: true,
-  [NOTIFICATION_TYPES.PHONE_NUMBER_ADDED]: true,
-  [NOTIFICATION_TYPES.SYSTEM]: true,
+  [NOTIFICATION_TYPES.APPOINTMENT_REMINDER]: true,
 });
 
 // ============================================================================
@@ -250,7 +175,7 @@ export const getNotificationLogs = async (): Promise<
   } catch (error: any) {
     console.error(
       "❌ Failed to get notification logs:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     return null;
   }
@@ -265,13 +190,13 @@ export const getNotificationLogs = async (): Promise<
  */
 export const sendTestNotification = async (): Promise<boolean> => {
   try {
-    const response = await apiClient.post("notifications/test/");
+    const response = await apiClient.get("notifications/test/");
     console.log("✅ Test notification sent:", response.data);
     return response.data?.success ?? true;
   } catch (error: any) {
     console.error(
       "❌ Failed to send test notification:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     return false;
   }
@@ -285,17 +210,17 @@ export const sendTestNotification = async (): Promise<boolean> => {
  * Get the screen to navigate to based on notification type
  */
 export const getScreenForNotificationType = (
-  type: NotificationType | string
+  type: NotificationType | string,
 ): string => {
   switch (type) {
+    case NOTIFICATION_TYPES.CALL_RECEIVED:
+      return "/(tabs)/phone";
     case NOTIFICATION_TYPES.CALL_COMPLETED:
-      return "/call-history";
+      return "/(tabs)/phone";
     case NOTIFICATION_TYPES.APPOINTMENT_SCHEDULED:
-      return "/(tabs)"; // Main screen or appointments when available
-    case NOTIFICATION_TYPES.AGENT_UPDATED:
-      return "/agent-setup";
-    case NOTIFICATION_TYPES.PHONE_NUMBER_ADDED:
-      return "/(tabs)"; // Main screen
+      return "/(tabs)/calendar";
+    case NOTIFICATION_TYPES.APPOINTMENT_REMINDER:
+      return "/(tabs)/calendar";
     default:
       return "/(tabs)";
   }
@@ -305,19 +230,17 @@ export const getScreenForNotificationType = (
  * Get human-readable label for notification type
  */
 export const getNotificationTypeLabel = (
-  type: NotificationType | string
+  type: NotificationType | string,
 ): string => {
   switch (type) {
+    case NOTIFICATION_TYPES.CALL_RECEIVED:
+      return "Incoming Call Notifications";
     case NOTIFICATION_TYPES.CALL_COMPLETED:
-      return "Call Notifications";
+      return "Call Completed Notifications";
     case NOTIFICATION_TYPES.APPOINTMENT_SCHEDULED:
       return "Appointment Notifications";
-    case NOTIFICATION_TYPES.AGENT_UPDATED:
-      return "Agent Updates";
-    case NOTIFICATION_TYPES.PHONE_NUMBER_ADDED:
-      return "Phone Number Notifications";
-    case NOTIFICATION_TYPES.SYSTEM:
-      return "System Notifications";
+    case NOTIFICATION_TYPES.APPOINTMENT_REMINDER:
+      return "Appointment Reminders";
     default:
       return type;
   }
@@ -329,10 +252,7 @@ export const getNotificationTypeLabel = (
 
 export default {
   // Send notifications
-  notifyCallCompleted,
   notifyAppointmentScheduled,
-  notifyAgentUpdated,
-  notifyPhoneNumberAdded,
 
   // Preferences
   getNotificationPreferences,

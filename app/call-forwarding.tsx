@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Linking,
   Image,
 } from "react-native";
@@ -17,6 +16,7 @@ import { useAgentQuery, usePhoneNumbersQuery } from "@/utils/hooks";
 import * as Clipboard from "expo-clipboard";
 import { US_CARRIERS } from "../utils/constants";
 import type { USCarrier } from "../utils/types.d";
+import { showError, showSuccess } from "@/utils/toast";
 
 interface CarrierCardProps {
   carrier: USCarrier;
@@ -66,7 +66,7 @@ function CarrierCard({
               onPress={() =>
                 onDial(
                   formatCode(carrier.activateAll),
-                  t("callForwarding.forwardAll", "Forward All Calls")
+                  t("callForwarding.forwardAll", "Forward All Calls"),
                 )
               }
             >
@@ -78,7 +78,7 @@ function CarrierCard({
             <Text style={styles.codeHint}>
               {t(
                 "callForwarding.forwardAllHint",
-                "Dial this code to forward all incoming calls"
+                "Dial this code to forward all incoming calls",
               )}
             </Text>
           </View>
@@ -93,7 +93,7 @@ function CarrierCard({
               onPress={() =>
                 onDial(
                   carrier.deactivate,
-                  t("callForwarding.deactivate", "Deactivate Forwarding")
+                  t("callForwarding.deactivate", "Deactivate Forwarding"),
                 )
               }
             >
@@ -103,7 +103,7 @@ function CarrierCard({
             <Text style={styles.codeHint}>
               {t(
                 "callForwarding.deactivateHint",
-                "Dial this code to stop call forwarding"
+                "Dial this code to stop call forwarding",
               )}
             </Text>
           </View>
@@ -118,7 +118,7 @@ function CarrierCard({
               onPress={() =>
                 onDial(
                   formatCode(carrier.activateNoAnswer),
-                  t("callForwarding.noAnswer", "Forward When No Answer")
+                  t("callForwarding.noAnswer", "Forward When No Answer"),
                 )
               }
             >
@@ -130,7 +130,7 @@ function CarrierCard({
             <Text style={styles.codeHint}>
               {t(
                 "callForwarding.noAnswerHint",
-                "Forward calls only when you don't answer"
+                "Forward calls only when you don't answer",
               )}
             </Text>
           </View>
@@ -145,7 +145,7 @@ function CarrierCard({
               onPress={() =>
                 onDial(
                   formatCode(carrier.activateBusy),
-                  t("callForwarding.busy", "Forward When Busy")
+                  t("callForwarding.busy", "Forward When Busy"),
                 )
               }
             >
@@ -157,7 +157,7 @@ function CarrierCard({
             <Text style={styles.codeHint}>
               {t(
                 "callForwarding.busyHint",
-                "Forward calls only when your line is busy"
+                "Forward calls only when your line is busy",
               )}
             </Text>
           </View>
@@ -172,7 +172,7 @@ function CarrierCard({
             <Text style={styles.notesText}>
               {t(
                 carrier.notes,
-                "Dial these codes from your phone's dialer app. Some carriers may require calling customer service to enable call forwarding."
+                "Dial these codes from your phone's dialer app. Some carriers may require calling customer service to enable call forwarding.",
               )}
             </Text>
           </View>
@@ -189,12 +189,12 @@ export default function CallForwardingScreen() {
 
   // Get the phone number associated with the agent
   const phoneNumberData = phoneNumbers?.find(
-    (pn) => pn.agent === Number(agentConfig?.id)
+    (pn) => pn.agent === Number(agentConfig?.id),
   );
   const twilioNumber = phoneNumberData?.phone_number || "";
 
   const [expandedCarrier, setExpandedCarrier] = React.useState<string | null>(
-    null
+    null,
   );
 
   const handleDial = async (code: string, label: string) => {
@@ -204,28 +204,28 @@ export default function CallForwardingScreen() {
       if (canOpen) {
         await Linking.openURL(url);
       } else {
-        Alert.alert(
+        showError(
           t("common.error", "Error"),
           t(
             "callForwarding.cannotDial",
-            "Unable to open dialer on this device"
-          )
+            "Unable to open dialer on this device",
+          ),
         );
       }
     } catch (error) {
       console.log("Dialing error:", error);
-      Alert.alert(
+      showError(
         t("common.error", "Error"),
-        t("callForwarding.dialError", "Failed to dial code")
+        t("callForwarding.dialError", "Failed to dial code"),
       );
     }
   };
 
   const copyTwilioNumber = async () => {
     await Clipboard.setStringAsync(twilioNumber);
-    Alert.alert(
+    showSuccess(
       t("common.success", "Success"),
-      t("callForwarding.numberCopied", "Phone number copied to clipboard")
+      t("callForwarding.numberCopied", "Phone number copied to clipboard"),
     );
   };
 
@@ -255,7 +255,7 @@ export default function CallForwardingScreen() {
           <Text style={styles.noPhoneMessage}>
             {t(
               "callForwarding.noPhoneMessage",
-              "You need a phone number to set up call forwarding"
+              "You need a phone number to set up call forwarding",
             )}
           </Text>
           <TouchableOpacity
@@ -296,7 +296,7 @@ export default function CallForwardingScreen() {
           <Text style={styles.infoBannerText}>
             {t(
               "callForwarding.infoBanner",
-              "Forward calls from your personal phone to your AI agent. When someone calls your personal number, the call will be handled by your AI agent."
+              "Forward calls from your personal phone to your AI agent. When someone calls your personal number, the call will be handled by your AI agent.",
             )}
           </Text>
         </View>
@@ -319,7 +319,7 @@ export default function CallForwardingScreen() {
           <Text style={styles.sectionHint}>
             {t(
               "callForwarding.numberHint",
-              "This is the number you'll forward calls to"
+              "This is the number you'll forward calls to",
             )}
           </Text>
         </View>
@@ -341,7 +341,7 @@ export default function CallForwardingScreen() {
                 <Text style={styles.stepDescription}>
                   {t(
                     "callForwarding.step1Description",
-                    "Select your mobile carrier from the list below"
+                    "Select your mobile carrier from the list below",
                   )}
                 </Text>
               </View>
@@ -357,7 +357,7 @@ export default function CallForwardingScreen() {
                 <Text style={styles.stepDescription}>
                   {t(
                     "callForwarding.step2Description",
-                    "Open your phone's dialer and dial the forwarding code"
+                    "Open your phone's dialer and dial the forwarding code",
                   )}
                 </Text>
               </View>
@@ -373,7 +373,7 @@ export default function CallForwardingScreen() {
                 <Text style={styles.stepDescription}>
                   {t(
                     "callForwarding.step3Description",
-                    "You'll hear a confirmation tone or receive a message"
+                    "You'll hear a confirmation tone or receive a message",
                   )}
                 </Text>
               </View>
@@ -396,7 +396,7 @@ export default function CallForwardingScreen() {
               expanded={expandedCarrier === carrier.id}
               onToggle={() =>
                 setExpandedCarrier(
-                  expandedCarrier === carrier.id ? null : carrier.id
+                  expandedCarrier === carrier.id ? null : carrier.id,
                 )
               }
             />
@@ -413,7 +413,7 @@ export default function CallForwardingScreen() {
           <Text style={styles.helpText}>
             {t(
               "callForwarding.needHelp",
-              "If these codes don't work, contact your carrier's customer service. Some plans may require additional features to enable call forwarding."
+              "If these codes don't work, contact your carrier's customer service. Some plans may require additional features to enable call forwarding.",
             )}
           </Text>
         </View>
@@ -569,7 +569,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 8,
-    resizeMode: 'contain' as const,
+    resizeMode: "contain" as const,
   },
   carrierName: {
     fontSize: 16,

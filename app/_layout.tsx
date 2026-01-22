@@ -10,6 +10,8 @@ import { saveLastLogin, getAuthToken } from "../utils/storage";
 import * as Updates from "expo-updates";
 import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import NotificationProvider from "./notifications/NotificationProvider";
+import Toast from "react-native-toast-message";
+import { toastConfig } from "../utils/toastConfig";
 
 function AppStateHandler({ children }: { children: React.ReactNode }) {
   const appState = useRef(AppState.currentState);
@@ -22,7 +24,7 @@ function AppStateHandler({ children }: { children: React.ReactNode }) {
       if (!Updates.isEnabled) {
         console.log("🔄 [OTA] Updates are not enabled");
         console.log(
-          "🔄 [OTA] Updates only work in production builds (eas build)"
+          "🔄 [OTA] Updates only work in production builds (eas build)",
         );
         console.log("🔄 [OTA] Current channel:", Updates.channel || "none");
         console.log("🔄 [OTA] Is embedded launch:", Updates.isEmbeddedLaunch);
@@ -91,11 +93,11 @@ function AppStateHandler({ children }: { children: React.ReactNode }) {
         ) {
           const now = new Date().toISOString();
           saveLastLogin(now).catch((err) =>
-            console.error("Failed to save last login:", err)
+            console.error("Failed to save last login:", err),
           );
         }
         appState.current = nextAppState;
-      }
+      },
     );
 
     return () => {
@@ -134,9 +136,8 @@ export default function RootLayout() {
 
       try {
         // Importación dinámica solo cuando no está en Expo Go
-        const { requestTrackingPermissionsAsync } = await import(
-          "expo-tracking-transparency"
-        );
+        const { requestTrackingPermissionsAsync } =
+          await import("expo-tracking-transparency");
         const { Settings } = await import("react-native-fbsdk-next");
 
         // 1️⃣ PEDIR PERMISO (ATT) - Usando la librería oficial de Expo
@@ -172,6 +173,7 @@ export default function RootLayout() {
               },
             }}
           />
+          <Toast config={toastConfig} />
         </NotificationProvider>
       </AppStateHandler>
     </QueryClientProvider>

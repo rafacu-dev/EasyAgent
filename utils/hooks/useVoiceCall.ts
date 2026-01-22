@@ -4,9 +4,10 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Alert, Platform } from "react-native";
+import { Platform } from "react-native";
 import { apiClient } from "../axios-interceptor";
 import { Audio } from "expo-av";
+import { showError, showInfo } from "../toast";
 
 // Types for the Voice SDK
 interface VoiceToken {
@@ -68,7 +69,7 @@ export function useVoiceCall({
   const voiceRef = useRef<any>(null);
   const activeCallRef = useRef<any>(null);
   const durationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
-    null
+    null,
   );
   const speakerStateRef = useRef<boolean>(false);
 
@@ -81,7 +82,7 @@ export function useVoiceCall({
         return newState;
       });
     },
-    [onCallStateChange]
+    [onCallStateChange],
   );
 
   // Setup event handlers for an active call
@@ -109,12 +110,12 @@ export function useVoiceCall({
           console.log(
             `[TWILIO DEBUG] ✅ Audio mode set: ${
               speakerStateRef.current ? "SPEAKER" : "EARPIECE"
-            }`
+            }`,
           );
         } catch (error) {
           console.error(
             "[TWILIO DEBUG] ❌ Failed to set audio mode on connect:",
-            error
+            error,
           );
         }
 
@@ -138,7 +139,7 @@ export function useVoiceCall({
       call.on("disconnected", (error?: any) => {
         console.log(
           "[TWILIO DEBUG] ❌ Call disconnected",
-          error ? `Error: ${error}` : ""
+          error ? `Error: ${error}` : "",
         );
         // Stop duration timer
         if (durationIntervalRef.current) {
@@ -162,7 +163,7 @@ export function useVoiceCall({
         console.log("[TWILIO DEBUG] 📞 Call ringing...");
       });
     },
-    [updateCallState]
+    [updateCallState],
   );
 
   // Handle accepting incoming call
@@ -176,7 +177,7 @@ export function useVoiceCall({
         console.error("Failed to accept call:", error);
       }
     },
-    [setupCallEventHandlers]
+    [setupCallEventHandlers],
   );
 
   // Initialize Voice SDK
@@ -195,15 +196,10 @@ export function useVoiceCall({
           // Set up event listeners for incoming calls (optional)
           voiceRef.current.on("callInvite", (callInvite: any) => {
             console.log("[TWILIO DEBUG] 📞 Incoming call invite:", callInvite);
-            // Handle incoming call - could show UI to accept/reject
-            Alert.alert("Incoming Call", `Call from ${callInvite.from}`, [
-              {
-                text: "Reject",
-                style: "destructive",
-                onPress: () => callInvite.reject(),
-              },
-              { text: "Accept", onPress: () => handleAcceptCall(callInvite) },
-            ]);
+            // Handle incoming call - show notification
+            showInfo("Incoming Call", `Call from ${callInvite.from}`);
+            // Auto-accept incoming calls (or could add UI to accept/reject)
+            handleAcceptCall(callInvite);
           });
 
           voiceRef.current.on("error", (error: any) => {
@@ -215,7 +211,7 @@ export function useVoiceCall({
         } catch (error) {
           console.error(
             "[TWILIO DEBUG] ❌ Failed to initialize Voice SDK:",
-            error
+            error,
           );
         }
       }
@@ -256,7 +252,7 @@ export function useVoiceCall({
       console.error("[TWILIO DEBUG] ❌ Failed to get access token:", error);
       console.error("[TWILIO DEBUG] Error details:", error.response?.data);
       throw new Error(
-        error.response?.data?.error || "Failed to get access token"
+        error.response?.data?.error || "Failed to get access token",
       );
     }
   }, [fromNumber]);
@@ -268,28 +264,28 @@ export function useVoiceCall({
 
       if (!isSDKAvailable || !voiceRef.current) {
         console.error("[TWILIO DEBUG] ERROR: Voice SDK not available");
-        Alert.alert(
+        showError(
           "Voice SDK Not Available",
-          "The voice calling feature is not available on this device. Please ensure you have the proper native modules installed."
+          "The voice calling feature is not available on this device. Please ensure you have the proper native modules installed.",
         );
         return false;
       }
 
       if (!fromNumber) {
         console.error("[TWILIO DEBUG] ERROR: No from_number available");
-        Alert.alert("Error", "No phone number available for making calls");
+        showError("Error", "No phone number available for making calls");
         return false;
       }
 
       if (activeCallRef.current) {
         console.warn("[TWILIO DEBUG] WARNING: Call already in progress");
-        Alert.alert("Error", "A call is already in progress");
+        showError("Error", "A call is already in progress");
         return false;
       }
 
       try {
         console.log(
-          `[TWILIO DEBUG] Initiating call from ${fromNumber} to ${toNumber}`
+          `[TWILIO DEBUG] Initiating call from ${fromNumber} to ${toNumber}`,
         );
         updateCallState({ isConnecting: true, remoteParty: toNumber });
 
@@ -324,10 +320,10 @@ export function useVoiceCall({
         console.error("[TWILIO DEBUG] ❌ Failed to make call:", error);
         console.error(
           "[TWILIO DEBUG] Error details:",
-          JSON.stringify(error, null, 2)
+          JSON.stringify(error, null, 2),
         );
         updateCallState({ isConnecting: false, remoteParty: null });
-        Alert.alert("Call Failed", error.message || "Failed to initiate call");
+        showError("Call Failed", error.message || "Failed to initiate call");
         return false;
       }
     },
@@ -337,7 +333,7 @@ export function useVoiceCall({
       updateCallState,
       getAccessToken,
       setupCallEventHandlers,
-    ]
+    ],
   );
 
   // Disconnect active call
@@ -372,7 +368,7 @@ export function useVoiceCall({
       console.log(
         `[TWILIO DEBUG] ${
           newMuteState ? "🔇" : "🔊"
-        } Toggling mute: ${newMuteState}`
+        } Toggling mute: ${newMuteState}`,
       );
       activeCallRef.current.mute(newMuteState);
       updateCallState({ isMuted: newMuteState });
@@ -386,7 +382,7 @@ export function useVoiceCall({
       console.log(
         `[TWILIO DEBUG] ${
           newHoldState ? "⏸️" : "▶️"
-        } Toggling hold: ${newHoldState}`
+        } Toggling hold: ${newHoldState}`,
       );
       activeCallRef.current.hold(newHoldState);
       updateCallState({ isOnHold: newHoldState });
@@ -400,7 +396,7 @@ export function useVoiceCall({
     console.log(
       `[TWILIO DEBUG] ${
         newSpeakerState ? "🔊" : "🔉"
-      } Toggling speaker: ${newSpeakerState}`
+      } Toggling speaker: ${newSpeakerState}`,
     );
     try {
       // Set audio mode for speaker/earpiece
@@ -415,11 +411,11 @@ export function useVoiceCall({
       console.log(
         `[TWILIO DEBUG] ✅ Audio routed to ${
           newSpeakerState ? "SPEAKER" : "EARPIECE"
-        }`
+        }`,
       );
     } catch (error) {
       console.error("[TWILIO DEBUG] ❌ Failed to toggle speaker:", error);
-      Alert.alert("Error", "Failed to toggle speaker mode");
+      showError("Error", "Failed to toggle speaker mode");
     }
   }, [callState.isSpeakerOn, updateCallState]);
 
@@ -435,7 +431,7 @@ export function useVoiceCall({
     console.log("[TWILIO DEBUG] Registering for incoming calls...");
     if (!isSDKAvailable || !voiceRef.current || !fromNumber) {
       console.error(
-        "[TWILIO DEBUG] ERROR: Cannot register - SDK not available or no number"
+        "[TWILIO DEBUG] ERROR: Cannot register - SDK not available or no number",
       );
       return false;
     }
@@ -451,7 +447,7 @@ export function useVoiceCall({
     } catch (error) {
       console.error(
         "[TWILIO DEBUG] ❌ Failed to register for incoming calls:",
-        error
+        error,
       );
       return false;
     }
@@ -473,7 +469,7 @@ export function useVoiceCall({
     } catch (error) {
       console.error(
         "[TWILIO DEBUG] ❌ Failed to unregister from incoming calls:",
-        error
+        error,
       );
     }
   }, [isSDKAvailable, fromNumber, getAccessToken]);

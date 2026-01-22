@@ -131,7 +131,7 @@ class NotificationService {
       (notification) => {
         console.log("Notification received:", notification);
         this.handleNotificationReceived(notification);
-      }
+      },
     );
 
     // Listener para cuando el usuario toca una notificación
@@ -144,7 +144,7 @@ class NotificationService {
 
   // Handle received notification
   private handleNotificationReceived(
-    notification: Notifications.Notification
+    notification: Notifications.Notification,
   ): void {
     const { title, body, data } = notification.request.content;
 
@@ -161,7 +161,7 @@ class NotificationService {
 
   // Handle notification response (when user taps it)
   private handleNotificationResponse(
-    response: Notifications.NotificationResponse
+    response: Notifications.NotificationResponse,
   ): void {
     const { data } = response.notification.request.content;
 
@@ -185,7 +185,14 @@ class NotificationService {
   async sendTokenToServer(): Promise<boolean> {
     try {
       if (!this.expoPushToken) {
-        console.warn("No push token available");
+        console.warn("⚠️ No push token available");
+        return false;
+      }
+
+      // Check if user is authenticated first
+      const authToken = await AsyncStorage.getItem("authToken");
+      if (!authToken) {
+        console.warn("⚠️ User not authenticated, skipping token registration");
         return false;
       }
 
@@ -203,16 +210,25 @@ class NotificationService {
         os_version: Device.osVersion || "Unknown",
       };
 
+      console.log("📱 Registering push token with backend...", {
+        platform: deviceInfo.platform,
+        device_name: deviceInfo.device_name,
+      });
+
       // Use apiClient which automatically includes authentication
       const response = await apiClient.post(
         "/notifications/register/",
-        deviceInfo
+        deviceInfo,
       );
 
       console.log("✅ Device token registered successfully:", response.data);
       return true;
-    } catch (error) {
-      console.error("Error registering device token:", error);
+    } catch (error: any) {
+      console.error("❌ Error registering device token:", error);
+      if (error.response) {
+        console.error("❌ Response status:", error.response.status);
+        console.error("❌ Response data:", error.response.data);
+      }
       return false;
     }
   }
@@ -232,7 +248,7 @@ class NotificationService {
     title: string,
     body: string,
     trigger: Notifications.NotificationTriggerInput,
-    data?: any
+    data?: any,
   ): Promise<string | null> {
     try {
       const identifier = await Notifications.scheduleNotificationAsync({

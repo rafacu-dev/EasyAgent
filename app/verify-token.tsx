@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -16,6 +15,7 @@ import { Colors } from "../utils/colors";
 import { apiClient } from "@/utils/axios-interceptor";
 import { Ionicons } from "@expo/vector-icons";
 import { STORAGE_KEYS } from "@/utils/storage";
+import { showError, showSuccess } from "@/utils/toast";
 
 export default function VerifyTokenScreen() {
   const { t } = useTranslation();
@@ -36,7 +36,7 @@ export default function VerifyTokenScreen() {
     if (resendCountdown > 0) {
       const timer = setTimeout(
         () => setResendCountdown(resendCountdown - 1),
-        1000
+        1000,
       );
       return () => clearTimeout(timer);
     }
@@ -44,8 +44,43 @@ export default function VerifyTokenScreen() {
 
   const handleCodeChange = (value: string, index: number) => {
     // Only allow digits
-    const digit = value.replace(/[^0-9]/g, "").slice(-1);
+    const digitsOnly = value.replace(/[^0-9]/g, "");
 
+    // Handle paste of multiple digits (6-digit code)
+    if (digitsOnly.length >= 6) {
+      const newCode = digitsOnly.slice(0, 6).split("");
+      setCode(newCode);
+
+      // Blur current input and auto-submit
+      inputRefs.current[index]?.blur();
+      handleVerifyToken(newCode.join(""));
+      return;
+    }
+
+    // Handle paste of partial code (2-5 digits)
+    if (digitsOnly.length > 1) {
+      const newCode = [...code];
+      const digits = digitsOnly.slice(0, 6).split("");
+
+      // Fill from current index
+      digits.forEach((digit, i) => {
+        if (index + i < 6) {
+          newCode[index + i] = digit;
+        }
+      });
+
+      setCode(newCode);
+
+      // Focus the next empty input or last filled
+      const lastFilledIndex = Math.min(index + digits.length - 1, 5);
+      if (lastFilledIndex < 5) {
+        inputRefs.current[lastFilledIndex + 1]?.focus();
+      }
+      return;
+    }
+
+    // Handle single digit input
+    const digit = digitsOnly.slice(-1);
     const newCode = [...code];
     newCode[index] = digit;
     setCode(newCode);
@@ -74,7 +109,7 @@ export default function VerifyTokenScreen() {
     const token = tokenCode || code.join("");
 
     if (token.length !== 6) {
-      Alert.alert(t("common.error"), t("verifyToken.codeRequired"));
+      showError(t("common.error"), t("verifyToken.codeRequired"));
       return;
     }
 
@@ -90,8 +125,28 @@ export default function VerifyTokenScreen() {
       await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refresh);
       await AsyncStorage.setItem(
         STORAGE_KEYS.USER,
-        JSON.stringify(response.user)
+        JSON.stringify(response.user),
       );
+
+      // Register for push notifications after successful login
+      try {
+        const NotificationService = (
+          await import("./notifications/NotificationService")
+        ).default;
+        const notificationService = NotificationService.getInstance();
+
+        // Request permissions and get token
+        const pushToken =
+          await notificationService.requestPermissionsAndRegister();
+        if (pushToken) {
+          console.log("✅ Notification token obtained after login");
+          // Send to server
+          await notificationService.sendTokenToServer();
+        }
+      } catch (notifError) {
+        console.error("⚠️ Error setting up notifications:", notifError);
+        // Don't block login if notifications fail
+      }
 
       // Redirect based on user status
       if (response.is_new_user) {
@@ -103,9 +158,9 @@ export default function VerifyTokenScreen() {
       }
     } catch (error: any) {
       if (__DEV__) console.error("Error verifying token:", error);
-      Alert.alert(
+      showError(
         t("common.error"),
-        error.response?.data?.error || t("verifyToken.verifyFailed")
+        error.response?.data?.error || t("verifyToken.verifyFailed"),
       );
       // Clear code on error
       setCode(["", "", "", "", "", ""]);
@@ -122,12 +177,12 @@ export default function VerifyTokenScreen() {
     try {
       await apiClient.post("auth/request-token/", { email });
       setResendCountdown(60);
-      Alert.alert(t("common.success"), t("verifyToken.codeSent"));
+      showSuccess(t("common.success"), t("verifyToken.codeSent"));
     } catch (error: any) {
       if (__DEV__) console.error("Error resending code:", error);
-      Alert.alert(
+      showError(
         t("common.error"),
-        error.response?.data?.error || t("verifyToken.resendFailed")
+        error.response?.data?.error || t("verifyToken.resendFailed"),
       );
     } finally {
       setResendLoading(false);
@@ -255,7 +310,6 @@ export default function VerifyTokenScreen() {
                 handleKeyPress(nativeEvent.key, index)
               }
               keyboardType="number-pad"
-              maxLength={1}
               editable={!isLoading}
               selectTextOnFocus
             />

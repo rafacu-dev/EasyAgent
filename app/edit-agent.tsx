@@ -2,7 +2,6 @@ import { router } from "expo-router";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -17,10 +16,10 @@ import {
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { apiClient } from "../utils/axios-interceptor";
 import { Colors } from "../utils/colors";
+import { showError, showSuccess } from "../utils/toast";
 import { Ionicons } from "@expo/vector-icons";
 import { useAgentQuery, useUpdateAgentMutation } from "../utils/hooks";
 import type { AgentConfig } from "../utils/types";
-import { onAgentUpdated } from "./notifications/notificationHelpers";
 
 export default function EditAgent() {
   const { t } = useTranslation();
@@ -56,9 +55,9 @@ export default function EditAgent() {
     if (isLoading) return;
 
     if (!formData.agentId) {
-      Alert.alert(
+      showError(
         t("common.error", "Error"),
-        t("editAgent.noAgentId", "Agent ID not found. Cannot update.")
+        t("editAgent.noAgentId", "Agent ID not found. Cannot update."),
       );
       return;
     }
@@ -84,31 +83,18 @@ export default function EditAgent() {
 
       await updateAgentMutation.mutateAsync(updatedConfig);
 
-      // Send notification for agent update
-      onAgentUpdated({
-        name: formData.agentName,
-        id: formData.agentId,
-      }).catch((err) =>
-        console.error("Failed to send agent update notification:", err)
-      );
-
-      Alert.alert(
+      showSuccess(
         t("common.success", "Success"),
         t("editAgent.updateSuccess", "Agent updated successfully"),
-        [
-          {
-            text: "OK",
-            onPress: () => router.back(),
-          },
-        ]
       );
+      router.back();
     } catch (error: any) {
       console.error("Error updating agent:", error);
       const errorMessage =
         error.response?.data?.error ||
         error.message ||
         t("editAgent.updateError", "Failed to update agent");
-      Alert.alert(t("common.error", "Error"), errorMessage);
+      showError(t("common.error", "Error"), errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -154,7 +140,7 @@ export default function EditAgent() {
             <Text style={styles.subtitle}>
               {t(
                 "editAgent.subtitle",
-                "Update your agent's properties and configuration"
+                "Update your agent's properties and configuration",
               )}
             </Text>
           </Animated.View>
@@ -237,7 +223,7 @@ export default function EditAgent() {
                 style={styles.input}
                 placeholder={t(
                   "agentSetup.agentNamePlaceholder",
-                  "Enter agent name"
+                  "Enter agent name",
                 )}
                 placeholderTextColor="#B0B0B0"
                 value={formData.agentName}
@@ -255,7 +241,7 @@ export default function EditAgent() {
                 style={styles.input}
                 placeholder={t(
                   "companyInfo.companyNamePlaceholder",
-                  "Enter company name"
+                  "Enter company name",
                 )}
                 placeholderTextColor="#B0B0B0"
                 value={formData.companyName}
@@ -274,7 +260,7 @@ export default function EditAgent() {
                 style={[styles.input, styles.textArea]}
                 placeholder={t(
                   "agentSetup.descriptionPlaceholder",
-                  "Describe your agent's personality..."
+                  "Describe your agent's personality...",
                 )}
                 placeholderTextColor="#B0B0B0"
                 value={formData.agentDescription}
@@ -295,7 +281,7 @@ export default function EditAgent() {
                 style={[styles.input, styles.textArea]}
                 placeholder={t(
                   "companyInfo.socialMediaPlaceholder",
-                  "Add social media links..."
+                  "Add social media links...",
                 )}
                 placeholderTextColor="#B0B0B0"
                 value={formData.socialMediaAndWeb}
@@ -320,7 +306,7 @@ export default function EditAgent() {
               <Text style={styles.helperText}>
                 {t(
                   "editAgent.sectorHelper",
-                  "To change sector, create a new agent"
+                  "To change sector, create a new agent",
                 )}
               </Text>
             </View>

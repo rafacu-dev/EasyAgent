@@ -5,7 +5,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   ScrollView,
   Linking,
@@ -33,6 +32,7 @@ import icon from "../../assets/images/paywall/icon.png";
 import bgIconSuscription from "../../assets/images/bg-icon-suscription.png";
 import { FontAwesome } from "@expo/vector-icons";
 import { Colors } from "@/utils/colors";
+import { showError, showSuccess, showInfo, showWarning } from "@/utils/toast";
 
 interface PaywallScreenProps {
   onPurchaseSuccess: () => void;
@@ -81,20 +81,14 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
           Object.keys(customerInfo.entitlements.active).length > 0;
 
         if (hasActiveSubscription) {
-          Alert.alert(
+          showInfo(
             t("paywall.activePlanTitle"),
             t("paywall.activePlanMessage"),
-            [
-              {
-                text: t("paywall.ok"),
-                onPress: () => {
-                  router.dismissAll();
-                  router.replace("/home");
-                },
-              },
-            ],
-            { cancelable: false }
           );
+          setTimeout(() => {
+            router.dismissAll();
+            router.replace("/home");
+          }, 2000);
         }
       } catch (error) {
         console.error("Error checking active subscription:", error);
@@ -114,7 +108,7 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
           duration: 15000, // Aumentado a 15 segundos para rotación más lenta
           useNativeDriver: true,
         }),
-        { iterations: -1 } // -1 significa infinitas iteraciones
+        { iterations: -1 }, // -1 significa infinitas iteraciones
       ).start();
     };
     startRotation();
@@ -151,7 +145,7 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
       buttonTranslateY.value = withDelay(320, withTiming(0, animationConfig));
       buttonScale.value = withDelay(
         320,
-        withTiming(1, { ...animationConfig, duration: 500 })
+        withTiming(1, { ...animationConfig, duration: 500 }),
       );
 
       termsOpacity.value = withDelay(400, withTiming(1, animationConfig));
@@ -221,7 +215,7 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
     packageBounceScale.value = withSequence(
       withTiming(0.95, { duration: 100 }),
       withTiming(1.05, { duration: 100 }),
-      withTiming(1, { duration: 100 })
+      withTiming(1, { duration: 100 }),
     );
   };
 
@@ -230,9 +224,8 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
       try {
         getOfferings();
       } catch (error) {
-        Alert.alert(t("paywall.initializationError"), JSON.stringify(error), [
-          { text: t("common.ok"), onPress: () => onClose() },
-        ]);
+        showError(t("paywall.initializationError"), JSON.stringify(error));
+        setTimeout(() => onClose(), 2000);
         setLoading(false);
       }
     };
@@ -251,7 +244,7 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
         const allOfferings = Object.values(offerings?.all || {});
         offeringToUse =
           allOfferings.find(
-            (offering) => offering.availablePackages.length > 0
+            (offering) => offering.availablePackages.length > 0,
           ) || null;
       }
 
@@ -287,7 +280,7 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
     } catch (error) {
       const purchaseError = error as PurchasesError;
       if (!purchaseError.userCancelled) {
-        Alert.alert(t("paywall.purchaseError"), purchaseError.message);
+        showError(t("paywall.purchaseError"), purchaseError.message);
       }
     } finally {
       setPurchasing(false);
@@ -298,33 +291,28 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
     try {
       const customerInfo = await Purchases.restorePurchases();
       if (customerInfo.entitlements.active.premium) {
-        Alert.alert(
+        showSuccess(
           t("paywall.purchasesRestoredTitle"),
           t("paywall.purchasesRestoredMessage"),
-          [
-            {
-              text: t("paywall.ok"),
-              onPress: () => {
-                onPurchaseSuccess();
-                onClose();
-              },
-            },
-          ]
         );
+        setTimeout(() => {
+          onPurchaseSuccess();
+          onClose();
+        }, 2000);
       } else {
-        Alert.alert(
+        showInfo(
           t("paywall.noPurchasesFound"),
-          t("paywall.noPurchasesMessage")
+          t("paywall.noPurchasesMessage"),
         );
       }
     } catch (error) {
-      Alert.alert(t("paywall.restoreError"));
+      showError(t("paywall.restoreError"));
     }
   };
 
   const openTermsAndConditions = () => {
     Linking.openURL(
-      "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+      "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
     );
   };
 
@@ -420,7 +408,7 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
   const getLocalizedPackageInfo = (
     pkg: PurchasesPackage,
     index: number,
-    isReferral: boolean = false
+    isReferral: boolean = false,
   ) => {
     const isPopular =
       pkg.identifier.includes("annual") || pkg.identifier.includes("yearly");
@@ -706,9 +694,6 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
                       onPress={() => {
                         animatePackageSelection();
                         setSelectedPackage(pkg);
-                        if (price.includes("3.9")) {
-                          Alert.alert(t("paywall.basicMonthlyTitle"));
-                        }
                       }}
                       disabled={purchasing}
                     >

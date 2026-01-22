@@ -7,14 +7,8 @@
 import * as Notifications from "expo-notifications";
 import NotificationService from "./NotificationService";
 import {
-  notifyCallCompleted,
   notifyAppointmentScheduled,
-  notifyAgentUpdated,
-  notifyPhoneNumberAdded,
-  type CallNotificationData,
   type AppointmentNotificationData,
-  type AgentNotificationData,
-  type PhoneNumberNotificationData,
 } from "./easyAgentNotifications";
 
 // Notification service instance
@@ -22,7 +16,7 @@ const notificationService = NotificationService.getInstance();
 
 // Helper for creating time interval triggers
 const createTimeIntervalTrigger = (
-  seconds: number
+  seconds: number,
 ): Notifications.TimeIntervalTriggerInput => ({
   type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
   seconds,
@@ -36,42 +30,6 @@ const createDateTrigger = (date: Date): Notifications.DateTriggerInput => ({
 });
 
 // ============================================================================
-// Call Notifications
-// ============================================================================
-
-/**
- * Notify when a call is completed
- */
-export const onCallCompleted = async (callData: CallNotificationData) => {
-  try {
-    // Schedule immediate local notification
-    await notificationService.scheduleLocalNotification(
-      "Call Completed",
-      `Call to ${callData.to_number || "client"} has ended. Duration: ${
-        callData.duration || 0
-      }s`,
-      null, // Immediate
-      {
-        type: "call_completed",
-        call_id: callData.call_id,
-        screen: "/call-history",
-      }
-    );
-
-    // Also notify Django server for push to other devices
-    try {
-      await notifyCallCompleted(callData);
-    } catch (error) {
-      console.error("Error notifying server about call completion:", error);
-    }
-
-    console.log("Call completion notification scheduled");
-  } catch (error) {
-    console.error("Error notifying call completion:", error);
-  }
-};
-
-// ============================================================================
 // Appointment Notifications
 // ============================================================================
 
@@ -79,7 +37,7 @@ export const onCallCompleted = async (callData: CallNotificationData) => {
  * Notify when an appointment is scheduled
  */
 export const onAppointmentScheduled = async (
-  appointmentData: AppointmentNotificationData
+  appointmentData: AppointmentNotificationData,
 ) => {
   try {
     await notificationService.scheduleLocalNotification(
@@ -94,7 +52,7 @@ export const onAppointmentScheduled = async (
         type: "appointment_scheduled",
         appointment_id: appointmentData.id,
         screen: "/(tabs)",
-      }
+      },
     );
 
     // Notify server
@@ -119,7 +77,7 @@ export const scheduleAppointmentReminder = async (
     date: Date;
     client_name?: string;
   },
-  minutesBefore: number = 30
+  minutesBefore: number = 30,
 ) => {
   try {
     const reminderDate = new Date(appointmentData.date);
@@ -143,7 +101,7 @@ export const scheduleAppointmentReminder = async (
         type: "appointment_reminder",
         appointment_id: appointmentData.id,
         screen: "/(tabs)",
-      }
+      },
     );
 
     console.log(`Appointment reminder scheduled:`, identifier);
@@ -151,86 +109,6 @@ export const scheduleAppointmentReminder = async (
   } catch (error) {
     console.error("Error scheduling appointment reminder:", error);
     return null;
-  }
-};
-
-// ============================================================================
-// Agent Notifications
-// ============================================================================
-
-/**
- * Notify when an agent is created or updated
- */
-export const onAgentUpdated = async (agentData: AgentNotificationData) => {
-  try {
-    await notificationService.scheduleLocalNotification(
-      "Agent Updated",
-      `Your agent "${agentData.name}" has been ${
-        agentData.status || "updated"
-      }`,
-      createTimeIntervalTrigger(1),
-      {
-        type: "agent_updated",
-        agent_id: agentData.id,
-        screen: "/agent-setup",
-      }
-    );
-
-    // Notify server
-    try {
-      await notifyAgentUpdated(agentData);
-    } catch (error) {
-      console.error("Error notifying server about agent update:", error);
-    }
-
-    console.log("Agent update notification scheduled");
-  } catch (error) {
-    console.error("Error notifying agent update:", error);
-  }
-};
-
-/**
- * Notify when a new agent is created
- */
-export const onAgentCreated = async (agentData: {
-  id: string;
-  name: string;
-}) => {
-  return onAgentUpdated({ ...agentData, status: "created" });
-};
-
-// ============================================================================
-// Phone Number Notifications
-// ============================================================================
-
-/**
- * Notify when a phone number is added
- */
-export const onPhoneNumberAdded = async (
-  phoneData: PhoneNumberNotificationData
-) => {
-  try {
-    await notificationService.scheduleLocalNotification(
-      "Phone Number Added",
-      `Your new number ${phoneData.phone_number} is now active`,
-      createTimeIntervalTrigger(1),
-      {
-        type: "phone_number_added",
-        phone_number_id: phoneData.id,
-        screen: "/(tabs)",
-      }
-    );
-
-    // Notify server
-    try {
-      await notifyPhoneNumberAdded(phoneData);
-    } catch (error) {
-      console.error("Error notifying server about phone number:", error);
-    }
-
-    console.log("Phone number notification scheduled");
-  } catch (error) {
-    console.error("Error notifying phone number addition:", error);
   }
 };
 
@@ -245,14 +123,14 @@ export const scheduleCustomReminder = async (
   title: string,
   message: string,
   triggerDate: Date,
-  data?: any
+  data?: any,
 ) => {
   try {
     const identifier = await notificationService.scheduleLocalNotification(
       title,
       message,
       createDateTrigger(triggerDate),
-      data
+      data,
     );
 
     console.log("Custom reminder scheduled:", identifier);
@@ -268,7 +146,7 @@ export const scheduleCustomReminder = async (
  */
 export const cancelEntityReminders = async (
   entityType: string,
-  entityId: string
+  entityId: string,
 ) => {
   try {
     const scheduledNotifications =
@@ -279,10 +157,10 @@ export const cancelEntityReminders = async (
       const idKey = `${entityType}_id`;
       if (data?.[idKey] === entityId) {
         await notificationService.cancelScheduledNotification(
-          notification.identifier
+          notification.identifier,
         );
         console.log(
-          `Cancelled notification ${notification.identifier} for ${entityType} ${entityId}`
+          `Cancelled notification ${notification.identifier} for ${entityType} ${entityId}`,
         );
       }
     }
@@ -320,19 +198,9 @@ export const getScheduledReminders = async () => {
 // ============================================================================
 
 export default {
-  // Call notifications
-  onCallCompleted,
-
   // Appointment notifications
   onAppointmentScheduled,
   scheduleAppointmentReminder,
-
-  // Agent notifications
-  onAgentUpdated,
-  onAgentCreated,
-
-  // Phone number notifications
-  onPhoneNumberAdded,
 
   // General utilities
   scheduleCustomReminder,

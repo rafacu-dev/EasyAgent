@@ -2,7 +2,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Alert,
   ScrollView,
   Text,
   TextInput,
@@ -19,6 +18,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Colors } from "../utils/colors";
 import { apiClient } from "@/utils/axios-interceptor";
+import { showError } from "@/utils/toast";
 
 const AnimatedView = ({
   children,
@@ -43,7 +43,7 @@ const AnimatedView = ({
           damping: 20,
           stiffness: 300,
           mass: 0.5,
-        })
+        }),
       );
       opacity.value = withDelay(delay, withTiming(1, { duration: 400 }));
       translateY.value = withDelay(
@@ -52,7 +52,7 @@ const AnimatedView = ({
           damping: 20,
           stiffness: 300,
           mass: 0.5,
-        })
+        }),
       );
     }
   }, [show, delay, opacity, scale, translateY]);
@@ -120,9 +120,9 @@ export default function CompanyInfo() {
       });
     } catch (error: any) {
       console.error("Error saving company info:", error);
-      Alert.alert(
+      showError(
         t("common.error"),
-        error.response?.data?.error || "Failed to save company info"
+        error.response?.data?.error || "Failed to save company info",
       );
     } finally {
       setIsLoading(false);
