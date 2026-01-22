@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   TouchableWithoutFeedback,
   Keyboard,
+  Alert,
 } from "react-native";
 import { Colors } from "../../utils/colors";
 import { useTranslation } from "react-i18next";
@@ -243,7 +244,24 @@ export default function PhoneScreen() {
     // Format numbers for display and API
     const formattedInput = formatPhoneNumber(phoneNumberInput);
 
-    // Proceed directly with the call
+    // Show confirmation dialog before making the call
+    Alert.alert(
+      t("phone.confirmCallTitle", "Confirm Call"),
+      t("phone.confirmCallMessage", `Do you want to call ${formattedInput}?`),
+      [
+        {
+          text: t("common.cancel", "Cancel"),
+          style: "cancel",
+        },
+        {
+          text: t("common.call", "Call"),
+          onPress: () => executeCall(formattedInput),
+        },
+      ],
+    );
+  };
+
+  const executeCall = async (formattedInput: string) => {
     setIsLoading(true);
     try {
       if (isAgentMode) {

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Modal,
+  Alert,
 } from "react-native";
 import { Colors } from "../utils/colors";
 import { useTranslation } from "react-i18next";
@@ -117,17 +118,23 @@ export default function BuyPhoneNumberScreen() {
   });
 
   const handlePurchase = (phoneNumber: string) => {
-    showWarning(
+    Alert.alert(
       t("getPhone.confirmTitle", "Confirm Selection"),
       t(
         "getPhone.confirmMessage",
         `Are you sure you want to obtain ${phoneNumber} for your agent?`,
       ),
+      [
+        {
+          text: t("common.cancel", "Cancel"),
+          style: "cancel",
+        },
+        {
+          text: t("common.confirm", "Confirm"),
+          onPress: () => purchaseMutation.mutate(phoneNumber),
+        },
+      ],
     );
-    // Auto-proceed after showing confirmation message
-    setTimeout(() => {
-      purchaseMutation.mutate(phoneNumber);
-    }, 1500);
   };
 
   const handleSearch = () => {
