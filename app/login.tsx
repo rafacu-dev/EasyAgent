@@ -8,12 +8,12 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { Colors } from "../utils/colors";
 import { apiClient } from "@/utils/axios-interceptor";
 import { Ionicons } from "@expo/vector-icons";
+import { showError } from "@/utils/toast";
 
 export default function LoginScreen() {
   const { t } = useTranslation();
@@ -27,12 +27,12 @@ export default function LoginScreen() {
 
   const handleRequestToken = async () => {
     if (!email.trim()) {
-      Alert.alert(t("common.error"), t("login.emailRequired"));
+      showError(t("common.error"), t("login.emailRequired"));
       return;
     }
 
     if (!isValidEmail(email)) {
-      Alert.alert(t("common.error"), t("login.invalidEmail"));
+      showError(t("common.error"), t("login.invalidEmail"));
       return;
     }
 
@@ -48,9 +48,9 @@ export default function LoginScreen() {
       });
     } catch (error: any) {
       console.error("Error requesting token:", error);
-      Alert.alert(
+      showError(
         t("common.error"),
-        error.response?.data?.error || t("login.requestFailed")
+        error.response?.data?.error || t("login.requestFailed"),
       );
     } finally {
       setIsLoading(false);

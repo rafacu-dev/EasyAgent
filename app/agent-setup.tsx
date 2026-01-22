@@ -2,7 +2,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -17,7 +16,7 @@ import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { apiClient } from "../utils/axios-interceptor";
 import { Colors } from "../utils/colors";
 import { useUpdateAgentMutation } from "../utils/hooks";
-import { onAgentCreated } from "./notifications/notificationHelpers";
+import { showError } from "@/utils/toast";
 
 export default function AgentSetup() {
   const { t } = useTranslation();
@@ -52,22 +51,12 @@ export default function AgentSetup() {
           agentDescription: agentDescription,
         };
         await updateAgentMutation.mutateAsync(newConfig);
-
-        // Send notification for new agent
-        onAgentCreated({
-          name: agentName,
-          id: response.data.id,
-        }).catch((err) =>
-          console.error("Failed to send agent creation notification:", err)
-        );
       }
 
       router.replace("/(tabs)/home");
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || String(error);
-      Alert.alert(t("common.error", "Error"), errorMessage, [
-        { text: t("common.ok", "OK") },
-      ]);
+      showError(t("common.error", "Error"), errorMessage);
     } finally {
       setIsLoading(false);
     }

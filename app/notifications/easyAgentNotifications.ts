@@ -190,7 +190,7 @@ export const getNotificationLogs = async (): Promise<
  */
 export const sendTestNotification = async (): Promise<boolean> => {
   try {
-    const response = await apiClient.post("notifications/test/");
+    const response = await apiClient.get("notifications/test/");
     console.log("✅ Test notification sent:", response.data);
     return response.data?.success ?? true;
   } catch (error: any) {
@@ -214,13 +214,13 @@ export const getScreenForNotificationType = (
 ): string => {
   switch (type) {
     case NOTIFICATION_TYPES.CALL_RECEIVED:
-      return "/call-history";
+      return "/(tabs)/phone";
     case NOTIFICATION_TYPES.CALL_COMPLETED:
-      return "/call-history";
+      return "/(tabs)/phone";
     case NOTIFICATION_TYPES.APPOINTMENT_SCHEDULED:
-      return "/(tabs)"; // Main screen or appointments when available
+      return "/(tabs)/calendar";
     case NOTIFICATION_TYPES.APPOINTMENT_REMINDER:
-      return "/(tabs)"; // Main screen or appointments when available
+      return "/(tabs)/calendar";
     default:
       return "/(tabs)";
   }

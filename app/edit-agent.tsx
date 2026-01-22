@@ -2,7 +2,6 @@ import { router } from "expo-router";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -17,6 +16,7 @@ import {
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { apiClient } from "../utils/axios-interceptor";
 import { Colors } from "../utils/colors";
+import { showError, showSuccess } from "../utils/toast";
 import { Ionicons } from "@expo/vector-icons";
 import { useAgentQuery, useUpdateAgentMutation } from "../utils/hooks";
 import type { AgentConfig } from "../utils/types";
@@ -55,7 +55,7 @@ export default function EditAgent() {
     if (isLoading) return;
 
     if (!formData.agentId) {
-      Alert.alert(
+      showError(
         t("common.error", "Error"),
         t("editAgent.noAgentId", "Agent ID not found. Cannot update."),
       );
@@ -83,23 +83,18 @@ export default function EditAgent() {
 
       await updateAgentMutation.mutateAsync(updatedConfig);
 
-      Alert.alert(
+      showSuccess(
         t("common.success", "Success"),
         t("editAgent.updateSuccess", "Agent updated successfully"),
-        [
-          {
-            text: "OK",
-            onPress: () => router.back(),
-          },
-        ],
       );
+      router.back();
     } catch (error: any) {
       console.error("Error updating agent:", error);
       const errorMessage =
         error.response?.data?.error ||
         error.message ||
         t("editAgent.updateError", "Failed to update agent");
-      Alert.alert(t("common.error", "Error"), errorMessage);
+      showError(t("common.error", "Error"), errorMessage);
     } finally {
       setIsLoading(false);
     }

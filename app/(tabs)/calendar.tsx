@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
-  Alert,
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
@@ -28,6 +27,7 @@ import {
   scheduleAppointmentReminder,
 } from "../notifications/notificationHelpers";
 import type { AppointmentNotificationData } from "../notifications/easyAgentNotifications";
+import { showError, showSuccess } from "@/utils/toast";
 
 const STATUS_COLORS: { [key in AppointmentStatus]: string } = {
   scheduled: Colors.info,
@@ -74,7 +74,7 @@ export default function CalendarScreen() {
       const response = await apiClient.get(
         `appointments/month/?year=${selectedDate.getFullYear()}&month=${
           selectedDate.getMonth() + 1
-        }`
+        }`,
       );
       console.log("Fetched month data:", response);
       return response;
@@ -88,7 +88,7 @@ export default function CalendarScreen() {
   // Get appointments for selected date
   const selectedDateStr = selectedDate.toISOString().split("T")[0];
   const dayAppointments = appointments.filter(
-    (apt) => apt.date === selectedDateStr
+    (apt) => apt.date === selectedDateStr,
   );
 
   // Create appointment mutation
@@ -117,7 +117,7 @@ export default function CalendarScreen() {
           client_name: appointmentData.client_name || formData.client_name,
         };
         onAppointmentScheduled(notificationPayload).catch((err) =>
-          console.error("Failed to send appointment notification:", err)
+          console.error("Failed to send appointment notification:", err),
         );
 
         // Schedule reminder notification if appointment has a valid date/time
@@ -125,24 +125,24 @@ export default function CalendarScreen() {
           scheduleAppointmentReminder({
             id: String(appointmentData.id),
             date: new Date(
-              appointmentData.date + "T" + appointmentData.start_time
+              appointmentData.date + "T" + appointmentData.start_time,
             ),
             client_name: appointmentData.client_name || formData.client_name,
           }).catch((err) =>
-            console.error("Failed to schedule appointment reminder:", err)
+            console.error("Failed to schedule appointment reminder:", err),
           );
         }
       }
 
-      Alert.alert(
+      showSuccess(
         t("calendar.success", "Success"),
-        t("calendar.appointmentCreated", "Appointment created successfully")
+        t("calendar.appointmentCreated", "Appointment created successfully"),
       );
     },
     onError: (error: any) => {
-      Alert.alert(
+      showError(
         t("common.error", "Error"),
-        error.response?.data?.error || "Failed to create appointment"
+        error.response?.data?.error || "Failed to create appointment",
       );
     },
   });
@@ -155,10 +155,10 @@ export default function CalendarScreen() {
       setShowDetailModal(false);
     },
     onError: (error: any) => {
-      Alert.alert(
+      showError(
         t("common.error", "Error"),
         error.response?.data?.error ||
-          t("calendar.cancelFailed", "Failed to cancel appointment")
+          t("calendar.cancelFailed", "Failed to cancel appointment"),
       );
     },
   });
@@ -171,10 +171,10 @@ export default function CalendarScreen() {
       setShowDetailModal(false);
     },
     onError: (error: any) => {
-      Alert.alert(
+      showError(
         t("common.error", "Error"),
         error.response?.data?.error ||
-          t("calendar.confirmFailed", "Failed to confirm appointment")
+          t("calendar.confirmFailed", "Failed to confirm appointment"),
       );
     },
   });
@@ -201,9 +201,9 @@ export default function CalendarScreen() {
       !formData.start_time ||
       !formData.client_name
     ) {
-      Alert.alert(
+      showError(
         t("common.error", "Error"),
-        t("calendar.fillRequired", "Please fill all required fields")
+        t("calendar.fillRequired", "Please fill all required fields"),
       );
       return;
     }
@@ -260,13 +260,13 @@ export default function CalendarScreen() {
   const daysInMonth = new Date(
     selectedDate.getFullYear(),
     selectedDate.getMonth() + 1,
-    0
+    0,
   ).getDate();
 
   const firstDayOfMonth = new Date(
     selectedDate.getFullYear(),
     selectedDate.getMonth(),
-    1
+    1,
   ).getDay();
 
   const monthNames = [
@@ -297,7 +297,7 @@ export default function CalendarScreen() {
     // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${selectedDate.getFullYear()}-${String(
-        selectedDate.getMonth() + 1
+        selectedDate.getMonth() + 1,
       ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
       const hasAppointments = appointmentDates.includes(dateStr);
 
@@ -318,7 +318,11 @@ export default function CalendarScreen() {
           ]}
           onPress={() =>
             setSelectedDate(
-              new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day)
+              new Date(
+                selectedDate.getFullYear(),
+                selectedDate.getMonth(),
+                day,
+              ),
             )
           }
         >
@@ -331,7 +335,7 @@ export default function CalendarScreen() {
             {day}
           </Text>
           {hasAppointments && <View style={styles.appointmentDot} />}
-        </TouchableOpacity>
+        </TouchableOpacity>,
       );
     }
 
@@ -343,8 +347,8 @@ export default function CalendarScreen() {
       new Date(
         selectedDate.getFullYear(),
         selectedDate.getMonth() + direction,
-        1
-      )
+        1,
+      ),
     );
   };
 
@@ -428,7 +432,7 @@ export default function CalendarScreen() {
               <Text style={styles.emptyStateSubtext}>
                 {t(
                   "calendar.appointmentsWillAppear",
-                  "Scheduled appointments will appear here"
+                  "Scheduled appointments will appear here",
                 )}
               </Text>
             </View>
@@ -457,10 +461,10 @@ export default function CalendarScreen() {
                       appointment.status === "confirmed"
                         ? "checkmark-circle"
                         : appointment.status === "cancelled"
-                        ? "close-circle"
-                        : appointment.status === "completed"
-                        ? "checkmark-done-circle"
-                        : "time"
+                          ? "close-circle"
+                          : appointment.status === "completed"
+                            ? "checkmark-done-circle"
+                            : "time"
                     }
                     size={24}
                     color={STATUS_COLORS[appointment.status] || Colors.info}
@@ -547,7 +551,7 @@ export default function CalendarScreen() {
                 }
                 placeholder={t(
                   "calendar.titlePlaceholder",
-                  "Appointment title"
+                  "Appointment title",
                 )}
                 placeholderTextColor={Colors.textLight}
               />
@@ -576,7 +580,7 @@ export default function CalendarScreen() {
                 }
                 placeholder={t(
                   "calendar.timePlaceholder",
-                  "HH:MM (e.g., 14:30)"
+                  "HH:MM (e.g., 14:30)",
                 )}
                 placeholderTextColor={Colors.textLight}
               />
@@ -606,7 +610,7 @@ export default function CalendarScreen() {
                 }
                 placeholder={t(
                   "calendar.clientNamePlaceholder",
-                  "Client's name"
+                  "Client's name",
                 )}
                 placeholderTextColor={Colors.textLight}
               />
@@ -622,7 +626,7 @@ export default function CalendarScreen() {
                 }
                 placeholder={t(
                   "calendar.clientPhonePlaceholder",
-                  "+1234567890"
+                  "+1234567890",
                 )}
                 keyboardType="phone-pad"
                 placeholderTextColor={Colors.textLight}
@@ -639,7 +643,7 @@ export default function CalendarScreen() {
                 }
                 placeholder={t(
                   "calendar.clientEmailPlaceholder",
-                  "email@example.com"
+                  "email@example.com",
                 )}
                 keyboardType="email-address"
                 placeholderTextColor={Colors.textLight}
@@ -656,7 +660,7 @@ export default function CalendarScreen() {
                 }
                 placeholder={t(
                   "calendar.descriptionPlaceholder",
-                  "Appointment details..."
+                  "Appointment details...",
                 )}
                 multiline
                 numberOfLines={3}
@@ -674,7 +678,7 @@ export default function CalendarScreen() {
                 }
                 placeholder={t(
                   "calendar.notesPlaceholder",
-                  "Additional notes..."
+                  "Additional notes...",
                 )}
                 multiline
                 numberOfLines={3}
@@ -747,11 +751,11 @@ export default function CalendarScreen() {
                     {selectedAppointment.duration_minutes
                       ? `${selectedAppointment.duration_minutes} ${t(
                           "calendar.minutes",
-                          "minutes"
+                          "minutes",
                         )}`
                       : t(
                           "calendar.durationNotSpecified",
-                          "Duration not specified"
+                          "Duration not specified",
                         )}
                   </Text>
                 </View>
@@ -841,7 +845,7 @@ export default function CalendarScreen() {
                     <Text style={styles.aiCreatedText}>
                       {t(
                         "calendar.createdByAgent",
-                        "Created by AI Agent during a call"
+                        "Created by AI Agent during a call",
                       )}
                     </Text>
                   </View>

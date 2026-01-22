@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   Switch,
   Modal,
   ActivityIndicator,
@@ -26,12 +25,13 @@ import { apiClient } from "../../utils/axios-interceptor";
 import { formatPhoneNumber } from "../../utils/formatters";
 import { Audio } from "expo-av";
 import { transcribeAudio, getTextFromResult } from "../../utils/transcription";
+import { showError, showSuccess, showInfo, showWarning } from "@/utils/toast";
 
 export default function PhoneScreen() {
   const { t } = useTranslation();
   const { data: agentConfig, isLoading: isLoadingAgent } = useAgentQuery();
   const { phoneNumber, isLoading: isLoadingPhone } = useAgentPhoneNumber(
-    agentConfig?.id
+    agentConfig?.id,
   );
   const [phoneNumberInput, setPhoneNumberInput] = useState("");
   const [isAgentMode, setIsAgentMode] = useState(true); // Toggle between manual/agent call
@@ -66,7 +66,7 @@ export default function PhoneScreen() {
         setPhoneNumberInput((prev) => prev + digit);
       }
     },
-    [callState.isConnected, sendDigits]
+    [callState.isConnected, sendDigits],
   );
 
   const handleBackspace = () => {
@@ -82,9 +82,9 @@ export default function PhoneScreen() {
       const permission = await Audio.requestPermissionsAsync();
 
       if (permission.status !== "granted") {
-        Alert.alert(
+        showError(
           t("phone.permissionDenied", "Permission Denied"),
-          t("phone.microphonePermission", "Microphone access is required")
+          t("phone.microphonePermission", "Microphone access is required"),
         );
         return;
       }
@@ -95,15 +95,15 @@ export default function PhoneScreen() {
       });
 
       const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
+        Audio.RecordingOptionsPresets.HIGH_QUALITY,
       );
       setRecording(recording);
       setIsRecording(true);
     } catch (err) {
       if (__DEV__) console.error("Recording error:", err);
-      Alert.alert(
+      showError(
         t("phone.error", "Error"),
-        t("phone.recordingFailed", "Failed to start recording")
+        t("phone.recordingFailed", "Failed to start recording"),
       );
     }
   };
@@ -123,9 +123,9 @@ export default function PhoneScreen() {
     if (__DEV__) console.log("Recording stopped, URI:", uri);
 
     if (!uri) {
-      Alert.alert(
+      showError(
         t("phone.error", "Error"),
-        t("phone.recordingFailed", "Failed to save recording")
+        t("phone.recordingFailed", "Failed to save recording"),
       );
       return;
     }
@@ -153,9 +153,9 @@ export default function PhoneScreen() {
         // Append to existing prompt or set new one
         setCallPrompt((prev) => (prev ? `${prev} ${text}` : text));
       } else {
-        Alert.alert(
+        showInfo(
           t("phone.info", "Info"),
-          t("phone.noTranscription", "No speech detected in the recording")
+          t("phone.noTranscription", "No speech detected in the recording"),
         );
       }
 
@@ -186,10 +186,10 @@ export default function PhoneScreen() {
       */
     } catch (error: any) {
       console.error("Transcription error:", error);
-      Alert.alert(
+      showError(
         t("phone.error", "Error"),
         error.message ||
-          t("phone.transcriptionFailed", "Failed to transcribe audio")
+          t("phone.transcriptionFailed", "Failed to transcribe audio"),
       );
     } finally {
       setIsTranscribing(false);
@@ -225,17 +225,17 @@ export default function PhoneScreen() {
 
   const handleMakeCall = async () => {
     if (!phoneNumberInput || phoneNumberInput.length < 10) {
-      Alert.alert(
+      showError(
         t("phone.error", "Error"),
-        t("phone.invalidNumber", "Please enter a valid phone number")
+        t("phone.invalidNumber", "Please enter a valid phone number"),
       );
       return;
     }
 
     if (isAgentMode && !callPrompt.trim()) {
-      Alert.alert(
+      showError(
         t("phone.error", "Error"),
-        t("phone.promptRequired", "Please enter instructions for the agent")
+        t("phone.promptRequired", "Please enter instructions for the agent"),
       );
       return;
     }
@@ -243,67 +243,50 @@ export default function PhoneScreen() {
     // Format numbers for display and API
     const formattedInput = formatPhoneNumber(phoneNumberInput);
 
-    Alert.alert(
-      t("phone.confirmCall", "Confirm Call"),
-      t("phone.confirmMessage", `Call ${formattedInput}?`),
-      [
-        {
-          text: t("common.cancel", "Cancel"),
-          style: "cancel",
-        },
-        {
-          text: t("phone.call", "Call"),
-          onPress: async () => {
-            setIsLoading(true);
-            try {
-              if (isAgentMode) {
-                // AI Agent call
-                await apiClient.post("calls/create-phone-call/", {
-                  agent_id: agentConfig?.id,
-                  from_number: phoneNumber,
-                  to_number: formattedInput,
-                  call_prompt: callPrompt,
-                });
-                Alert.alert(
-                  t("phone.success", "Success"),
-                  t(
-                    "phone.agentCallInitiated",
-                    "AI agent call initiated successfully"
-                  )
-                );
-                setPhoneNumberInput("");
-                setCallPrompt("");
-              } else {
-                // Direct call via Voice SDK
-                if (isSDKAvailable) {
-                  const success = await makeCall(formattedInput);
-                  if (success) {
-                    // Don't clear inputs yet - show in-call UI
-                  }
-                } else {
-                  // Fallback: Voice SDK not available
-                  Alert.alert(
-                    t("phone.sdkNotAvailable", "Voice Calling Unavailable"),
-                    t(
-                      "phone.sdkNotAvailableMessage",
-                      "Direct calling requires native modules. Please use AI Agent mode or rebuild the app with native support."
-                    )
-                  );
-                }
-              }
-            } catch (error: any) {
-              Alert.alert(
-                t("phone.error", "Error"),
-                error.response?.data?.error ||
-                  t("phone.callFailed", "Failed to initiate call")
-              );
-            } finally {
-              setIsLoading(false);
-            }
-          },
-        },
-      ]
-    );
+    // Proceed directly with the call
+    setIsLoading(true);
+    try {
+      if (isAgentMode) {
+        // AI Agent call
+        await apiClient.post("calls/create-phone-call/", {
+          agent_id: agentConfig?.id,
+          from_number: phoneNumber,
+          to_number: formattedInput,
+          call_prompt: callPrompt,
+        });
+        showSuccess(
+          t("phone.success", "Success"),
+          t("phone.agentCallInitiated", "AI agent call initiated successfully"),
+        );
+        setPhoneNumberInput("");
+        setCallPrompt("");
+      } else {
+        // Direct call via Voice SDK
+        if (isSDKAvailable) {
+          const success = await makeCall(formattedInput);
+          if (success) {
+            // Don't clear inputs yet - show in-call UI
+          }
+        } else {
+          // Fallback: Voice SDK not available
+          showWarning(
+            t("phone.sdkNotAvailable", "Voice Calling Unavailable"),
+            t(
+              "phone.sdkNotAvailableMessage",
+              "Direct calling requires native modules. Please use AI Agent mode or rebuild the app with native support.",
+            ),
+          );
+        }
+      }
+    } catch (error: any) {
+      showError(
+        t("phone.error", "Error"),
+        error.response?.data?.error ||
+          t("phone.callFailed", "Failed to initiate call"),
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // No phone number view
@@ -502,7 +485,7 @@ export default function PhoneScreen() {
                     ? t("phone.transcribing", "Transcribing audio...")
                     : t(
                         "phone.promptPlaceholder",
-                        "E.g., Schedule an appointment for next week..."
+                        "E.g., Schedule an appointment for next week...",
                       )
                 }
                 placeholderTextColor={Colors.textLight}
@@ -681,7 +664,7 @@ export default function PhoneScreen() {
                   <Text style={styles.infoSectionText}>
                     {t(
                       "phone.agentModeInfo",
-                      "Your AI agent will make the call and follow the instructions you provide. Perfect for automated appointment scheduling, customer follow-ups, and more."
+                      "Your AI agent will make the call and follow the instructions you provide. Perfect for automated appointment scheduling, customer follow-ups, and more.",
                     )}
                   </Text>
                 </View>
@@ -692,7 +675,7 @@ export default function PhoneScreen() {
                   <Text style={styles.infoSectionText}>
                     {t(
                       "phone.manualModeInfo",
-                      "Make a direct call where you speak personally using your configured phone number."
+                      "Make a direct call where you speak personally using your configured phone number.",
                     )}
                   </Text>
                 </View>

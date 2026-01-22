@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   SectionList,
   TextInput,
-  Alert,
   Linking,
   Platform,
 } from "react-native";
@@ -30,6 +29,7 @@ import type { RecentCallItem } from "../../utils/types";
 import NoPhoneNumber from "../../components/NoPhoneNumber";
 import { formatDuration, formatDateWithWeekday } from "../../utils/formatters";
 import { getConfig } from "@/utils/services";
+import { showWarning } from "@/utils/toast";
 
 // RecentCallItem type moved to global `utils/types.d.ts`
 
@@ -202,33 +202,14 @@ export default function HomeScreen() {
             ? response["update_url_ios"]
             : response["update_url_android"];
         if (appVersion < response["min_version"]) {
-          Alert.alert(
-            t("index.updateApp"),
-            t("index.updateAppMsg"),
-            [
-              {
-                text: t("index.updateButton"),
-                onPress: () => {
-                  Linking.openURL(storeUrl);
-                },
-              },
-            ],
-            { cancelable: false },
-          );
+          showWarning(t("index.updateApp"), t("index.updateAppMsg"));
+          setTimeout(() => {
+            Linking.openURL(storeUrl);
+          }, 2000);
         } else if (appVersion < response["current_version"]) {
-          Alert.alert(
+          showWarning(
             t("index.updateAppAvailable"),
             t("index.updateAppMsgAvailable"),
-            [
-              {
-                text: t("index.updateButton"),
-                onPress: () => {
-                  Linking.openURL(storeUrl);
-                },
-              },
-              { text: t("index.later"), onPress: () => {} },
-            ],
-            { cancelable: true },
           );
         }
       });

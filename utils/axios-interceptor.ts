@@ -8,6 +8,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BaseUrl, STORAGE_KEYS } from "./constants";
 import { router } from "expo-router";
 
+// Flag to prevent multiple redirects to login
+let isRedirectingToLogin = false;
+
 /**
  * Centralized API Client with interceptors
  * All HTTP requests should use this instance
@@ -51,7 +54,7 @@ class ApiClient {
       (error: AxiosError) => {
         if (__DEV__) console.error("❌ Request error:", error);
         return Promise.reject(error);
-      }
+      },
     );
 
     // Response Interceptor
@@ -69,14 +72,23 @@ class ApiClient {
           // Handle specific error cases
           switch (status) {
             case 401:
-              // Invalid or expired token
+              // Invalid or expired token - only redirect once
               if (__DEV__)
                 console.log("Invalid or expired token, redirecting to login");
-              await AsyncStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-              await AsyncStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-              await AsyncStorage.removeItem(STORAGE_KEYS.USER);
-              // Redirect to login
-              router.replace("/login");
+
+              if (!isRedirectingToLogin) {
+                isRedirectingToLogin = true;
+                await AsyncStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+                await AsyncStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+                await AsyncStorage.removeItem(STORAGE_KEYS.USER);
+
+                // Reset flag after a short delay to allow navigation
+                setTimeout(() => {
+                  isRedirectingToLogin = false;
+                }, 1000);
+
+                router.replace("/login");
+              }
               break;
 
             case 403:
@@ -105,7 +117,7 @@ class ApiClient {
         }
 
         return Promise.reject(error);
-      }
+      },
     );
   }
 
@@ -127,7 +139,7 @@ class ApiClient {
   public async post<T = any>(
     url: string,
     data?: any,
-    config?: any
+    config?: any,
   ): Promise<T> {
     const response = await this.axiosInstance.post<T>(url, data, config);
     return response.data;
@@ -141,7 +153,7 @@ class ApiClient {
   public async patch<T = any>(
     url: string,
     data?: any,
-    config?: any
+    config?: any,
   ): Promise<T> {
     const response = await this.axiosInstance.patch<T>(url, data, config);
     return response.data;

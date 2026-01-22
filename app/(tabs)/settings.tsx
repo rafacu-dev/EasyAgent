@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
-  Alert,
 } from "react-native";
 import { Colors } from "../../utils/colors";
 import { useTranslation } from "react-i18next";
@@ -14,6 +13,7 @@ import { useState } from "react";
 import { clearStorage, clearAuthData } from "../../utils/storage";
 import { router } from "expo-router";
 import { useAgentQuery, useAgentPhoneNumber } from "@/utils/hooks";
+import { showWarning } from "@/utils/toast";
 
 export default function SettingsScreen() {
   const { t, i18n } = useTranslation();
@@ -28,48 +28,24 @@ export default function SettingsScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert(
+    showWarning(
       t("settings.logoutTitle", "Logout"),
       t("settings.logoutMessage", "Are you sure you want to logout?"),
-      [
-        {
-          text: t("common.cancel", "Cancel"),
-          style: "cancel",
-        },
-        {
-          text: t("settings.logout", "Logout"),
-          style: "destructive",
-          onPress: async () => {
-            await clearAuthData();
-            router.replace("/login" as any);
-          },
-        },
-      ]
     );
+    // Give user time to read the message before logging out
+    setTimeout(async () => {
+      await clearAuthData();
+      router.replace("/login" as any);
+    }, 2000);
   };
 
   const handleDeleteAgent = () => {
-    Alert.alert(
+    showWarning(
       t("settings.deleteAgentTitle", "Delete Agent"),
       t(
         "settings.deleteAgentMessage",
-        "This will permanently delete your agent. This action cannot be undone."
+        "This will permanently delete your agent. This action cannot be undone.",
       ),
-      [
-        {
-          text: t("common.cancel", "Cancel"),
-          style: "cancel",
-        },
-        {
-          text: t("common.delete", "Delete"),
-          style: "destructive",
-          onPress: async () => {
-            // TODO: Implement actual agent deletion via API
-            await clearStorage();
-            router.replace("/");
-          },
-        },
-      ]
     );
   };
 

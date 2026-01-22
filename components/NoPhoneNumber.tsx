@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 import { Colors } from "../utils/colors";
 import { useUserQuery } from "../utils/hooks";
+import { showWarning } from "../utils/toast";
 
 interface NoPhoneNumberProps {
   variant?: "simple" | "detailed";
@@ -19,23 +20,16 @@ export default function NoPhoneNumber({
 
   const handleBuyPhoneNumber = () => {
     if (!isProOrAbove) {
-      Alert.alert(
+      showWarning(
         t("subscription.proFeature", "Pro Feature"),
         t(
           "subscription.phoneNumberProMessage",
-          "Phone numbers are a Pro feature. Upgrade to access this feature."
+          "Phone numbers are a Pro feature. Upgrade to access this feature.",
         ),
-        [
-          {
-            text: t("common.cancel", "Cancel"),
-            style: "cancel",
-          },
-          {
-            text: t("subscription.upgrade", "Upgrade"),
-            onPress: () => router.push("/paywall/PaywallScreen"),
-          },
-        ]
       );
+      setTimeout(() => {
+        router.push("/paywall/PaywallScreen");
+      }, 1500);
     } else {
       router.push("/buy-phone-number");
     }
@@ -53,7 +47,7 @@ export default function NoPhoneNumber({
         <Text style={styles.message}>
           {t(
             `${translationPrefix}.noPhoneMessage`,
-            "To access calls and records, first buy a phone number for your agent"
+            "To access calls and records, first buy a phone number for your agent",
           )}
         </Text>
 
@@ -67,7 +61,7 @@ export default function NoPhoneNumber({
             <Text style={styles.featureText}>
               {t(
                 `${translationPrefix}.featureInbound`,
-                "Receive inbound calls"
+                "Receive inbound calls",
               )}
             </Text>
           </View>
@@ -90,7 +84,7 @@ export default function NoPhoneNumber({
             <Text style={styles.featureText}>
               {t(
                 `${translationPrefix}.featureRecording`,
-                "Call recording & transcripts"
+                "Call recording & transcripts",
               )}
             </Text>
           </View>
@@ -119,7 +113,7 @@ export default function NoPhoneNumber({
       <Text style={styles.messageSimple}>
         {t(
           `${translationPrefix}.noPhoneMessage`,
-          "To access calls and records, first buy a phone number for your agent"
+          "To access calls and records, first buy a phone number for your agent",
         )}
       </Text>
       <TouchableOpacity

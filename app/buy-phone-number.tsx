@@ -5,7 +5,6 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   Modal,
 } from "react-native";
 import { Colors } from "../utils/colors";
@@ -17,7 +16,7 @@ import { apiClient } from "../utils/axios-interceptor";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAgentQuery, useUserQuery } from "../utils/hooks";
 import { PhoneSearchHeader } from "../components/PhoneSearchHeader";
-import { onPhoneNumberAdded } from "./notifications/notificationHelpers";
+import { showError, showSuccess, showWarning } from "@/utils/toast";
 
 interface AvailableNumber {
   phone_number: string;
@@ -43,24 +42,16 @@ export default function BuyPhoneNumberScreen() {
   // Redirect to paywall if user is not pro
   useEffect(() => {
     if (!isProOrAbove) {
-      Alert.alert(
+      showWarning(
         t("subscription.proFeature", "Pro Feature"),
         t(
           "subscription.phoneNumberProMessage",
-          "Phone numbers are a Pro feature. Upgrade to access this feature."
+          "Phone numbers are a Pro feature. Upgrade to access this feature.",
         ),
-        [
-          {
-            text: t("common.cancel", "Cancel"),
-            style: "cancel",
-            onPress: () => router.back(),
-          },
-          {
-            text: t("subscription.upgrade", "Upgrade"),
-            onPress: () => router.replace("/paywall/PaywallScreen"),
-          },
-        ]
       );
+      setTimeout(() => {
+        router.replace("/paywall/PaywallScreen");
+      }, 2000);
     }
   }, [isProOrAbove, t]);
 
@@ -104,36 +95,16 @@ export default function BuyPhoneNumberScreen() {
         queryClient.invalidateQueries({ queryKey: ["userProfile"] }),
       ]);
 
-      // Send notification for new phone number
-      const phoneNumberData = response?.data || response;
-      if (phoneNumberData?.phone_number) {
-        onPhoneNumberAdded({
-          id: phoneNumberData.id || phoneNumberData.phone_number, // fallback to phone_number if id missing
-          phone_number: phoneNumberData.phone_number,
-          friendly_name:
-            phoneNumberData.friendly_name ||
-            `${agentConfig?.companyName || "Agent"} Number`,
-        }).catch((err) =>
-          console.error("Failed to send phone number notification:", err)
-        );
-      }
-
-      Alert.alert(
+      showSuccess(
         t("getPhone.success", "Success!"),
         t(
           "getPhone.obtainSuccess",
-          "Phone number obtained and linked to your agent successfully!"
+          "Phone number obtained and linked to your agent successfully!",
         ),
-        [
-          {
-            text: t("common.ok", "OK"),
-            onPress: () => {
-              // Redirect to call forwarding setup after successful purchase
-              router.replace("/call-forwarding");
-            },
-          },
-        ]
       );
+      setTimeout(() => {
+        router.replace("/call-forwarding");
+      }, 1500);
     },
     onError: (error: any) => {
       const errorMessage =
@@ -141,29 +112,22 @@ export default function BuyPhoneNumberScreen() {
         error?.message ||
         error?.error ||
         t("getPhone.obtainError", "Failed to obtain phone number");
-      Alert.alert(t("getPhone.error", "Error"), errorMessage);
+      showError(t("getPhone.error", "Error"), errorMessage);
     },
   });
 
   const handlePurchase = (phoneNumber: string) => {
-    Alert.alert(
+    showWarning(
       t("getPhone.confirmTitle", "Confirm Selection"),
       t(
         "getPhone.confirmMessage",
-        `Are you sure you want to obtain ${phoneNumber} for your agent?`
+        `Are you sure you want to obtain ${phoneNumber} for your agent?`,
       ),
-      [
-        {
-          text: t("common.cancel", "Cancel"),
-          style: "cancel",
-        },
-        {
-          text: t("getPhone.obtain", "Obtain Number"),
-          style: "default",
-          onPress: () => purchaseMutation.mutate(phoneNumber),
-        },
-      ]
     );
+    // Auto-proceed after showing confirmation message
+    setTimeout(() => {
+      purchaseMutation.mutate(phoneNumber);
+    }, 1500);
   };
 
   const handleSearch = () => {
@@ -246,7 +210,7 @@ export default function BuyPhoneNumberScreen() {
         <Text style={styles.emptyStateSubtext}>
           {t(
             "getPhone.filterToFind",
-            "Use the filters above to find specific phone numbers"
+            "Use the filters above to find specific phone numbers",
           )}
         </Text>
       </View>
@@ -319,7 +283,7 @@ export default function BuyPhoneNumberScreen() {
             <Text style={styles.modalText}>
               {t(
                 "getPhone.info",
-                "Select a phone number to enable calls and recordings with your AI agent. Phone numbers are included with your Pro subscription."
+                "Select a phone number to enable calls and recordings with your AI agent. Phone numbers are included with your Pro subscription.",
               )}
             </Text>
             <TouchableOpacity

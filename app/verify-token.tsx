@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -16,6 +15,7 @@ import { Colors } from "../utils/colors";
 import { apiClient } from "@/utils/axios-interceptor";
 import { Ionicons } from "@expo/vector-icons";
 import { STORAGE_KEYS } from "@/utils/storage";
+import { showError, showSuccess } from "@/utils/toast";
 
 export default function VerifyTokenScreen() {
   const { t } = useTranslation();
@@ -109,7 +109,7 @@ export default function VerifyTokenScreen() {
     const token = tokenCode || code.join("");
 
     if (token.length !== 6) {
-      Alert.alert(t("common.error"), t("verifyToken.codeRequired"));
+      showError(t("common.error"), t("verifyToken.codeRequired"));
       return;
     }
 
@@ -158,7 +158,7 @@ export default function VerifyTokenScreen() {
       }
     } catch (error: any) {
       if (__DEV__) console.error("Error verifying token:", error);
-      Alert.alert(
+      showError(
         t("common.error"),
         error.response?.data?.error || t("verifyToken.verifyFailed"),
       );
@@ -177,10 +177,10 @@ export default function VerifyTokenScreen() {
     try {
       await apiClient.post("auth/request-token/", { email });
       setResendCountdown(60);
-      Alert.alert(t("common.success"), t("verifyToken.codeSent"));
+      showSuccess(t("common.success"), t("verifyToken.codeSent"));
     } catch (error: any) {
       if (__DEV__) console.error("Error resending code:", error);
-      Alert.alert(
+      showError(
         t("common.error"),
         error.response?.data?.error || t("verifyToken.resendFailed"),
       );

@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -17,6 +16,7 @@ import {
   updateNotificationPreferences,
   sendTestNotification,
 } from "./easyAgentNotifications";
+import { showError, showSuccess, showInfo } from "@/utils/toast";
 
 interface NotificationPreferences {
   enabled: boolean;
@@ -92,7 +92,7 @@ const NotificationPreferencesScreen: React.FC = () => {
       await syncPreferencesWithServer(newPreferences);
     } catch (error) {
       console.error("Error saving notification preferences:", error);
-      Alert.alert(t("common.error"), t("notifications.preferencesError"));
+      showError(t("common.error"), t("notifications.preferencesError"));
     }
   };
 
@@ -130,46 +130,35 @@ const NotificationPreferencesScreen: React.FC = () => {
   const testNotification = async (): Promise<void> => {
     try {
       if (!expoPushToken) {
-        Alert.alert(t("common.error"), "No push token available");
+        showError(t("common.error"), "No push token available");
         return;
       }
 
-      Alert.alert(
+      showInfo(
         t("notifications.testNotification", "Test Notification"),
         t(
           "notifications.testNotificationMessage",
           "A test notification will be sent to your device.",
         ),
-        [
-          { text: t("common.cancel"), style: "cancel" },
-          {
-            text: t("common.submit"),
-            onPress: async () => {
-              setIsSyncing(true);
-              const success = await sendTestNotification();
-              setIsSyncing(false);
-
-              if (success) {
-                Alert.alert(
-                  t("common.success"),
-                  t(
-                    "notifications.testNotificationSent",
-                    "Test notification sent!",
-                  ),
-                );
-              } else {
-                Alert.alert(
-                  t("common.error"),
-                  t(
-                    "notifications.testNotificationFailed",
-                    "Failed to send test notification",
-                  ),
-                );
-              }
-            },
-          },
-        ],
       );
+      setIsSyncing(true);
+      const success = await sendTestNotification();
+      setIsSyncing(false);
+
+      if (success) {
+        showSuccess(
+          t("common.success"),
+          t("notifications.testNotificationSent", "Test notification sent!"),
+        );
+      } else {
+        showError(
+          t("common.error"),
+          t(
+            "notifications.testNotificationFailed",
+            "Failed to send test notification",
+          ),
+        );
+      }
     } catch (error) {
       console.error("Error sending test notification:", error);
       setIsSyncing(false);
