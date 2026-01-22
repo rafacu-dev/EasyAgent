@@ -69,10 +69,15 @@
       "expo-web-browser",
       [
         "react-native-fbsdk-next",
-        {
-          "appID": "YOUR_FACEBOOK_APP_ID",
-          "clientToken": "YOUR_FACEBOOK_CLIENT_TOKEN",
-          "displayName": "EasyAgent"
+        {          
+          "appID": "1258090116208256",
+          "clientToken": "5a99cea63c81b29081fc6b7773caadea",
+          "displayName": "EasyAgent",
+          "scheme": "fb1258090116208256",
+          "advertiserIDCollectionEnabled": true,
+          "autoLogAppEventsEnabled": true,
+          "isAutoInitEnabled": true,
+          "iosUserTrackingPermission": "This identifier will be used to deliver personalized ads to you."
         }
       ],
       "expo-tracking-transparency"
@@ -82,8 +87,8 @@
       "reactCompiler": true
     },
     "extra": {
-      "rcApplApiKey": "appl_nunGwWyvHhMVyiDGLfpXXtSyYsC",
-      "rcGooglApiKey": "goog_oIWkmVpSoygObsqnMXqKBofnNUK",
+      "rcApplApiKey": "appl_NFOqhllUjlPByLZAXmiSYUIPkVi",
+      "rcGooglApiKey": "",
       "router": {},
       "eas": {
         "projectId": "5a7204d1-9095-4611-8382-fa10bcee4403"
