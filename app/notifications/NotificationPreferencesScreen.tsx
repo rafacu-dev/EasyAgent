@@ -20,20 +20,18 @@ import {
 
 interface NotificationPreferences {
   enabled: boolean;
+  call_received: boolean;
   call_completed: boolean;
   appointment_scheduled: boolean;
-  agent_updated: boolean;
-  phone_number_added: boolean;
-  system: boolean;
+  appointment_reminder: boolean;
 }
 
 const defaultPreferences: NotificationPreferences = {
   enabled: true,
+  call_received: true,
   call_completed: true,
   appointment_scheduled: true,
-  agent_updated: true,
-  phone_number_added: true,
-  system: true,
+  appointment_reminder: true,
 };
 
 const NotificationPreferencesScreen: React.FC = () => {
@@ -52,7 +50,7 @@ const NotificationPreferencesScreen: React.FC = () => {
     try {
       // First load from local storage
       const savedPreferences = await AsyncStorage.getItem(
-        "notification_preferences"
+        "notification_preferences",
       );
       if (savedPreferences) {
         const parsed = JSON.parse(savedPreferences);
@@ -70,7 +68,7 @@ const NotificationPreferencesScreen: React.FC = () => {
         setPreferences(merged);
         await AsyncStorage.setItem(
           "notification_preferences",
-          JSON.stringify(merged)
+          JSON.stringify(merged),
         );
       }
     } catch (error) {
@@ -81,12 +79,12 @@ const NotificationPreferencesScreen: React.FC = () => {
   };
 
   const savePreferences = async (
-    newPreferences: NotificationPreferences
+    newPreferences: NotificationPreferences,
   ): Promise<void> => {
     try {
       await AsyncStorage.setItem(
         "notification_preferences",
-        JSON.stringify(newPreferences)
+        JSON.stringify(newPreferences),
       );
       setPreferences(newPreferences);
 
@@ -99,7 +97,7 @@ const NotificationPreferencesScreen: React.FC = () => {
   };
 
   const syncPreferencesWithServer = async (
-    prefs: NotificationPreferences
+    prefs: NotificationPreferences,
   ): Promise<void> => {
     try {
       if (!expoPushToken) {
@@ -140,7 +138,7 @@ const NotificationPreferencesScreen: React.FC = () => {
         t("notifications.testNotification", "Test Notification"),
         t(
           "notifications.testNotificationMessage",
-          "A test notification will be sent to your device."
+          "A test notification will be sent to your device.",
         ),
         [
           { text: t("common.cancel"), style: "cancel" },
@@ -156,21 +154,21 @@ const NotificationPreferencesScreen: React.FC = () => {
                   t("common.success"),
                   t(
                     "notifications.testNotificationSent",
-                    "Test notification sent!"
-                  )
+                    "Test notification sent!",
+                  ),
                 );
               } else {
                 Alert.alert(
                   t("common.error"),
                   t(
                     "notifications.testNotificationFailed",
-                    "Failed to send test notification"
-                  )
+                    "Failed to send test notification",
+                  ),
                 );
               }
             },
           },
-        ]
+        ],
       );
     } catch (error) {
       console.error("Error sending test notification:", error);
@@ -208,7 +206,7 @@ const NotificationPreferencesScreen: React.FC = () => {
             <Text style={styles.preferenceDescription}>
               {t(
                 "notifications.enableDescription",
-                "Allow app to send push notifications"
+                "Allow app to send push notifications",
               )}
             </Text>
           </View>
@@ -223,12 +221,33 @@ const NotificationPreferencesScreen: React.FC = () => {
         <View style={styles.preferenceItem}>
           <View style={styles.preferenceContent}>
             <Text style={styles.preferenceLabel}>
-              {t("notifications.calls", "Call Notifications")}
+              {t("notifications.incomingCalls", "Incoming Calls")}
             </Text>
             <Text style={styles.preferenceDescription}>
               {t(
-                "notifications.callsDescription",
-                "Notifications when calls are completed"
+                "notifications.incomingCallsDescription",
+                "Notifications when calls are received by your agent",
+              )}
+            </Text>
+          </View>
+          <Switch
+            value={preferences.call_received}
+            onValueChange={() => togglePreference("call_received")}
+            trackColor={{ false: "#767577", true: "#8d36ff" }}
+            thumbColor={preferences.call_received ? "#ffffff" : "#f4f3f4"}
+            disabled={!preferences.enabled}
+          />
+        </View>
+
+        <View style={styles.preferenceItem}>
+          <View style={styles.preferenceContent}>
+            <Text style={styles.preferenceLabel}>
+              {t("notifications.callsCompleted", "Calls Completed")}
+            </Text>
+            <Text style={styles.preferenceDescription}>
+              {t(
+                "notifications.callsCompletedDescription",
+                "Notifications when calls are completed",
               )}
             </Text>
           </View>
@@ -249,7 +268,7 @@ const NotificationPreferencesScreen: React.FC = () => {
             <Text style={styles.preferenceDescription}>
               {t(
                 "notifications.appointmentsDescription",
-                "Notifications about scheduled appointments"
+                "Notifications about scheduled appointments",
               )}
             </Text>
           </View>
@@ -267,62 +286,22 @@ const NotificationPreferencesScreen: React.FC = () => {
         <View style={styles.preferenceItem}>
           <View style={styles.preferenceContent}>
             <Text style={styles.preferenceLabel}>
-              {t("notifications.agentUpdates", "Agent Updates")}
+              {t("notifications.appointmentReminders", "Appointment Reminders")}
             </Text>
             <Text style={styles.preferenceDescription}>
               {t(
-                "notifications.agentUpdatesDescription",
-                "Notifications when your agent is updated"
+                "notifications.appointmentRemindersDescription",
+                "Reminders before scheduled appointments",
               )}
             </Text>
           </View>
           <Switch
-            value={preferences.agent_updated}
-            onValueChange={() => togglePreference("agent_updated")}
+            value={preferences.appointment_reminder}
+            onValueChange={() => togglePreference("appointment_reminder")}
             trackColor={{ false: "#767577", true: "#8d36ff" }}
-            thumbColor={preferences.agent_updated ? "#ffffff" : "#f4f3f4"}
-            disabled={!preferences.enabled}
-          />
-        </View>
-
-        <View style={styles.preferenceItem}>
-          <View style={styles.preferenceContent}>
-            <Text style={styles.preferenceLabel}>
-              {t("notifications.phoneNumbers", "Phone Numbers")}
-            </Text>
-            <Text style={styles.preferenceDescription}>
-              {t(
-                "notifications.phoneNumbersDescription",
-                "Notifications when phone numbers are added"
-              )}
-            </Text>
-          </View>
-          <Switch
-            value={preferences.phone_number_added}
-            onValueChange={() => togglePreference("phone_number_added")}
-            trackColor={{ false: "#767577", true: "#8d36ff" }}
-            thumbColor={preferences.phone_number_added ? "#ffffff" : "#f4f3f4"}
-            disabled={!preferences.enabled}
-          />
-        </View>
-
-        <View style={styles.preferenceItem}>
-          <View style={styles.preferenceContent}>
-            <Text style={styles.preferenceLabel}>
-              {t("notifications.system", "System Notifications")}
-            </Text>
-            <Text style={styles.preferenceDescription}>
-              {t(
-                "notifications.systemDescription",
-                "General system notifications and alerts"
-              )}
-            </Text>
-          </View>
-          <Switch
-            value={preferences.system}
-            onValueChange={() => togglePreference("system")}
-            trackColor={{ false: "#767577", true: "#8d36ff" }}
-            thumbColor={preferences.system ? "#ffffff" : "#f4f3f4"}
+            thumbColor={
+              preferences.appointment_reminder ? "#ffffff" : "#f4f3f4"
+            }
             disabled={!preferences.enabled}
           />
         </View>

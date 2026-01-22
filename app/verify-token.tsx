@@ -128,6 +128,26 @@ export default function VerifyTokenScreen() {
         JSON.stringify(response.user),
       );
 
+      // Register for push notifications after successful login
+      try {
+        const NotificationService = (
+          await import("./notifications/NotificationService")
+        ).default;
+        const notificationService = NotificationService.getInstance();
+
+        // Request permissions and get token
+        const pushToken =
+          await notificationService.requestPermissionsAndRegister();
+        if (pushToken) {
+          console.log("✅ Notification token obtained after login");
+          // Send to server
+          await notificationService.sendTokenToServer();
+        }
+      } catch (notifError) {
+        console.error("⚠️ Error setting up notifications:", notifError);
+        // Don't block login if notifications fail
+      }
+
       // Redirect based on user status
       if (response.is_new_user) {
         // New user or user without company info - go to setup

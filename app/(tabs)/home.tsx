@@ -9,6 +9,7 @@ import {
   Linking,
   Platform,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
 import Constants from "expo-constants";
 import { Ionicons, SimpleLineIcons } from "@expo/vector-icons";
@@ -38,7 +39,7 @@ export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const { data: agentConfig, isLoading: isLoadingAgent } = useAgentQuery();
   const { phoneNumber, isLoading: isLoadingPhone } = useAgentPhoneNumber(
-    agentConfig?.id
+    agentConfig?.id,
   );
   const [callTypeFilter, setCallTypeFilter] = useState<
     "all" | "inbound" | "outbound"
@@ -61,8 +62,8 @@ export default function HomeScreen() {
         callTypeFilter === "all" ? "" : `&direction=${callTypeFilter}`;
       return apiClient.get(
         `calls/?agent_id=${encodeURIComponent(
-          String(agentDbId)
-        )}&limit=10&sort_order=descending${directionParam}`
+          String(agentDbId),
+        )}&limit=10&sort_order=descending${directionParam}`,
       );
     },
   });
@@ -82,12 +83,12 @@ export default function HomeScreen() {
         const [callsData, appointmentsData] = await Promise.all([
           apiClient.get(
             `calls/?agent_id=${encodeURIComponent(
-              String(agentDbId)
+              String(agentDbId),
             )}&limit=5&sort_order=descending${
               lastLogin
                 ? `&after_datetime=${encodeURIComponent(lastLogin)}`
                 : ""
-            }`
+            }`,
           ),
           apiClient.get(`appointments/${lastLoginParam}`),
         ]);
@@ -97,7 +98,7 @@ export default function HomeScreen() {
           newAppointments: appointmentsData?.data?.length ?? 0,
         };
       },
-    }
+    },
   );
 
   const callSections = useMemo(() => {
@@ -160,12 +161,28 @@ export default function HomeScreen() {
         // First initialize (without permissions)
         await notificationService.initialize();
 
+        // Check if user is authenticated before requesting permissions
+        const authToken = await AsyncStorage.getItem("authToken");
+        if (!authToken) {
+          console.log("⚠️ User not authenticated yet, will retry after login");
+          return;
+        }
+
         // Then request permissions
         const token = await notificationService.requestPermissionsAndRegister();
         if (token) {
           console.log("✅ Notification token obtained:", token);
           // Send token to server
-          await notificationService.sendTokenToServer();
+          const success = await notificationService.sendTokenToServer();
+          if (success) {
+            console.log("✅ Token successfully registered with backend");
+          } else {
+            console.log("⚠️ Failed to register token with backend, will retry");
+            // Retry after 3 seconds
+            setTimeout(async () => {
+              await notificationService.sendTokenToServer();
+            }, 3000);
+          }
         }
       } catch (notifError) {
         console.error("Error initializing notifications:", notifError);
@@ -196,7 +213,7 @@ export default function HomeScreen() {
                 },
               },
             ],
-            { cancelable: false }
+            { cancelable: false },
           );
         } else if (appVersion < response["current_version"]) {
           Alert.alert(
@@ -211,7 +228,7 @@ export default function HomeScreen() {
               },
               { text: t("index.later"), onPress: () => {} },
             ],
-            { cancelable: true }
+            { cancelable: true },
           );
         }
       });
@@ -700,7 +717,7 @@ export default function HomeScreen() {
               <Text style={styles.emptyCallsSubtitle}>
                 {t(
                   "home.noCallsDescription",
-                  "Your recent calls will appear here once you start making or receiving calls."
+                  "Your recent calls will appear here once you start making or receiving calls.",
                 )}
               </Text>
             </View>
