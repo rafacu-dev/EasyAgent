@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "692102080763",
+    "project_id": "easyagent-70693",
+    "storage_bucket": "easyagent-70693.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:692102080763:android:bb1cde75a5f376ce89e85e",
+        "android_client_info": {
+          "package_name": "com.drecom.EasyAgent"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCTKbJh7ZKGigwRkb2XRWp5GgzjiyMx2DM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

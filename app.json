@@ -2,7 +2,7 @@
   "expo": {
     "name": "EasyAgent",
     "slug": "EasyAgent",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "easyagent",
@@ -37,7 +37,7 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "googleServicesFile": "./android/app/google-services.json",
+      "googleServicesFile": "./google-services.json",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -71,7 +71,7 @@
       "expo-notifications",
       [
         "react-native-fbsdk-next",
-        {          
+        {
           "appID": "1258090116208256",
           "clientToken": "5a99cea63c81b29081fc6b7773caadea",
           "displayName": "EasyAgent",
