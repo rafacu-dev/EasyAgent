@@ -35,7 +35,7 @@ export interface TranscriptionResponse {
  * @returns Transcription result
  */
 export async function transcribeAudio(
-  options: TranscriptionOptions
+  options: TranscriptionOptions,
 ): Promise<TranscriptionResponse> {
   const {
     audioUri,
@@ -64,9 +64,9 @@ export async function transcribeAudio(
         "Content-Type": "multipart/form-data",
       },
     });
-
+    console.log("Transcription API response:", response);
     // API returns nested data object: { data: { transcription/translation, ... } }
-    return response.data?.data || {};
+    return response.data || {};
   } catch (error: any) {
     throw new Error(error.response?.data?.error || "Failed to process audio");
   }
@@ -80,7 +80,7 @@ export async function transcribeAudio(
  */
 export async function translateAudio(
   audioUri: string,
-  targetLanguage: string = "en"
+  targetLanguage: string = "en",
 ): Promise<string> {
   const result = await transcribeAudio({
     audioUri,

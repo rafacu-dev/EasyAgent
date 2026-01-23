@@ -9,11 +9,13 @@ import {
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Audio, AVPlaybackStatus } from "expo-av";
 import { Colors } from "@/app/utils/colors";
 import { apiClient } from "@/app/utils/axios-interceptor";
 import { useQuery } from "@tanstack/react-query";
 import { formatDuration, formatDateTime } from "@/app/utils/formatters";
+import { showError } from "@/app/utils/toast";
 
 interface CallDetails {
   id: string;
@@ -42,6 +44,13 @@ export default function CallDetailsScreen() {
   const [isAnalysisExpanded, setIsAnalysisExpanded] = useState(false);
   const [isTranscriptExpanded, setIsTranscriptExpanded] = useState(false);
 
+  // Audio player state
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [playbackPosition, setPlaybackPosition] = useState(0);
+  const [playbackDuration, setPlaybackDuration] = useState(0);
+
   const { data, isLoading } = useQuery<
     CallDetails | { call?: CallDetails; agent?: AgentInfo } | undefined
   >({
@@ -52,6 +61,91 @@ export default function CallDetailsScreen() {
     },
     enabled: !!id,
   });
+
+  // Cleanup sound on unmount
+  useEffect(() => {
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, [sound]);
+
+  const onPlaybackStatusUpdate = (status: AVPlaybackStatus) => {
+    if (status.isLoaded) {
+      setPlaybackPosition(status.positionMillis);
+      setPlaybackDuration(status.durationMillis || 0);
+      setIsPlaying(status.isPlaying);
+
+      if (status.didJustFinish) {
+        setIsPlaying(false);
+        setPlaybackPosition(0);
+      }
+    }
+  };
+
+  const handlePlayRecording = async (recordingUrl: string) => {
+    try {
+      if (sound) {
+        // If sound exists, toggle play/pause
+        const status = await sound.getStatusAsync();
+        if (status.isLoaded && status.isPlaying) {
+          await sound.pauseAsync();
+        } else {
+          await sound.playAsync();
+        }
+        return;
+      }
+
+      // Load and play new sound
+      setIsLoadingAudio(true);
+
+      // Set audio mode for playback
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+      });
+
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: recordingUrl },
+        { shouldPlay: true },
+        onPlaybackStatusUpdate,
+      );
+
+      setSound(newSound);
+      setIsPlaying(true);
+    } catch (error) {
+      console.error("Error playing recording:", error);
+      showError(
+        t("callDetails.playbackError", "Playback Error"),
+        t(
+          "callDetails.playbackErrorMessage",
+          "Failed to play recording. Please try again.",
+        ),
+      );
+    } finally {
+      setIsLoadingAudio(false);
+    }
+  };
+
+  const handleStopRecording = async () => {
+    if (sound) {
+      await sound.stopAsync();
+      await sound.unloadAsync();
+      setSound(null);
+      setIsPlaying(false);
+      setPlaybackPosition(0);
+      setPlaybackDuration(0);
+    }
+  };
+
+  const formatPlaybackTime = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
 
   const rawCall: CallDetails | undefined =
     (data && (data as any).call) || (data as CallDetails) || undefined;
@@ -540,12 +634,82 @@ export default function CallDetailsScreen() {
           {/* Recording */}
           {displayCall.recording_url ? (
             <View style={styles.card}>
-              <TouchableOpacity style={styles.recordingButton}>
-                <Ionicons name="play-circle" size={20} color={Colors.primary} />
-                <Text style={styles.recordingButtonText}>
-                  {t("callDetails.playRecording")}
+              <View style={styles.cardTitleRow}>
+                <Ionicons
+                  name="musical-notes"
+                  size={18}
+                  color={Colors.primary}
+                />
+                <Text style={styles.cardTitle}>
+                  {t("callDetails.recording", "Recording")}
                 </Text>
-              </TouchableOpacity>
+              </View>
+
+              {/* Playback Progress */}
+              {(isPlaying || playbackPosition > 0) && (
+                <View style={styles.playbackProgress}>
+                  <View style={styles.progressBarContainer}>
+                    <View
+                      style={[
+                        styles.progressBar,
+                        {
+                          width:
+                            playbackDuration > 0
+                              ? `${(playbackPosition / playbackDuration) * 100}%`
+                              : "0%",
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.playbackTime}>
+                    {formatPlaybackTime(playbackPosition)} /{" "}
+                    {formatPlaybackTime(playbackDuration)}
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.recordingControls}>
+                <TouchableOpacity
+                  style={[
+                    styles.recordingButton,
+                    isLoadingAudio && styles.recordingButtonDisabled,
+                  ]}
+                  onPress={() =>
+                    handlePlayRecording(displayCall.recording_url!)
+                  }
+                  disabled={isLoadingAudio}
+                >
+                  {isLoadingAudio ? (
+                    <ActivityIndicator size="small" color={Colors.primary} />
+                  ) : (
+                    <Ionicons
+                      name={isPlaying ? "pause-circle" : "play-circle"}
+                      size={24}
+                      color={Colors.primary}
+                    />
+                  )}
+                  <Text style={styles.recordingButtonText}>
+                    {isLoadingAudio
+                      ? t("callDetails.loadingRecording", "Loading...")
+                      : isPlaying
+                        ? t("callDetails.pauseRecording", "Pause")
+                        : t("callDetails.playRecording", "Play Recording")}
+                  </Text>
+                </TouchableOpacity>
+
+                {sound && (
+                  <TouchableOpacity
+                    style={styles.stopButton}
+                    onPress={handleStopRecording}
+                  >
+                    <Ionicons
+                      name="stop-circle"
+                      size={24}
+                      color={Colors.error}
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           ) : null}
 
@@ -768,21 +932,54 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     lineHeight: 18,
   },
+  playbackProgress: {
+    marginBottom: 12,
+  },
+  progressBarContainer: {
+    height: 6,
+    backgroundColor: Colors.backgroundLight,
+    borderRadius: 3,
+    overflow: "hidden",
+    marginBottom: 6,
+  },
+  progressBar: {
+    height: "100%",
+    backgroundColor: Colors.primary,
+    borderRadius: 3,
+  },
+  playbackTime: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+    textAlign: "center",
+  },
+  recordingControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
   recordingButton: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    marginTop: 8,
-    paddingVertical: 10,
+    paddingVertical: 12,
     backgroundColor: Colors.backgroundLight,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: Colors.primary,
   },
+  recordingButtonDisabled: {
+    opacity: 0.6,
+  },
   recordingButtonText: {
     fontSize: 13,
     fontWeight: "600",
     color: Colors.primary,
+  },
+  stopButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: Colors.error + "15",
   },
 });

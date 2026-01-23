@@ -26,7 +26,12 @@ import { apiClient } from "@/app/utils/axios-interceptor";
 import { formatPhoneNumber } from "@/app/utils/formatters";
 import { Audio } from "expo-av";
 import { transcribeAudio, getTextFromResult } from "@/app/utils/transcription";
-import { showError, showSuccess, showInfo, showWarning } from "@/app/utils/toast";
+import {
+  showError,
+  showSuccess,
+  showInfo,
+  showWarning,
+} from "@/app/utils/toast";
 
 export default function PhoneScreen() {
   const { t } = useTranslation();
@@ -141,7 +146,7 @@ export default function PhoneScreen() {
         translate: false, // Set to true for translation
         // targetLanguage: "en", // Only needed if translate is true
       });
-
+      console.log("result from transcription:", result);
       const text = getTextFromResult(result);
 
       if (__DEV__) {

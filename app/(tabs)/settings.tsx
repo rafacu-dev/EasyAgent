@@ -5,15 +5,18 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
+  ActivityIndicator,
 } from "react-native";
 import { Colors } from "@/app/utils/colors";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
-import { clearStorage, clearAuthData } from "@/app/utils/storage";
+import { clearAuthData } from "@/app/utils/storage";
 import { router } from "expo-router";
 import { useAgentQuery, useAgentPhoneNumber } from "@/app/utils/hooks";
-import { showWarning } from "@/app/utils/toast";
+import { showWarning, showError, showSuccess } from "@/app/utils/toast";
+import { showDestructiveAlert } from "@/app/utils/alert";
+import { apiClient } from "@/app/utils/axios-interceptor";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function SettingsScreen() {
@@ -22,6 +25,7 @@ export default function SettingsScreen() {
   const { phoneNumber } = useAgentPhoneNumber(agentConfig?.id);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [isDeletingCompany, setIsDeletingCompany] = useState(false);
 
   // Check notification permissions on mount
   useEffect(() => {
@@ -79,24 +83,50 @@ export default function SettingsScreen() {
   };
 
   const handleLogout = () => {
-    showWarning(
+    showDestructiveAlert(
       t("settings.logoutTitle", "Logout"),
       t("settings.logoutMessage", "Are you sure you want to logout?"),
+      async () => {
+        await clearAuthData();
+        router.replace("/login" as any);
+      },
+      t("settings.logout", "Logout"),
+      t("common.cancel", "Cancel"),
     );
-    // Give user time to read the message before logging out
-    setTimeout(async () => {
-      await clearAuthData();
-      router.replace("/login" as any);
-    }, 2000);
   };
 
-  const handleDeleteAgent = () => {
-    showWarning(
-      t("settings.deleteAgentTitle", "Delete Agent"),
+  const handleDeleteCompany = () => {
+    showDestructiveAlert(
+      t("settings.deleteCompanyTitle", "Delete Company"),
       t(
-        "settings.deleteAgentMessage",
-        "This will permanently delete your agent. This action cannot be undone.",
+        "settings.deleteCompanyMessage",
+        "This will permanently delete your company, agent, and release your phone number. This action cannot be undone.",
       ),
+      async () => {
+        setIsDeletingCompany(true);
+        try {
+          await apiClient.delete("profile/delete-company/");
+          showSuccess(
+            t("settings.deleteCompanySuccess", "Company Deleted"),
+            t(
+              "settings.deleteCompanySuccessMessage",
+              "Your company has been deleted successfully.",
+            ),
+          );
+          await clearAuthData();
+          router.replace("/login" as any);
+        } catch (error: any) {
+          const errorMessage =
+            error?.response?.data?.error ||
+            error?.message ||
+            "Failed to delete company";
+          showError(t("common.error", "Error"), errorMessage);
+        } finally {
+          setIsDeletingCompany(false);
+        }
+      },
+      t("settings.deleteCompany", "Delete Company"),
+      t("common.cancel", "Cancel"),
     );
   };
 
@@ -273,12 +303,20 @@ export default function SettingsScreen() {
           </Text>
 
           <TouchableOpacity
-            style={styles.settingItem}
-            onPress={handleDeleteAgent}
+            style={[
+              styles.settingItem,
+              isDeletingCompany && styles.settingItemDisabled,
+            ]}
+            onPress={handleDeleteCompany}
+            disabled={isDeletingCompany}
           >
-            <Ionicons name="trash-outline" size={24} color="#FF3B30" />
+            {isDeletingCompany ? (
+              <ActivityIndicator size="small" color="#FF3B30" />
+            ) : (
+              <Ionicons name="trash-outline" size={24} color="#FF3B30" />
+            )}
             <Text style={[styles.settingItemText, { color: "#FF3B30" }]}>
-              {t("settings.deleteAgent", "Delete Agent")}
+              {t("settings.deleteCompany", "Delete Company")}
             </Text>
             <Ionicons name="chevron-forward" size={20} color="#ccc" />
           </TouchableOpacity>
@@ -392,6 +430,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 1,
+  },
+  settingItemDisabled: {
+    opacity: 0.6,
   },
   settingItemText: {
     flex: 1,

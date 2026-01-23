@@ -35,7 +35,7 @@ export const formatDurationSeconds = (durationSeconds?: number): string => {
  */
 export const formatShortDate = (
   timestampMs?: number,
-  locale?: string
+  locale?: string,
 ): string => {
   if (!timestampMs) return "";
   const date = new Date(timestampMs);
@@ -53,7 +53,7 @@ export const formatShortDate = (
  */
 export const formatDateWithWeekday = (
   timestampMs?: number,
-  locale?: string
+  locale?: string,
 ): string => {
   if (!timestampMs) return "";
   const date = new Date(timestampMs);
@@ -72,7 +72,7 @@ export const formatDateWithWeekday = (
  */
 export const formatDateTime = (
   timestampMs?: number,
-  locale?: string
+  locale?: string,
 ): string => {
   if (!timestampMs) return "";
   const date = new Date(timestampMs);
@@ -107,24 +107,18 @@ export const formatTime = (timestampMs?: number, locale?: string): string => {
  */
 export const formatPhoneNumber = (phoneNumber?: string): string => {
   if (!phoneNumber) return "";
-
+  const parsed = phoneNumber.replace(/\D+/g, "");
   if (phoneNumber.startsWith("+")) {
-    return phoneNumber;
+    return `+${parsed}`;
   }
   // Format US numbers
-  if (phoneNumber.length === 10) {
-    return `+1${phoneNumber.slice(0, 3)}${phoneNumber.slice(
-      3,
-      6
-    )}${phoneNumber.slice(6)}`;
+  if (parsed.length === 10) {
+    return `+1${parsed.slice(0, 3)}${parsed.slice(3, 6)}${parsed.slice(6)}`;
   }
 
   // Format with country code
-  if (phoneNumber.length === 11 && phoneNumber.startsWith("1")) {
-    return `+1${phoneNumber.slice(1, 4)}${phoneNumber.slice(
-      4,
-      7
-    )}${phoneNumber.slice(7)}`;
+  if (parsed.length === 11 && parsed.startsWith("1")) {
+    return `+1${parsed.slice(1, 4)}${parsed.slice(4, 7)}${parsed.slice(7)}`;
   }
 
   // Return original if can't format
@@ -139,7 +133,7 @@ export const formatPhoneNumber = (phoneNumber?: string): string => {
  */
 export const extractErrorMessage = (
   error: unknown,
-  fallback = "An error occurred"
+  fallback = "An error occurred",
 ): string => {
   if (error instanceof Error) {
     return error.message;

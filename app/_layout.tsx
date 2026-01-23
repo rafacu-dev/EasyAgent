@@ -109,22 +109,22 @@ function AppStateHandler({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
-  useEffect(() => {
-    const initializePurchases = async () => {
-      Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
-      if (Platform.OS === "ios") {
-        Purchases.configure({
-          apiKey: Constants.expoConfig?.extra?.rcApplApiKey,
-        });
-      } else if (Platform.OS === "android") {
-        Purchases.configure({
-          apiKey: Constants.expoConfig?.extra?.rcGooglApiKey,
-        });
-      }
-    };
+  // useEffect(() => {
+  //   const initializePurchases = async () => {
+  //     Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+  //     if (Platform.OS === "ios") {
+  //       Purchases.configure({
+  //         apiKey: Constants.expoConfig?.extra?.rcApplApiKey,
+  //       });
+  //     } else if (Platform.OS === "android") {
+  //       Purchases.configure({
+  //         apiKey: Constants.expoConfig?.extra?.rcGooglApiKey,
+  //       });
+  //     }
+  //   };
 
-    initializePurchases();
-  }, []);
+  //   initializePurchases();
+  // }, []);
 
   useEffect(() => {
     const initializeFacebookSDK = async () => {

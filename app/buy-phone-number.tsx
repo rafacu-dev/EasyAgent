@@ -70,6 +70,7 @@ export default function BuyPhoneNumberScreen() {
       };
       if (areaCode) payload.area_code = areaCode;
       if (contains) payload.contains = contains;
+      console.log("Searching available numbers with payload:", payload);
 
       return apiClient.post("phone-numbers/search-available/", payload);
     },
