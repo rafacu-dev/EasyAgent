@@ -10,10 +10,10 @@ import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
-import { Colors } from "../../utils/colors";
-import { apiClient } from "../../utils/axios-interceptor";
+import { Colors } from "@/app/utils/colors";
+import { apiClient } from "@/app/utils/axios-interceptor";
 import { useQuery } from "@tanstack/react-query";
-import { formatDuration, formatDateTime } from "../../utils/formatters";
+import { formatDuration, formatDateTime } from "@/app/utils/formatters";
 
 interface CallDetails {
   id: string;

@@ -1,7 +1,7 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { Colors } from "../../utils/colors";
+import { Colors } from "@/app/utils/colors";
 
 export default function TabsLayout() {
   const { t } = useTranslation();

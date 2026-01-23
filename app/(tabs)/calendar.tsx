@@ -9,25 +9,25 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
-import { Colors } from "../../utils/colors";
+import { Colors } from "@/app/utils/colors";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useCallback } from "react";
-import { useAgentQuery, useAgentPhoneNumber } from "../../utils/hooks";
-import NoPhoneNumber from "../../components/NoPhoneNumber";
+import { useAgentQuery, useAgentPhoneNumber } from "@/app/utils/hooks";
+import NoPhoneNumber from "../components/NoPhoneNumber";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "../../utils/axios-interceptor";
+import { apiClient } from "@/app/utils/axios-interceptor";
 import type {
   Appointment,
   MonthResponse,
   AppointmentStatus,
-} from "../../utils/types";
+} from "@/app/utils/types";
 import {
   onAppointmentScheduled,
   scheduleAppointmentReminder,
 } from "../notifications/notificationHelpers";
 import type { AppointmentNotificationData } from "../notifications/easyAgentNotifications";
-import { showError, showSuccess } from "@/utils/toast";
+import { showError, showSuccess } from "@/app/utils/toast";
 
 const STATUS_COLORS: { [key in AppointmentStatus]: string } = {
   scheduled: Colors.info,

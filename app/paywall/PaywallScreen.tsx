@@ -28,11 +28,9 @@ import Purchases, {
   PurchasesError,
 } from "react-native-purchases";
 import { useTranslation } from "react-i18next";
-import icon from "../../assets/images/paywall/icon.png";
-import bgIconSuscription from "../../assets/images/bg-icon-suscription.png";
 import { FontAwesome } from "@expo/vector-icons";
-import { Colors } from "@/utils/colors";
-import { showError, showSuccess, showInfo, showWarning } from "@/utils/toast";
+import { Colors } from "@/app/utils/colors";
+import { showError, showSuccess, showInfo, showWarning } from "@/app/utils/toast";
 
 interface PaywallScreenProps {
   onPurchaseSuccess: () => void;
@@ -325,19 +323,19 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
     const radius = 90; // Radio del círculo - aumentado para más separación
     // Usando todas las 8 imágenes de los toolsButtons del index
     const images = [
-      require("../../assets/images/paywall/support.png"),
-      require("../../assets/images/paywall/translate.png"),
-      require("../../assets/images/paywall/24.png"),
-      require("../../assets/images/paywall/callendar.png"),
-      require("../../assets/images/paywall/support.png"),
-      require("../../assets/images/paywall/translate.png"),
-      require("../../assets/images/paywall/24.png"),
-      require("../../assets/images/paywall/callendar.png"),
+      require("@/assets/images/paywall/support.png"),
+      require("@/assets/images/paywall/translate.png"),
+      require("@/assets/images/paywall/24.png"),
+      require("@/assets/images/paywall/callendar.png"),
+      require("@/assets/images/paywall/support.png"),
+      require("@/assets/images/paywall/translate.png"),
+      require("@/assets/images/paywall/24.png"),
+      require("@/assets/images/paywall/callendar.png"),
     ];
 
     return (
       <ImageBackground
-        source={bgIconSuscription}
+        source={require("@/assets/images/bg-icon-suscription.png")}
         style={styles.rotatingContainer}
         resizeMode="cover"
       >
@@ -573,7 +571,7 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
           <View style={{ marginTop: 0, paddingTop: 0 }}>
             <View style={styles.iconContainer}>
               <RotatingImages />
-              <Image source={icon} style={styles.centerIcon} />
+              <Image source={require("@/assets/images/icon.png")} style={styles.centerIcon} />
             </View>
             <View style={{ marginTop: -80, backgroundColor: "#fff" }}>
               <Reanimated.View style={titleAnimatedStyle}>

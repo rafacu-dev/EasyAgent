@@ -4,7 +4,7 @@
  * for phone numbers, agents, appointments, and calls.
  */
 
-import { apiClient } from "@/utils/axios-interceptor";
+import { apiClient } from "@/app/utils/axios-interceptor";
 
 // ============================================================================
 // Types

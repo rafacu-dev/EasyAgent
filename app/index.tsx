@@ -3,10 +3,10 @@ import { View, ActivityIndicator, Text, StyleSheet, Image } from "react-native";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Updates from "expo-updates";
-import FirstLoginView from "../components/FirstLoginView";
-import { useAgentQuery } from "@/utils/hooks";
+import FirstLoginView from "./intro/FirstLoginView";
+import { useAgentQuery } from "@/app/utils/hooks";
 import { useTranslation } from "react-i18next";
-import { Colors } from "@/utils/colors";
+import { Colors } from "@/app/utils/colors";
 
 export default function Index() {
   const { t } = useTranslation();
@@ -83,7 +83,7 @@ export default function Index() {
     return (
       <View style={styles.splashContainer}>
         <Image
-          source={require("../assets/images/icon.png")}
+          source={require("@/assets/images/icon.png")}
           style={styles.splashIcon}
           resizeMode="contain"
         />

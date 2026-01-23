@@ -10,9 +10,9 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { Colors } from "../utils/colors";
-import { useAgentQuery } from "../utils/hooks";
-import { apiClient } from "../utils/axios-interceptor";
+import { Colors } from "@/app/utils/colors";
+import { useAgentQuery } from "@/app/utils/hooks";
+import { apiClient } from "@/app/utils/axios-interceptor";
 import { useQuery } from "@tanstack/react-query";
 
 const { width } = Dimensions.get("window");

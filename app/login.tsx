@@ -10,10 +10,10 @@ import {
   Platform,
 } from "react-native";
 import { router } from "expo-router";
-import { Colors } from "../utils/colors";
-import { apiClient } from "@/utils/axios-interceptor";
+import { Colors } from "@/app/utils/colors";
+import { apiClient } from "@/app/utils/axios-interceptor";
 import { Ionicons } from "@expo/vector-icons";
-import { showError } from "@/utils/toast";
+import { showError } from "@/app/utils/toast";
 
 export default function LoginScreen() {
   const { t } = useTranslation();

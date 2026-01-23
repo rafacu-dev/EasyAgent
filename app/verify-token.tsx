@@ -11,11 +11,11 @@ import {
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Colors } from "../utils/colors";
-import { apiClient } from "@/utils/axios-interceptor";
+import { Colors } from "@/app/utils/colors";
+import { apiClient } from "@/app/utils/axios-interceptor";
 import { Ionicons } from "@expo/vector-icons";
-import { STORAGE_KEYS } from "@/utils/storage";
-import { showError, showSuccess } from "@/utils/toast";
+import { STORAGE_KEYS } from "@/app/utils/storage";
+import { showError, showSuccess } from "@/app/utils/toast";
 
 export default function VerifyTokenScreen() {
   const { t } = useTranslation();
