@@ -7,6 +7,7 @@ import {
   TextInput,
   Linking,
   Platform,
+  RefreshControl,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
@@ -14,22 +15,22 @@ import Constants from "expo-constants";
 import { Ionicons, SimpleLineIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useMemo, useState } from "react";
-import { Colors } from "../../utils/colors";
+import { Colors } from "@/app/utils/colors";
 import { router } from "expo-router";
-import { useAgentQuery, useAgentPhoneNumber } from "../../utils/hooks";
-import { apiClient } from "../../utils/axios-interceptor";
-import { useQuery } from "@tanstack/react-query";
-import { getLastLogin } from "../../utils/storage";
+import { useAgentQuery, useAgentPhoneNumber } from "@/app/utils/hooks";
+import { apiClient } from "@/app/utils/axios-interceptor";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getLastLogin } from "@/app/utils/storage";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
 } from "react-native-reanimated";
-import type { RecentCallItem } from "../../utils/types";
-import NoPhoneNumber from "../../components/NoPhoneNumber";
-import { formatDuration, formatDateWithWeekday } from "../../utils/formatters";
-import { getConfig } from "@/utils/services";
-import { showWarning } from "@/utils/toast";
+import type { RecentCallItem } from "@/app/utils/types";
+import NoPhoneNumber from "../components/NoPhoneNumber";
+import { formatDuration, formatDateWithWeekday } from "@/app/utils/formatters";
+import { getConfig } from "@/app/utils/services";
+import { showWarning } from "@/app/utils/toast";
 
 // RecentCallItem type moved to global `utils/types.d.ts`
 
@@ -37,6 +38,7 @@ import { showWarning } from "@/utils/toast";
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
+  const queryClient = useQueryClient();
   const { data: agentConfig, isLoading: isLoadingAgent } = useAgentQuery();
   const { phoneNumber, isLoading: isLoadingPhone } = useAgentPhoneNumber(
     agentConfig?.id,
@@ -45,6 +47,7 @@ export default function HomeScreen() {
     "all" | "inbound" | "outbound"
   >("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
   const agentDbId = agentConfig?.id ?? null;
   const currentLocale = i18n.language;
@@ -106,6 +109,11 @@ export default function HomeScreen() {
     const callsByDate: { [key: string]: RecentCallItem[] } = {};
 
     rawCalls.forEach((c: any) => {
+      // Skip calls with invalid duration
+      if (c?.duration_ms == null || isNaN(c?.duration_ms) || !isFinite(c?.duration_ms)) {
+        return;
+      }
+
       const direction = c?.direction;
       const number = direction === "inbound" ? c?.from_number : c?.to_number;
       const date = formatDateWithWeekday(c?.start_timestamp, currentLocale);
@@ -148,6 +156,22 @@ export default function HomeScreen() {
   }, [callsResp?.calls, currentLocale, searchQuery]);
 
   const error = callsErr?.message as string | undefined;
+
+  // Handle pull to refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Invalidate queries to refetch data
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["recent-calls"] }),
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+      ]);
+    } catch (error) {
+      console.error("Error refreshing:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Initialize notifications system
   useEffect(() => {
@@ -713,6 +737,14 @@ export default function HomeScreen() {
               showsVerticalScrollIndicator={false}
               style={styles.callsList}
               stickySectionHeadersEnabled={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={Colors.primary}
+                  colors={[Colors.primary]}
+                />
+              }
             />
           </View>
         )}

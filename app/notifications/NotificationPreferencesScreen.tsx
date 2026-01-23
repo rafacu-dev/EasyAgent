@@ -16,7 +16,7 @@ import {
   updateNotificationPreferences,
   sendTestNotification,
 } from "./easyAgentNotifications";
-import { showError, showSuccess, showInfo } from "@/utils/toast";
+import { showError, showSuccess, showInfo } from "@/app/utils/toast";
 
 interface NotificationPreferences {
   enabled: boolean;

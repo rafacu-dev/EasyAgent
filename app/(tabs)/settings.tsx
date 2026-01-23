@@ -6,21 +6,72 @@ import {
   TouchableOpacity,
   Switch,
 } from "react-native";
-import { Colors } from "../../utils/colors";
+import { Colors } from "@/app/utils/colors";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
-import { clearStorage, clearAuthData } from "../../utils/storage";
+import { useState, useEffect } from "react";
+import { clearStorage, clearAuthData } from "@/app/utils/storage";
 import { router } from "expo-router";
-import { useAgentQuery, useAgentPhoneNumber } from "@/utils/hooks";
-import { showWarning } from "@/utils/toast";
+import { useAgentQuery, useAgentPhoneNumber } from "@/app/utils/hooks";
+import { showWarning } from "@/app/utils/toast";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function SettingsScreen() {
   const { t, i18n } = useTranslation();
   const { data: agentConfig } = useAgentQuery();
   const { phoneNumber } = useAgentPhoneNumber(agentConfig?.id);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Check notification permissions on mount
+  useEffect(() => {
+    const checkNotificationPermissions = async () => {
+      try {
+        const NotificationService = (
+          await import("../notifications/NotificationService")
+        ).default;
+        const notificationService = NotificationService.getInstance();
+        await notificationService.initialize();
+        const authToken = await AsyncStorage.getItem("authToken");
+        setNotificationsEnabled(!!authToken);
+      } catch (error) {
+        console.error("Error checking notification permissions:", error);
+      }
+    };
+    checkNotificationPermissions();
+  }, []);
+
+  // Handle notification toggle
+  const handleNotificationToggle = async (value: boolean) => {
+    if (value) {
+      try {
+        const NotificationService = (
+          await import("../notifications/NotificationService")
+        ).default;
+        const notificationService = NotificationService.getInstance();
+        await notificationService.initialize();
+        const token = await notificationService.requestPermissionsAndRegister();
+        if (token) {
+          await notificationService.sendTokenToServer();
+          setNotificationsEnabled(true);
+        } else {
+          setNotificationsEnabled(false);
+          showWarning(
+            t("settings.permissionDenied", "Permission Denied"),
+            t(
+              "settings.notificationPermissionMessage",
+              "Please enable notifications in your device settings.",
+            ),
+          );
+        }
+      } catch (error) {
+        console.error("Error enabling notifications:", error);
+        setNotificationsEnabled(false);
+      }
+    } else {
+      setNotificationsEnabled(false);
+    }
+  };
 
   const changeLanguage = () => {
     const newLang = i18n.language === "en" ? "es" : "en";
@@ -127,7 +178,7 @@ export default function SettingsScreen() {
             </Text>
             <Switch
               value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
+              onValueChange={handleNotificationToggle}
               trackColor={{ false: "#d1d1d6", true: "#34C759" }}
               thumbColor="#fff"
             />
@@ -146,7 +197,7 @@ export default function SettingsScreen() {
             />
           </View>
 
-          <TouchableOpacity style={styles.settingItem} onPress={changeLanguage}>
+          {/* <TouchableOpacity style={styles.settingItem} onPress={changeLanguage}>
             <Ionicons name="language-outline" size={24} color="#666" />
             <Text style={styles.settingItemText}>
               {t("settings.language", "Language")}
@@ -155,7 +206,7 @@ export default function SettingsScreen() {
               {i18n.language === "en" ? "English" : "Español"}
             </Text>
             <Ionicons name="chevron-forward" size={20} color="#ccc" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         <View style={styles.section}>

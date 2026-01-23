@@ -8,15 +8,15 @@ import {
   Linking,
   Image,
 } from "react-native";
-import { Colors } from "../utils/colors";
+import { Colors } from "@/app/utils/colors";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useAgentQuery, usePhoneNumbersQuery } from "@/utils/hooks";
+import { useAgentQuery, usePhoneNumbersQuery } from "@/app/utils/hooks";
 import * as Clipboard from "expo-clipboard";
-import { US_CARRIERS } from "../utils/constants";
-import type { USCarrier } from "../utils/types.d";
-import { showError, showSuccess } from "@/utils/toast";
+import { US_CARRIERS } from "@/app/utils/constants";
+import type { USCarrier } from "@/app/utils/types.d";
+import { showError, showSuccess } from "@/app/utils/toast";
 
 interface CarrierCardProps {
   carrier: USCarrier;

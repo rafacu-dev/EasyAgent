@@ -8,16 +8,16 @@ import {
   Modal,
   Alert,
 } from "react-native";
-import { Colors } from "../utils/colors";
+import { Colors } from "@/app/utils/colors";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import { router } from "expo-router";
-import { apiClient } from "../utils/axios-interceptor";
+import { apiClient } from "@/app/utils/axios-interceptor";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAgentQuery, useUserQuery } from "../utils/hooks";
-import { PhoneSearchHeader } from "../components/PhoneSearchHeader";
-import { showError, showSuccess, showWarning } from "@/utils/toast";
+import { useAgentQuery, useUserQuery } from "@/app/utils/hooks";
+import { PhoneSearchHeader } from "./components/PhoneSearchHeader";
+import { showError, showSuccess, showWarning } from "@/app/utils/toast";
 
 interface AvailableNumber {
   phone_number: string;

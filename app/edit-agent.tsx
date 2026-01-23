@@ -14,12 +14,12 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
-import { apiClient } from "../utils/axios-interceptor";
-import { Colors } from "../utils/colors";
-import { showError, showSuccess } from "../utils/toast";
+import { apiClient } from "@/app/utils/axios-interceptor";
+import { Colors } from "@/app/utils/colors";
+import { showError, showSuccess } from "@/app/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
-import { useAgentQuery, useUpdateAgentMutation } from "../utils/hooks";
-import type { AgentConfig } from "../utils/types";
+import { useAgentQuery, useUpdateAgentMutation } from "@/app/utils/hooks";
+import type { AgentConfig } from "@/app/utils/types";
 
 export default function EditAgent() {
   const { t } = useTranslation();
@@ -166,7 +166,7 @@ export default function EditAgent() {
                       ]}
                     >
                       <Image
-                        source={require("../assets/images/agent-m.jpg")}
+                        source={require("@/assets/images/agent-m.jpg")}
                         style={styles.genderImage}
                       />
                     </View>
@@ -197,7 +197,7 @@ export default function EditAgent() {
                       ]}
                     >
                       <Image
-                        source={require("../assets/images/agent-f.jpg")}
+                        source={require("@/assets/images/agent-f.jpg")}
                         style={styles.genderImage}
                       />
                     </View>

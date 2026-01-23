@@ -12,7 +12,7 @@ import {
   Keyboard,
   Alert,
 } from "react-native";
-import { Colors } from "../../utils/colors";
+import { Colors } from "@/app/utils/colors";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useCallback } from "react";
@@ -20,13 +20,13 @@ import {
   useAgentQuery,
   useAgentPhoneNumber,
   useVoiceCall,
-} from "../../utils/hooks";
-import NoPhoneNumber from "../../components/NoPhoneNumber";
-import { apiClient } from "../../utils/axios-interceptor";
-import { formatPhoneNumber } from "../../utils/formatters";
+} from "@/app/utils/hooks";
+import NoPhoneNumber from "../components/NoPhoneNumber";
+import { apiClient } from "@/app/utils/axios-interceptor";
+import { formatPhoneNumber } from "@/app/utils/formatters";
 import { Audio } from "expo-av";
-import { transcribeAudio, getTextFromResult } from "../../utils/transcription";
-import { showError, showSuccess, showInfo, showWarning } from "@/utils/toast";
+import { transcribeAudio, getTextFromResult } from "@/app/utils/transcription";
+import { showError, showSuccess, showInfo, showWarning } from "@/app/utils/toast";
 
 export default function PhoneScreen() {
   const { t } = useTranslation();

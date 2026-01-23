@@ -1,17 +1,17 @@
 import Constants from "expo-constants";
 import { Stack } from "expo-router";
-import "../utils/i18n"; // Initialize i18n
-import { Colors } from "../utils/colors";
+import "./utils/i18n"; // Initialize i18n
+import { Colors } from "@/app/utils/colors";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import { queryClient } from "../utils/queryClient";
+import { queryClient } from "@/app/utils/queryClient";
 import { useEffect, useRef } from "react";
 import { AppState, AppStateStatus, Platform } from "react-native";
-import { saveLastLogin, getAuthToken } from "../utils/storage";
+import { saveLastLogin, getAuthToken } from "@/app/utils/storage";
 import * as Updates from "expo-updates";
 import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import NotificationProvider from "./notifications/NotificationProvider";
 import Toast from "react-native-toast-message";
-import { toastConfig } from "../utils/toastConfig";
+import { toastConfig } from "@/app/utils/toastConfig";
 
 function AppStateHandler({ children }: { children: React.ReactNode }) {
   const appState = useRef(AppState.currentState);
