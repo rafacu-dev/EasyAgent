@@ -3,6 +3,15 @@
  */
 
 /**
+ * Remove all non-digit characters from a phone number string
+ * @param phoneNumber The input phone number string
+ * @returns Only digits as a string
+ */
+export const cleanPhoneNumber = (phoneNumber: string): string => {
+  return phoneNumber.replace(/\D+/g, "");
+};
+
+/**
  * Format duration from milliseconds to human-readable string
  * @param durationMs Duration in milliseconds
  * @returns Formatted string like "2:30" or "0:00"

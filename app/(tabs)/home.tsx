@@ -109,8 +109,8 @@ export default function HomeScreen() {
     const callsByDate: { [key: string]: RecentCallItem[] } = {};
 
     rawCalls.forEach((c: any) => {
-      // Skip calls with invalid duration
-      if (c?.duration_ms == null || isNaN(c?.duration_ms) || !isFinite(c?.duration_ms)) {
+      // Skip calls with invalid duration (null/undefined/NaN, but allow 0 for incomplete calls)
+      if (c?.duration_ms == null || isNaN(c?.duration_ms)) {
         return;
       }
 
