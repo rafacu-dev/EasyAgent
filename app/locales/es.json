@@ -119,7 +119,15 @@
     "enterName": "Ingresa el nombre del contacto",
     "notes": "Notas",
     "enterNotes": "Notas opcionales...",
-    "saveContact": "Guardar Contacto"
+    "saveContact": "Guardar Contacto",
+    "contact": "Contacto",
+    "unknownNumber": "Número desconocido",
+    "addToContacts": "Agregar a Contactos",
+    "readMore": "Leer más",
+    "recording": "Grabación",
+    "loadingRecording": "Cargando...",
+    "playbackError": "Error de reproducción",
+    "playbackErrorMessage": "No se pudo reproducir la grabación. Por favor, inténtalo de nuevo."
   },
   "messages": {
     "title": "Mensajes",

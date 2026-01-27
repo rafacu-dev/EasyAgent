@@ -119,7 +119,15 @@
     "enterName": "Enter contact name",
     "notes": "Notes",
     "enterNotes": "Optional notes...",
-    "saveContact": "Save Contact"
+    "saveContact": "Save Contact",
+    "contact": "Contact",
+    "unknownNumber": "Unknown number",
+    "addToContacts": "Add to Contacts",
+    "readMore": "Read More",
+    "recording": "Recording",
+    "loadingRecording": "Loading...",
+    "playbackError": "Playback Error",
+    "playbackErrorMessage": "Failed to play recording. Please try again."
   },
   "phone": {
     "title": "Phone",
