@@ -54,7 +54,8 @@
     "home": "Inicio",
     "phone": "Llamar",
     "calendar": "Calendario",
-    "settings": "Ajustes"
+    "settings": "Ajustes",
+    "messages": "Mensajes"
   },
   "home": {
     "welcome": "Bienvenido",
@@ -87,7 +88,9 @@
     "newCalls": "Nuevas Llamadas",
     "upcomingAppointments": "Próximas",
     "noCallsYet": "Aún No Hay Llamadas",
-    "noCallsDescription": "Tus llamadas recientes aparecerán aquí una vez que comiences a hacer o recibir llamadas."
+    "noCallsDescription": "Tus llamadas recientes aparecerán aquí una vez que comiences a hacer o recibir llamadas.",
+    "filterPhone": "Teléfono",
+    "filterWeb": "Web"
   },
   "callDetails": {
     "title": "Detalles de Llamada",
