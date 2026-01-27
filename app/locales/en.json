@@ -127,7 +127,9 @@
     "recording": "Recording",
     "loadingRecording": "Loading...",
     "playbackError": "Playback Error",
-    "playbackErrorMessage": "Failed to play recording. Please try again."
+    "playbackErrorMessage": "Failed to play recording. Please try again.",
+    "showLess": "Show Less",
+    "pauseRecording": "Pause Recording"
   },
   "phone": {
     "title": "Phone",

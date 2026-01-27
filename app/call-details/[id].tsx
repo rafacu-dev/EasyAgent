@@ -11,349 +11,60 @@ import {
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { useState, useEffect } from "react";
-import { Audio, AVPlaybackStatus } from "expo-av";
+import { useState } from "react";
 import { Colors } from "@/app/utils/colors";
-import { apiClient } from "@/app/utils/axios-interceptor";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   formatDuration,
   formatDateTime,
   formatPhoneNumber,
 } from "@/app/utils/formatters";
-import { showError, showSuccess } from "@/app/utils/toast";
-import type { Contact } from "@/app/utils/types";
-
-interface CallDetails {
-  id: string;
-  from_number?: string;
-  to_number?: string;
-  duration_ms?: number;
-  start_timestamp?: number; // ms
-  end_timestamp?: number; // ms
-  call_status?: "completed" | "missed" | "error" | "in_progress" | string;
-  disconnect_reason?: string;
-  direction?: "inbound" | "outbound" | string;
-  call_type?: string;
-  transcript?: string;
-  recording_url?: string;
-  call_analysis?: Record<string, any> | [string, any][];
-  agent_name?: string;
-}
-
-interface AgentInfo {
-  name?: string;
-}
+import { useCallDetails } from "../hooks/useCallDetails";
+import { useAudioPlayer } from "../hooks/useAudioPlayer";
+import { useContactManagement } from "../hooks/useContactManagement";
 
 export default function CallDetailsScreen() {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [isAnalysisExpanded, setIsAnalysisExpanded] = useState(false);
   const [isTranscriptExpanded, setIsTranscriptExpanded] = useState(false);
 
-  // Contact modal state
-  const [showAddContactModal, setShowAddContactModal] = useState(false);
-  const [contactName, setContactName] = useState("");
-  const [contactNotes, setContactNotes] = useState("");
-  const [selectedPhoneNumber, setSelectedPhoneNumber] = useState("");
+  // Custom hooks
+  const {
+    isLoading,
+    displayCall,
+    displayAgent,
+    otherPartyNumber,
+    callAnalysis,
+    transcriptMessages,
+    directionInfo,
+    getStatusColor,
+    estimateCost,
+  } = useCallDetails(id);
 
-  // Audio player state
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
-  const [playbackPosition, setPlaybackPosition] = useState(0);
-  const [playbackDuration, setPlaybackDuration] = useState(0);
+  const {
+    isPlaying,
+    isLoadingAudio,
+    playbackPosition,
+    playbackDuration,
+    handlePlayRecording,
+    handleStopRecording,
+    formatPlaybackTime,
+    sound,
+  } = useAudioPlayer();
 
-  const { data, isLoading } = useQuery<
-    CallDetails | { call?: CallDetails; agent?: AgentInfo } | undefined
-  >({
-    queryKey: ["callDetails", id],
-    queryFn: async ({ queryKey }) => {
-      const res = await apiClient.get(`calls/${queryKey[1]}/`);
-      return res;
-    },
-    enabled: !!id,
-  });
-
-  // Extract phone numbers from call data
-  const rawCall: CallDetails | undefined =
-    (data && (data as any).call) || (data as CallDetails) || undefined;
-  const otherPartyNumber =
-    rawCall?.direction === "inbound"
-      ? rawCall?.from_number
-      : rawCall?.to_number;
-
-  // Contact lookup query
-  const { data: contactLookupData, refetch: refetchContact } = useQuery<{
-    data: Contact | null;
-    found: boolean;
-  }>({
-    queryKey: ["contact-lookup", otherPartyNumber],
-    queryFn: async () => {
-      const response = await apiClient.get(
-        `contacts/lookup/?phone_number=${encodeURIComponent(otherPartyNumber!)}`,
-      );
-      return response.data;
-    },
-    enabled: !!otherPartyNumber,
-  });
-
-  const existingContact = contactLookupData?.found
-    ? contactLookupData.data
-    : null;
-
-  // Add contact mutation
-  const addContactMutation = useMutation({
-    mutationFn: async (contactData: {
-      name: string;
-      phone_number: string;
-      notes: string;
-    }) => {
-      const response = await apiClient.post("contacts/", contactData);
-      return response.data;
-    },
-    onSuccess: () => {
-      showSuccess(
-        t("callDetails.contactAdded", "Contact Added"),
-        t("callDetails.contactAddedMessage", "Contact has been saved"),
-      );
-      setShowAddContactModal(false);
-      setContactName("");
-      setContactNotes("");
-      queryClient.invalidateQueries({ queryKey: ["contact-lookup"] });
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
-      refetchContact();
-    },
-    onError: (error: any) => {
-      showError(
-        t("callDetails.error", "Error"),
-        error.response?.data?.error ||
-          t("callDetails.contactAddFailed", "Failed to add contact"),
-      );
-    },
-  });
-
-  const handleAddContact = () => {
-    if (!contactName.trim()) {
-      showError(
-        t("callDetails.error", "Error"),
-        t("callDetails.nameRequired", "Please enter a name"),
-      );
-      return;
-    }
-
-    addContactMutation.mutate({
-      name: contactName.trim(),
-      phone_number: selectedPhoneNumber,
-      notes: contactNotes.trim(),
-    });
-  };
-
-  const openAddContactModal = (phoneNumber: string) => {
-    setSelectedPhoneNumber(phoneNumber);
-    setContactName("");
-    setContactNotes("");
-    setShowAddContactModal(true);
-  };
-
-  // Cleanup sound on unmount
-  useEffect(() => {
-    return () => {
-      if (sound) {
-        sound.unloadAsync();
-      }
-    };
-  }, [sound]);
-
-  const onPlaybackStatusUpdate = (status: AVPlaybackStatus) => {
-    if (status.isLoaded) {
-      setPlaybackPosition(status.positionMillis);
-      setPlaybackDuration(status.durationMillis || 0);
-      setIsPlaying(status.isPlaying);
-
-      if (status.didJustFinish) {
-        setIsPlaying(false);
-        setPlaybackPosition(0);
-      }
-    }
-  };
-
-  const handlePlayRecording = async (recordingUrl: string) => {
-    try {
-      if (sound) {
-        // If sound exists, toggle play/pause
-        const status = await sound.getStatusAsync();
-        if (status.isLoaded && status.isPlaying) {
-          await sound.pauseAsync();
-        } else {
-          await sound.playAsync();
-        }
-        return;
-      }
-
-      // Load and play new sound
-      setIsLoadingAudio(true);
-
-      // Set audio mode for playback
-      await Audio.setAudioModeAsync({
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
-        shouldDuckAndroid: true,
-      });
-
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: recordingUrl },
-        { shouldPlay: true },
-        onPlaybackStatusUpdate,
-      );
-
-      setSound(newSound);
-      setIsPlaying(true);
-    } catch (error) {
-      console.error("Error playing recording:", error);
-      showError(
-        t("callDetails.playbackError", "Playback Error"),
-        t(
-          "callDetails.playbackErrorMessage",
-          "Failed to play recording. Please try again.",
-        ),
-      );
-    } finally {
-      setIsLoadingAudio(false);
-    }
-  };
-
-  const handleStopRecording = async () => {
-    if (sound) {
-      await sound.stopAsync();
-      await sound.unloadAsync();
-      setSound(null);
-      setIsPlaying(false);
-      setPlaybackPosition(0);
-      setPlaybackDuration(0);
-    }
-  };
-
-  const formatPlaybackTime = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-  };
-
-  const displayCall: CallDetails = rawCall ?? {
-    id: String(id ?? "unknown"),
-    call_status: "unknown",
-  };
-  const displayAgent: AgentInfo = (data && (data as any).agent) || {
-      name: rawCall?.agent_name,
-    } || { name: "Unknown" };
-
-  const toObj = (analysis?: CallDetails["call_analysis"]) => {
-    if (!analysis) return {} as Record<string, any>;
-    if (Array.isArray(analysis)) {
-      const o: Record<string, any> = {};
-      analysis.forEach(([k, v]) => {
-        o[k] = v;
-      });
-      return o;
-    }
-    return analysis as Record<string, any>;
-  };
-
-  const callAnalysis = toObj(displayCall.call_analysis);
-
-  const getStatusColor = (status?: string) => {
-    switch (status) {
-      case "completed":
-        return Colors.success;
-      case "in_progress":
-        return Colors.info;
-      case "missed":
-        return Colors.statusMissed;
-      case "error":
-        return Colors.error;
-      default:
-        return Colors.textSecondary;
-    }
-  };
-
-  const getDirectionInfo = (direction?: string) => {
-    switch (direction) {
-      case "inbound":
-        return { icon: "arrow-down-circle" as const, color: Colors.success };
-      case "outbound":
-        return { icon: "arrow-up-circle" as const, color: Colors.info };
-      default:
-        return { icon: "help-circle" as const, color: Colors.textSecondary };
-    }
-  };
-
-  const estimateCost = (ms?: number) => {
-    if (!ms || ms <= 0) return "$0.00";
-    const minutes = Math.ceil(ms / 60000);
-    const cost = minutes * 0.06; // simple estimate
-    return `$${cost.toFixed(2)}`;
-  };
-
-  const directionInfo = getDirectionInfo(displayCall.direction);
-
-  // Parse transcript into chat messages
-  const parseTranscript = (transcript?: string) => {
-    if (!transcript) return [];
-
-    const messages: { role: "agent" | "client"; text: string }[] = [];
-    const lines = transcript.split("\n");
-
-    let currentRole: "agent" | "client" | null = null;
-    let currentText = "";
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-
-      // Check if line starts with role indicator
-      if (
-        trimmed.toLowerCase().startsWith("agent:") ||
-        trimmed.toLowerCase().startsWith("assistant:")
-      ) {
-        if (currentRole && currentText) {
-          messages.push({ role: currentRole, text: currentText.trim() });
-        }
-        currentRole = "agent";
-        currentText = trimmed.substring(trimmed.indexOf(":") + 1).trim();
-      } else if (
-        trimmed.toLowerCase().startsWith("client:") ||
-        trimmed.toLowerCase().startsWith("user:") ||
-        trimmed.toLowerCase().startsWith("customer:")
-      ) {
-        if (currentRole && currentText) {
-          messages.push({ role: currentRole, text: currentText.trim() });
-        }
-        currentRole = "client";
-        currentText = trimmed.substring(trimmed.indexOf(":") + 1).trim();
-      } else {
-        // Continue current message
-        if (currentText) currentText += " ";
-        currentText += trimmed;
-      }
-    }
-
-    // Add last message
-    if (currentRole && currentText) {
-      messages.push({ role: currentRole, text: currentText.trim() });
-    }
-
-    // If no role indicators found, treat as single agent message
-    if (messages.length === 0 && transcript.trim()) {
-      messages.push({ role: "agent", text: transcript.trim() });
-    }
-
-    return messages;
-  };
-
-  const transcriptMessages = parseTranscript(displayCall.transcript);
+  const {
+    showAddContactModal,
+    contactName,
+    contactNotes,
+    selectedPhoneNumber,
+    existingContact,
+    setShowAddContactModal,
+    setContactName,
+    setContactNotes,
+    handleAddContact,
+    openAddContactModal,
+    addContactMutation,
+  } = useContactManagement(otherPartyNumber);
 
   return (
     <View style={styles.container}>

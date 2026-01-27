@@ -108,10 +108,14 @@ class NotificationService {
       }
 
       try {
+        console.log(
+          "Getting Expo push token...",
+          Constants.expoConfig?.extra?.eas?.projectId,
+        );
         const pushTokenData = await Notifications.getExpoPushTokenAsync({
           projectId:
             Constants.expoConfig?.extra?.eas?.projectId ||
-            "70e433ab-14f4-4bbc-8070-e2adf248202d",
+            "5a7204d1-9095-4611-8382-fa10bcee4403",
         });
         token = pushTokenData.data;
       } catch (error) {

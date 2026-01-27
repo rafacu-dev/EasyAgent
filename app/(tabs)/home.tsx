@@ -220,23 +220,25 @@ export default function HomeScreen() {
     const checkForUpdates = () => {
       const appVersion = parseFloat(Constants.expoConfig?.version || "0.0");
 
-      getConfig().then((response) => {
-        const storeUrl =
-          Platform.OS === "ios"
-            ? response["update_url_ios"]
-            : response["update_url_android"];
-        if (appVersion < response["min_version"]) {
-          showWarning(t("index.updateApp"), t("index.updateAppMsg"));
-          setTimeout(() => {
-            Linking.openURL(storeUrl);
-          }, 2000);
-        } else if (appVersion < response["current_version"]) {
-          showWarning(
-            t("index.updateAppAvailable"),
-            t("index.updateAppMsgAvailable"),
-          );
-        }
-      });
+      getConfig()
+        .then((response) => {
+          const storeUrl =
+            Platform.OS === "ios"
+              ? response["update_url_ios"]
+              : response["update_url_android"];
+          if (appVersion < response["min_version"]) {
+            showWarning(t("index.updateApp"), t("index.updateAppMsg"));
+            setTimeout(() => {
+              Linking.openURL(storeUrl);
+            }, 2000);
+          } else if (appVersion < response["current_version"]) {
+            showWarning(
+              t("index.updateAppAvailable"),
+              t("index.updateAppMsgAvailable"),
+            );
+          }
+        })
+        .catch(() => {});
     };
     checkForUpdates();
   }, [t]);

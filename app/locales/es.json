@@ -127,7 +127,9 @@
     "recording": "Grabación",
     "loadingRecording": "Cargando...",
     "playbackError": "Error de reproducción",
-    "playbackErrorMessage": "No se pudo reproducir la grabación. Por favor, inténtalo de nuevo."
+    "playbackErrorMessage": "No se pudo reproducir la grabación. Por favor, inténtalo de nuevo.",
+    "showLess": "Mostrar menos",
+    "pauseRecording": "Pausar grabación"
   },
   "messages": {
     "title": "Mensajes",
