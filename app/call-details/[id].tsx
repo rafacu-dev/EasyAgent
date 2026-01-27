@@ -5,6 +5,8 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Modal,
+  TextInput,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,9 +15,14 @@ import { useState, useEffect } from "react";
 import { Audio, AVPlaybackStatus } from "expo-av";
 import { Colors } from "@/app/utils/colors";
 import { apiClient } from "@/app/utils/axios-interceptor";
-import { useQuery } from "@tanstack/react-query";
-import { formatDuration, formatDateTime } from "@/app/utils/formatters";
-import { showError } from "@/app/utils/toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  formatDuration,
+  formatDateTime,
+  formatPhoneNumber,
+} from "@/app/utils/formatters";
+import { showError, showSuccess } from "@/app/utils/toast";
+import type { Contact } from "@/app/utils/types";
 
 interface CallDetails {
   id: string;
@@ -40,9 +47,16 @@ interface AgentInfo {
 
 export default function CallDetailsScreen() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [isAnalysisExpanded, setIsAnalysisExpanded] = useState(false);
   const [isTranscriptExpanded, setIsTranscriptExpanded] = useState(false);
+
+  // Contact modal state
+  const [showAddContactModal, setShowAddContactModal] = useState(false);
+  const [contactName, setContactName] = useState("");
+  const [contactNotes, setContactNotes] = useState("");
+  const [selectedPhoneNumber, setSelectedPhoneNumber] = useState("");
 
   // Audio player state
   const [sound, setSound] = useState<Audio.Sound | null>(null);
@@ -61,6 +75,87 @@ export default function CallDetailsScreen() {
     },
     enabled: !!id,
   });
+
+  // Extract phone numbers from call data
+  const rawCall: CallDetails | undefined =
+    (data && (data as any).call) || (data as CallDetails) || undefined;
+  const otherPartyNumber =
+    rawCall?.direction === "inbound"
+      ? rawCall?.from_number
+      : rawCall?.to_number;
+
+  // Contact lookup query
+  const { data: contactLookupData, refetch: refetchContact } = useQuery<{
+    data: Contact | null;
+    found: boolean;
+  }>({
+    queryKey: ["contact-lookup", otherPartyNumber],
+    queryFn: async () => {
+      const response = await apiClient.get(
+        `contacts/lookup/?phone_number=${encodeURIComponent(otherPartyNumber!)}`,
+      );
+      return response.data;
+    },
+    enabled: !!otherPartyNumber,
+  });
+
+  const existingContact = contactLookupData?.found
+    ? contactLookupData.data
+    : null;
+
+  // Add contact mutation
+  const addContactMutation = useMutation({
+    mutationFn: async (contactData: {
+      name: string;
+      phone_number: string;
+      notes: string;
+    }) => {
+      const response = await apiClient.post("contacts/", contactData);
+      return response.data;
+    },
+    onSuccess: () => {
+      showSuccess(
+        t("callDetails.contactAdded", "Contact Added"),
+        t("callDetails.contactAddedMessage", "Contact has been saved"),
+      );
+      setShowAddContactModal(false);
+      setContactName("");
+      setContactNotes("");
+      queryClient.invalidateQueries({ queryKey: ["contact-lookup"] });
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      refetchContact();
+    },
+    onError: (error: any) => {
+      showError(
+        t("callDetails.error", "Error"),
+        error.response?.data?.error ||
+          t("callDetails.contactAddFailed", "Failed to add contact"),
+      );
+    },
+  });
+
+  const handleAddContact = () => {
+    if (!contactName.trim()) {
+      showError(
+        t("callDetails.error", "Error"),
+        t("callDetails.nameRequired", "Please enter a name"),
+      );
+      return;
+    }
+
+    addContactMutation.mutate({
+      name: contactName.trim(),
+      phone_number: selectedPhoneNumber,
+      notes: contactNotes.trim(),
+    });
+  };
+
+  const openAddContactModal = (phoneNumber: string) => {
+    setSelectedPhoneNumber(phoneNumber);
+    setContactName("");
+    setContactNotes("");
+    setShowAddContactModal(true);
+  };
 
   // Cleanup sound on unmount
   useEffect(() => {
@@ -147,8 +242,6 @@ export default function CallDetailsScreen() {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  const rawCall: CallDetails | undefined =
-    (data && (data as any).call) || (data as CallDetails) || undefined;
   const displayCall: CallDetails = rawCall ?? {
     id: String(id ?? "unknown"),
     call_status: "unknown",
@@ -459,6 +552,85 @@ export default function CallDetailsScreen() {
             ) : null}
           </View>
 
+          {/* Contact Section */}
+          {otherPartyNumber && (
+            <View style={styles.card}>
+              <View style={styles.cardTitleRow}>
+                <Ionicons name="person" size={18} color={Colors.primary} />
+                <Text style={styles.cardTitle}>
+                  {t("callDetails.contact", "Contact")}
+                </Text>
+              </View>
+
+              {existingContact ? (
+                <View style={styles.contactInfo}>
+                  <View style={styles.contactRow}>
+                    <Ionicons
+                      name="person-circle"
+                      size={48}
+                      color={Colors.primary}
+                    />
+                    <View style={styles.contactDetails}>
+                      <Text style={styles.contactName}>
+                        {existingContact.name}
+                      </Text>
+                      <Text style={styles.contactNumber}>
+                        {formatPhoneNumber(existingContact.phone_number)}
+                      </Text>
+                      {existingContact.notes ? (
+                        <Text style={styles.contactNotes} numberOfLines={2}>
+                          {existingContact.notes}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+                  <View style={styles.contactActions}>
+                    <TouchableOpacity
+                      style={styles.contactActionButton}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/(tabs)/messages",
+                          params: { other_party: existingContact.phone_number },
+                        })
+                      }
+                    >
+                      <Ionicons
+                        name="chatbubble"
+                        size={20}
+                        color={Colors.primary}
+                      />
+                      <Text style={styles.contactActionText}>
+                        {t("callDetails.message", "Message")}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.addContactPrompt}>
+                  <Text style={styles.addContactText}>
+                    {t("callDetails.unknownNumber", "Unknown number")}
+                  </Text>
+                  <Text style={styles.addContactSubtext}>
+                    {formatPhoneNumber(otherPartyNumber)}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.addContactButton}
+                    onPress={() => openAddContactModal(otherPartyNumber)}
+                  >
+                    <Ionicons
+                      name="person-add"
+                      size={18}
+                      color={Colors.textWhite}
+                    />
+                    <Text style={styles.addContactButtonText}>
+                      {t("callDetails.addToContacts", "Add to Contacts")}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          )}
+
           {/* Analysis */}
           {callAnalysis && Object.keys(callAnalysis).length > 0 ? (
             <View style={styles.card}>
@@ -716,6 +888,83 @@ export default function CallDetailsScreen() {
           <View style={{ height: 40 }} />
         </ScrollView>
       )}
+
+      {/* Add Contact Modal */}
+      <Modal
+        visible={showAddContactModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowAddContactModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {t("callDetails.addContact", "Add Contact")}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowAddContactModal(false)}
+                style={styles.modalClose}
+              >
+                <Ionicons name="close" size={24} color={Colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <Text style={styles.inputLabel}>
+                {t("callDetails.phoneNumber", "Phone Number")}
+              </Text>
+              <View style={styles.phoneNumberDisplay}>
+                <Ionicons name="call" size={20} color={Colors.primary} />
+                <Text style={styles.phoneNumberText}>
+                  {formatPhoneNumber(selectedPhoneNumber)}
+                </Text>
+              </View>
+
+              <Text style={styles.inputLabel}>
+                {t("callDetails.name", "Name")} *
+              </Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder={t("callDetails.enterName", "Enter contact name")}
+                placeholderTextColor={Colors.textLight}
+                value={contactName}
+                onChangeText={setContactName}
+              />
+
+              <Text style={styles.inputLabel}>
+                {t("callDetails.notes", "Notes")}
+              </Text>
+              <TextInput
+                style={[styles.textInput, styles.textInputMultiline]}
+                placeholder={t("callDetails.enterNotes", "Optional notes...")}
+                placeholderTextColor={Colors.textLight}
+                value={contactNotes}
+                onChangeText={setContactNotes}
+                multiline
+                numberOfLines={3}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.saveButton,
+                addContactMutation.isPending && styles.saveButtonDisabled,
+              ]}
+              onPress={handleAddContact}
+              disabled={addContactMutation.isPending}
+            >
+              {addContactMutation.isPending ? (
+                <ActivityIndicator size="small" color={Colors.textWhite} />
+              ) : (
+                <Text style={styles.saveButtonText}>
+                  {t("callDetails.saveContact", "Save Contact")}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -981,5 +1230,161 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
     backgroundColor: Colors.error + "15",
+  },
+  // Contact styles
+  contactInfo: {
+    marginTop: 8,
+  },
+  contactRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  contactDetails: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  contactName: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+  },
+  contactNumber: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  contactNotes: {
+    fontSize: 13,
+    color: Colors.textLight,
+    marginTop: 4,
+    fontStyle: "italic",
+  },
+  contactActions: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 8,
+  },
+  contactActionButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 10,
+    backgroundColor: Colors.primaryTransparent,
+    borderRadius: 8,
+  },
+  contactActionText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.primary,
+  },
+  addContactPrompt: {
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  addContactText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: Colors.textSecondary,
+  },
+  addContactSubtext: {
+    fontSize: 14,
+    color: Colors.textLight,
+    marginTop: 4,
+  },
+  addContactButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  addContactButtonText: {
+    color: Colors.textWhite,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: Colors.overlay,
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: Colors.cardBackground,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.textPrimary,
+  },
+  modalClose: {
+    padding: 4,
+  },
+  modalBody: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.textSecondary,
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  phoneNumberDisplay: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: Colors.background,
+    padding: 14,
+    borderRadius: 8,
+  },
+  phoneNumberText: {
+    fontSize: 16,
+    color: Colors.textPrimary,
+    fontWeight: "500",
+  },
+  textInput: {
+    backgroundColor: Colors.background,
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: Colors.textPrimary,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  textInputMultiline: {
+    height: 80,
+    textAlignVertical: "top",
+  },
+  saveButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
+  },
+  saveButtonText: {
+    color: Colors.textWhite,
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

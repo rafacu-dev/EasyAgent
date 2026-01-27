@@ -112,7 +112,14 @@
     "unsuccessful": "Unsuccessful",
     "voicemail": "Voicemail",
     "transcript": "Transcript",
-    "playRecording": "Play Recording"
+    "playRecording": "Play Recording",
+    "addContact": "Add Contact",
+    "phoneNumber": "Phone Number",
+    "name": "Name",
+    "enterName": "Enter contact name",
+    "notes": "Notes",
+    "enterNotes": "Optional notes...",
+    "saveContact": "Save Contact"
   },
   "phone": {
     "title": "Phone",
@@ -238,7 +245,8 @@
     "reports": "Reports",
     "analytics": "Agent Usage Analytics",
     "callHistory": "Call History",
-    "subscription": "Manage Subscription"
+    "subscription": "Manage Subscription",
+    "deleteCompany": "Delete Company"
   },
   "welcome": {
     "title": "Welcome to EasyAgent!",

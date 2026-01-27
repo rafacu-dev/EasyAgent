@@ -112,7 +112,23 @@
     "unsuccessful": "No Exitosa",
     "voicemail": "Buzón de Voz",
     "transcript": "Transcripción",
-    "playRecording": "Reproducir Grabación"
+    "playRecording": "Reproducir Grabación",
+    "addContact": "Agregar Contacto",
+    "phoneNumber": "Número de Teléfono",
+    "name": "Nombre",
+    "enterName": "Ingresa el nombre del contacto",
+    "notes": "Notas",
+    "enterNotes": "Notas opcionales...",
+    "saveContact": "Guardar Contacto"
+  },
+  "messages": {
+    "title": "Mensajes",
+    "newMessage": "Nuevo Mensaje",
+    "to": "Para:",
+    "enterPhoneNumber": "Ingresa número de teléfono",
+    "startConversation": "Iniciar Conversación",
+    "noConversations": "Aún no hay conversaciones",
+    "startMessaging": "Toca el botón de redactar para comenzar a enviar mensajes"
   },
   "phone": {
     "title": "Teléfono",
@@ -238,7 +254,8 @@
     "reports": "Reportes",
     "analytics": "Estadísticas del uso del agente",
     "callHistory": "Historial de llamadas",
-    "subscription": "Administrar suscripción"
+    "subscription": "Administrar suscripción",
+    "deleteCompany": "Eliminar Empresa"
   },
   "welcome": {
     "title": "¡Bienvenido a EasyAgent!",

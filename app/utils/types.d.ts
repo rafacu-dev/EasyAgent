@@ -97,3 +97,45 @@ export interface USCarrier {
   activateBusy: string;
   notes: string;
 }
+
+// Contact type
+export interface Contact {
+  id: number;
+  name: string;
+  phone_number: string;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Message type
+export interface Message {
+  id: number;
+  twilio_sid: string;
+  from_number: string;
+  to_number: string;
+  body: string;
+  direction: "inbound" | "outbound";
+  status: "queued" | "sending" | "sent" | "delivered" | "failed" | "received";
+  error_code: string;
+  error_message: string;
+  contact: number | null;
+  contact_name: string | null;
+  phone_number: number | null;
+  phone_number_display: string | null;
+  other_party: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Conversation type
+export interface Conversation {
+  other_party: string;
+  contact_name: string | null;
+  contact_id: number | null;
+  last_message: string;
+  last_message_time: string;
+  unread_count: number;
+  phone_number_id: number;
+  phone_number_display: string;
+}
