@@ -90,7 +90,9 @@
     "noCallsYet": "Aún No Hay Llamadas",
     "noCallsDescription": "Tus llamadas recientes aparecerán aquí una vez que comiences a hacer o recibir llamadas.",
     "filterPhone": "Teléfono",
-    "filterWeb": "Web"
+    "filterWeb": "Web",
+    "filterRetell": "Agente",
+    "filterTwilio": "Teléfono"
   },
   "callDetails": {
     "title": "Detalles de Llamada",
