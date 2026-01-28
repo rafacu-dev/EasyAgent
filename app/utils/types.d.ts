@@ -41,6 +41,7 @@ export interface RecentCallItem {
   fromNumber?: string;
   toNumber?: string;
   callType?: string;
+  callSource?: string;
 }
 
 export type AppointmentStatus =

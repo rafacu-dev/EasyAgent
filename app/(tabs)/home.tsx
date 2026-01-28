@@ -127,6 +127,7 @@ export default function HomeScreen() {
         direction: direction ?? "unknown",
         fromNumber: c?.from_number ?? "Unknown",
         toNumber: c?.to_number ?? "Unknown",
+        callSource: c?.call_source ?? "unknown",
       };
 
       // Filter by search query

@@ -25,9 +25,9 @@ export default function CallHistoryScreen() {
   const { data: agentConfig } = useAgentQuery();
   const agentDbId = agentConfig?.id ?? null;
 
-  const [callTypeFilter, setCallTypeFilter] = useState<"all" | "phone" | "web">(
-    "all"
-  );
+  const [callTypeFilter, setCallTypeFilter] = useState<
+    "all" | "retell" | "twilio"
+  >("all");
   const [directionFilter, setDirectionFilter] = useState<
     "all" | "inbound" | "outbound"
   >("all");
@@ -45,13 +45,11 @@ export default function CallHistoryScreen() {
 
   const buildQueryParams = (pagination?: string | null) => {
     let params = `agent_id=${encodeURIComponent(
-      String(agentDbId)
+      String(agentDbId),
     )}&limit=50&sort_order=descending`;
 
     if (callTypeFilter !== "all") {
-      params += `&call_type=${
-        callTypeFilter === "phone" ? "phone_call" : "web_call"
-      }`;
+      params += `&call_source=${callTypeFilter}`;
     }
 
     if (directionFilter !== "all") {
@@ -108,7 +106,7 @@ export default function CallHistoryScreen() {
     enabled: !!agentDbId,
     queryFn: async () => {
       const response = await apiClient.get(
-        `calls/?${buildQueryParams(paginationKey)}`
+        `calls/?${buildQueryParams(paginationKey)}`,
       );
       return response;
     },
@@ -127,7 +125,7 @@ export default function CallHistoryScreen() {
         date: c?.start_timestamp
           ? formatDateTime(
               new Date(c.start_timestamp).getMilliseconds(),
-              i18n.language
+              i18n.language,
             )
           : "",
         status: c?.call_status ?? "",
@@ -135,19 +133,18 @@ export default function CallHistoryScreen() {
         fromNumber: c?.from_number ?? "Unknown",
         toNumber: c?.to_number ?? "Unknown",
         callType: c?.call_type ?? "",
+        callSource: c?.call_source ?? "unknown",
       };
     });
   }, [callsResp, i18n.language]);
 
   // Update allCalls when new data arrives
   useEffect(() => {
-    if (newCalls.length === 0) return;
-
-    if (paginationKey && allCalls.length > 0) {
+    if (paginationKey && newCalls.length > 0) {
       // Loading more - append to existing calls
       setAllCalls((prev) => [...prev, ...newCalls]);
-    } else {
-      // First load or filter change
+    } else if (!paginationKey) {
+      // First load or filter change - always update even if empty
       setAllCalls(newCalls);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -164,9 +161,8 @@ export default function CallHistoryScreen() {
   };
 
   const handleApplyFilters = () => {
+    // Reset pagination - this will trigger a refetch via queryKey change
     setPaginationKey(null);
-    setAllCalls([]);
-    refetch();
   };
 
   const renderCallItem = ({ item }: { item: RecentCallItem }) => (
@@ -201,10 +197,10 @@ export default function CallHistoryScreen() {
           <Text style={styles.callDate} selectable>
             {item.date}
           </Text>
-          {item.callType && (
+          {item.callSource && item.callSource !== "unknown" && (
             <View style={styles.callTypeBadge}>
               <Text style={styles.callTypeText}>
-                {item.callType.replace("_", " ")}
+                {item.callSource === "retell" ? "Agent" : "Phone"}
               </Text>
             </View>
           )}
@@ -265,33 +261,33 @@ export default function CallHistoryScreen() {
               <TouchableOpacity
                 style={[
                   styles.filterButton,
-                  callTypeFilter === "phone" && styles.filterButtonActive,
+                  callTypeFilter === "retell" && styles.filterButtonActive,
                 ]}
-                onPress={() => setCallTypeFilter("phone")}
+                onPress={() => setCallTypeFilter("retell")}
               >
                 <Text
                   style={[
                     styles.filterButtonText,
-                    callTypeFilter === "phone" && styles.filterButtonTextActive,
+                    callTypeFilter === "retell" && styles.filterButtonTextActive,
                   ]}
                 >
-                  {t("home.filterPhone", "Phone")}
+                  {t("home.filterRetell", "Agent")}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
                   styles.filterButton,
-                  callTypeFilter === "web" && styles.filterButtonActive,
+                  callTypeFilter === "twilio" && styles.filterButtonActive,
                 ]}
-                onPress={() => setCallTypeFilter("web")}
+                onPress={() => setCallTypeFilter("twilio")}
               >
                 <Text
                   style={[
                     styles.filterButtonText,
-                    callTypeFilter === "web" && styles.filterButtonTextActive,
+                    callTypeFilter === "twilio" && styles.filterButtonTextActive,
                   ]}
                 >
-                  {t("home.filterWeb", "Web")}
+                  {t("home.filterTwilio", "Phone")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -366,7 +362,7 @@ export default function CallHistoryScreen() {
               style={styles.filterInput}
               placeholder={t(
                 "callHistory.fromNumberPlaceholder",
-                "Search by caller..."
+                "Search by caller...",
               )}
               placeholderTextColor={Colors.textLight}
               value={fromNumber}
@@ -383,7 +379,7 @@ export default function CallHistoryScreen() {
               style={styles.filterInput}
               placeholder={t(
                 "callHistory.toNumberPlaceholder",
-                "Search by recipient..."
+                "Search by recipient...",
               )}
               placeholderTextColor={Colors.textLight}
               value={toNumber}
