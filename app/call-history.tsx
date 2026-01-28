@@ -268,7 +268,8 @@ export default function CallHistoryScreen() {
                 <Text
                   style={[
                     styles.filterButtonText,
-                    callTypeFilter === "retell" && styles.filterButtonTextActive,
+                    callTypeFilter === "retell" &&
+                      styles.filterButtonTextActive,
                   ]}
                 >
                   {t("home.filterRetell", "Agent")}
@@ -284,7 +285,8 @@ export default function CallHistoryScreen() {
                 <Text
                   style={[
                     styles.filterButtonText,
-                    callTypeFilter === "twilio" && styles.filterButtonTextActive,
+                    callTypeFilter === "twilio" &&
+                      styles.filterButtonTextActive,
                   ]}
                 >
                   {t("home.filterTwilio", "Phone")}
