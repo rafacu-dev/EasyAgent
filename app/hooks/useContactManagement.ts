@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/app/utils/axios-interceptor";
 import { showError, showSuccess } from "@/app/utils/toast";
+import { normalizePhoneNumber } from "@/app/utils/formatters";
 import type { Contact } from "@/app/utils/types";
 
 export const useContactManagement = (phoneNumber?: string) => {
@@ -15,16 +16,21 @@ export const useContactManagement = (phoneNumber?: string) => {
   const [selectedPhoneNumber, setSelectedPhoneNumber] = useState("");
 
   // Contact lookup query
-  const { data: contactLookupData, refetch: refetchContact } = useQuery<{
+  const {
+    data: contactLookupData,
+    refetch: refetchContact,
+    isLoading,
+  } = useQuery<{
     data: Contact | null;
     found: boolean;
   }>({
     queryKey: ["contact-lookup", phoneNumber],
     queryFn: async () => {
+      const normalizedPhone = normalizePhoneNumber(phoneNumber!);
       const response = await apiClient.get(
-        `contacts/lookup/?phone_number=${encodeURIComponent(phoneNumber!)}`,
+        `contacts/lookup/?phone_number=${encodeURIComponent(normalizedPhone)}`,
       );
-      return response.data;
+      return response;
     },
     enabled: !!phoneNumber,
   });
@@ -75,7 +81,7 @@ export const useContactManagement = (phoneNumber?: string) => {
 
     addContactMutation.mutate({
       name: contactName.trim(),
-      phone_number: selectedPhoneNumber,
+      phone_number: normalizePhoneNumber(selectedPhoneNumber),
       notes: contactNotes.trim(),
     });
   };
@@ -94,6 +100,7 @@ export const useContactManagement = (phoneNumber?: string) => {
     contactNotes,
     selectedPhoneNumber,
     existingContact,
+    isLoadingContact: isLoading,
 
     // Setters
     setShowAddContactModal,

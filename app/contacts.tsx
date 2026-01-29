@@ -18,7 +18,10 @@ import { Colors } from "@/app/utils/colors";
 import { apiClient } from "@/app/utils/axios-interceptor";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Contact } from "@/app/utils/types";
-import { formatPhoneNumber } from "@/app/utils/formatters";
+import {
+  formatPhoneNumber,
+  normalizePhoneNumber,
+} from "@/app/utils/formatters";
 import { showError, showSuccess } from "@/app/utils/toast";
 
 export default function ContactsScreen() {
@@ -165,7 +168,7 @@ export default function ContactsScreen() {
 
     addContactMutation.mutate({
       name: contactName.trim(),
-      phone_number: contactPhone.trim(),
+      phone_number: normalizePhoneNumber(contactPhone.trim()),
       notes: contactNotes.trim(),
     });
   };
@@ -184,7 +187,7 @@ export default function ContactsScreen() {
       id: selectedContact.id,
       data: {
         name: contactName.trim(),
-        phone_number: contactPhone.trim(),
+        phone_number: normalizePhoneNumber(contactPhone.trim()),
         notes: contactNotes.trim(),
       },
     });

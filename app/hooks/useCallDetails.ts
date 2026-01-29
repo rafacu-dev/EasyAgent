@@ -17,6 +17,7 @@ interface CallDetails {
   recording_url?: string;
   call_analysis?: Record<string, any> | [string, any][];
   agent_name?: string;
+  price?: number;
 }
 
 interface AgentInfo {

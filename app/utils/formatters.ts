@@ -110,6 +110,35 @@ export const formatTime = (timestampMs?: number, locale?: string): string => {
 };
 
 /**
+ * Normalize phone number to E.164 format (+1XXXXXXXXXX)
+ * This should be used before storing or comparing phone numbers
+ * @param phoneNumber Raw phone number string
+ * @returns Normalized phone number in E.164 format
+ */
+export const normalizePhoneNumber = (phoneNumber?: string): string => {
+  if (!phoneNumber) return "";
+  const parsed = phoneNumber.replace(/\D+/g, "");
+
+  // Already has country code
+  if (parsed.length === 11 && parsed.startsWith("1")) {
+    return `+${parsed}`;
+  }
+
+  // US number without country code
+  if (parsed.length === 10) {
+    return `+1${parsed}`;
+  }
+
+  // Already formatted with +
+  if (phoneNumber.startsWith("+")) {
+    return `+${parsed}`;
+  }
+
+  // Return with + prefix
+  return `+${parsed}`;
+};
+
+/**
  * Format phone number to display format
  * @param phoneNumber Raw phone number string
  * @returns Formatted phone number or original if can't format

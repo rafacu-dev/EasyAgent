@@ -18,7 +18,11 @@ import { apiClient } from "@/app/utils/axios-interceptor";
 import { useQuery } from "@tanstack/react-query";
 import type { RecentCallItem } from "@/app/utils/types";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { formatDuration, formatDateTime } from "@/app/utils/formatters";
+import {
+  formatDuration,
+  formatDateTime,
+  formatPhoneNumber,
+} from "@/app/utils/formatters";
 
 export default function CallHistoryScreen() {
   const { t, i18n } = useTranslation();
@@ -90,7 +94,7 @@ export default function CallHistoryScreen() {
   const {
     data: callsResp,
     isLoading,
-    refetch,
+    error,
   } = useQuery({
     queryKey: [
       "call-history",
@@ -111,29 +115,32 @@ export default function CallHistoryScreen() {
       return response;
     },
   });
-
+  console.log("Calls Response:", error);
   // Transform raw calls data
   const newCalls: RecentCallItem[] = useMemo(() => {
     const rawCalls: any[] = callsResp?.calls ?? [];
     return rawCalls.map((c: any) => {
       const direction = c?.direction;
-      const number = direction === "inbound" ? c?.from_number : c?.to_number;
+      const number =
+        direction === "inbound"
+          ? formatPhoneNumber(c?.from_number)
+          : formatPhoneNumber(c?.to_number);
+      console.log("Processing call:", c);
       return {
         id: c?.call_id ?? `${c?.start_timestamp ?? Math.random()}`,
         number: number ?? "Unknown",
-        duration: formatDuration(c?.duration_ms),
+        duration: formatDuration(c?.duration_ms ?? c?.duration ?? 0),
         date: c?.start_timestamp
-          ? formatDateTime(
-              new Date(c.start_timestamp).getMilliseconds(),
-              i18n.language,
-            )
+          ? formatDateTime(new Date(c.start_timestamp).getTime(), i18n.language)
           : "",
         status: c?.call_status ?? "",
         direction: direction ?? "unknown",
-        fromNumber: c?.from_number ?? "Unknown",
-        toNumber: c?.to_number ?? "Unknown",
+        fromNumber: formatPhoneNumber(c?.from_number) ?? "Unknown",
+        toNumber: formatPhoneNumber(c?.to_number) ?? "Unknown",
         callType: c?.call_type ?? "",
         callSource: c?.call_source ?? "unknown",
+        from_contact_name: c?.from_contact_name,
+        to_contact_name: c?.to_contact_name,
       };
     });
   }, [callsResp, i18n.language]);
@@ -189,9 +196,24 @@ export default function CallHistoryScreen() {
           <Text style={styles.callDirectionLabel}>
             {item.direction === "inbound" ? "From" : "To"}:
           </Text>
-          <Text style={styles.callNumber} selectable>
-            {item.number}
-          </Text>
+          {/* Display contact name if available */}
+          {item.direction === "inbound" && item.from_contact_name ? (
+            <View style={{ flex: 1 }}>
+              <Text style={styles.callContactName} selectable>
+                {item.from_contact_name}
+              </Text>
+            </View>
+          ) : item.direction === "outbound" && item.to_contact_name ? (
+            <View style={{ flex: 1 }}>
+              <Text style={styles.callContactName} selectable>
+                {item.to_contact_name}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.callNumber} selectable>
+              {item.number}
+            </Text>
+          )}
         </View>
         <View style={styles.callMetaRow}>
           <Text style={styles.callDate} selectable>
@@ -768,6 +790,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: Colors.textPrimary,
+  },
+  callContactName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+  },
+  callNumberSecondary: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 2,
   },
   callMetaRow: {
     flexDirection: "row",

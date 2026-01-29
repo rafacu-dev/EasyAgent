@@ -28,7 +28,12 @@ import Animated, {
 } from "react-native-reanimated";
 import type { RecentCallItem } from "@/app/utils/types";
 import NoPhoneNumber from "../components/NoPhoneNumber";
-import { formatDuration, formatDateWithWeekday } from "@/app/utils/formatters";
+import {
+  formatDuration,
+  formatDateWithWeekday,
+  formatPhoneNumber,
+  formatDateTime,
+} from "@/app/utils/formatters";
 import { getConfig } from "@/app/utils/services";
 import { showWarning } from "@/app/utils/toast";
 
@@ -109,24 +114,36 @@ export default function HomeScreen() {
     const callsByDate: { [key: string]: RecentCallItem[] } = {};
 
     rawCalls.forEach((c: any) => {
-      // Skip calls with invalid duration (null/undefined/NaN, but allow 0 for incomplete calls)
-      if (c?.duration_ms == null || isNaN(c?.duration_ms)) {
+      // Skip calls with invalid duration or timestamp
+      if (
+        c?.duration_ms == null ||
+        isNaN(c?.duration_ms) ||
+        !c?.start_timestamp ||
+        c?.start_timestamp === 0
+      ) {
         return;
       }
 
       const direction = c?.direction;
-      const number = direction === "inbound" ? c?.from_number : c?.to_number;
-      const date = formatDateWithWeekday(c?.start_timestamp, currentLocale);
+      const number =
+        direction === "inbound"
+          ? formatPhoneNumber(c?.from_number)
+          : formatPhoneNumber(c?.to_number);
+      const timestamp = c?.start_timestamp || 0;
+      const date = formatDateWithWeekday(timestamp, currentLocale);
 
       const call: RecentCallItem = {
         id: c?.call_id ?? `${c?.start_timestamp ?? Math.random()}`,
         number: number ?? "Unknown",
-        duration: formatDuration(c?.duration_ms),
-        date,
+        duration: formatDuration(c?.duration_ms ?? c?.duration ?? 0),
+        date: c?.start_timestamp
+          ? formatDateTime(new Date(c.start_timestamp).getTime(), i18n.language)
+          : "",
         status: c?.call_status ?? "",
         direction: direction ?? "unknown",
-        fromNumber: c?.from_number ?? "Unknown",
-        toNumber: c?.to_number ?? "Unknown",
+        fromNumber: formatPhoneNumber(c?.from_number) ?? "Unknown",
+        toNumber: formatPhoneNumber(c?.to_number) ?? "Unknown",
+        callType: c?.call_type ?? "",
         callSource: c?.call_source ?? "unknown",
       };
 

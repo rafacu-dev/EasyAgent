@@ -194,6 +194,17 @@ export default function SettingsScreen() {
             </Text>
             <Ionicons name="chevron-forward" size={20} color="#ccc" />
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => router.push("/contacts" as any)}
+          >
+            <Ionicons name="people-outline" size={24} color="#666" />
+            <Text style={styles.settingItemText}>
+              {t("settings.contacts", "Contacts")}
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color="#ccc" />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>

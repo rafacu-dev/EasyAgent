@@ -11,11 +11,12 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
+  FlatList,
 } from "react-native";
 import { Colors } from "@/app/utils/colors";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   useAgentQuery,
   useAgentPhoneNumber,
@@ -33,6 +34,13 @@ import {
   showWarning,
 } from "@/app/utils/toast";
 
+interface Contact {
+  id: number;
+  name: string;
+  phone_number: string;
+  notes?: string;
+}
+
 export default function PhoneScreen() {
   const { t } = useTranslation();
   const { data: agentConfig, isLoading: isLoadingAgent } = useAgentQuery();
@@ -47,6 +55,10 @@ export default function PhoneScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [showContactsModal, setShowContactsModal] = useState(false);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [isLoadingContacts, setIsLoadingContacts] = useState(false);
+  const [contactSearchQuery, setContactSearchQuery] = useState("");
 
   // Voice SDK hook for direct calls
   const {
@@ -81,6 +93,32 @@ export default function PhoneScreen() {
 
   const handleClear = () => {
     setPhoneNumberInput("");
+  };
+
+  const fetchContacts = async (search?: string) => {
+    setIsLoadingContacts(true);
+    try {
+      const params = search ? `?search=${encodeURIComponent(search)}` : "";
+      const response = await apiClient.get(`contacts/${params}`);
+      setContacts(response.data || []);
+    } catch (error) {
+      console.error("Error fetching contacts:", error);
+      showError(t("phone.error", "Error"), "Failed to load contacts");
+    } finally {
+      setIsLoadingContacts(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showContactsModal) {
+      fetchContacts(contactSearchQuery);
+    }
+  }, [showContactsModal, contactSearchQuery]);
+
+  const handleSelectContact = (contact: Contact) => {
+    setPhoneNumberInput(contact.phone_number);
+    setShowContactsModal(false);
+    setContactSearchQuery("");
   };
 
   const startRecording = async () => {
@@ -164,32 +202,6 @@ export default function PhoneScreen() {
           t("phone.noTranscription", "No speech detected in the recording"),
         );
       }
-
-      /* Option 2: Direct API call (alternative)
-      const formData = new FormData();
-      formData.append("audio", {
-        uri: uri,
-        type: "audio/m4a",
-        name: "recording.m4a",
-      } as any);
-      
-      formData.append("language", "es");
-      // formData.append("translate", "false");
-      // formData.append("target_language", "en");
-
-      const response = await apiClient.post("transcribe/", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      const transcription = response.data?.data?.transcription || response.data?.data?.translation || "";
-      if (transcription) {
-        setCallPrompt((prev) =>
-          prev ? `${prev} ${transcription}` : transcription
-        );
-      }
-      */
     } catch (error: any) {
       console.error("Transcription error:", error);
       showError(
@@ -537,6 +549,18 @@ export default function PhoneScreen() {
 
           {/* Phone Number Display */}
           <View style={styles.displayContainer}>
+            <View style={styles.displayHeader}>
+              <TouchableOpacity
+                onPress={() => setShowContactsModal(true)}
+                style={styles.contactButton}
+              >
+                <Ionicons
+                  name="people-outline"
+                  size={24}
+                  color={Colors.primary}
+                />
+              </TouchableOpacity>
+            </View>
             {phoneNumberInput.length === 0 && (
               <Text style={styles.placeholderText}>
                 {t("phone.enterNumber", "Enter Phone Number")}
@@ -713,6 +737,109 @@ export default function PhoneScreen() {
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
+        </Modal>
+
+        {/* Contacts Modal */}
+        <Modal
+          visible={showContactsModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowContactsModal(false)}
+        >
+          <View style={styles.contactsModalOverlay}>
+            <View style={styles.contactsModalContent}>
+              <View style={styles.contactsModalHeader}>
+                <Text style={styles.contactsModalTitle}>Select Contact</Text>
+                <TouchableOpacity
+                  onPress={() => setShowContactsModal(false)}
+                  style={styles.contactsModalCloseButton}
+                >
+                  <Ionicons name="close" size={24} color={Colors.textPrimary} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Search Input */}
+              <View style={styles.contactsSearchContainer}>
+                <Ionicons
+                  name="search"
+                  size={20}
+                  color={Colors.textLight}
+                  style={styles.contactsSearchIcon}
+                />
+                <TextInput
+                  style={styles.contactsSearchInput}
+                  placeholder="Search contacts..."
+                  placeholderTextColor={Colors.textLight}
+                  value={contactSearchQuery}
+                  onChangeText={setContactSearchQuery}
+                />
+                {contactSearchQuery.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setContactSearchQuery("")}
+                    style={styles.contactsSearchClear}
+                  >
+                    <Ionicons
+                      name="close-circle"
+                      size={20}
+                      color={Colors.textLight}
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Contacts List */}
+              {isLoadingContacts ? (
+                <View style={styles.contactsLoadingContainer}>
+                  <ActivityIndicator size="large" color={Colors.primary} />
+                </View>
+              ) : contacts.length === 0 ? (
+                <View style={styles.contactsEmptyContainer}>
+                  <Ionicons
+                    name="people-outline"
+                    size={64}
+                    color={Colors.textLight}
+                  />
+                  <Text style={styles.contactsEmptyText}>
+                    No contacts found
+                  </Text>
+                  <Text style={styles.contactsEmptySubtext}>
+                    {contactSearchQuery
+                      ? "Try a different search"
+                      : "Add contacts to see them here"}
+                  </Text>
+                </View>
+              ) : (
+                <FlatList
+                  data={contacts}
+                  keyExtractor={(item) => item.id.toString()}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.contactItem}
+                      onPress={() => handleSelectContact(item)}
+                    >
+                      <View style={styles.contactAvatar}>
+                        <Text style={styles.contactAvatarText}>
+                          {item.name.charAt(0).toUpperCase()}
+                        </Text>
+                      </View>
+                      <View style={styles.contactInfo}>
+                        <Text style={styles.contactName}>{item.name}</Text>
+                        <Text style={styles.contactPhone}>
+                          {item.phone_number}
+                        </Text>
+                      </View>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={20}
+                        color={Colors.textLight}
+                      />
+                    </TouchableOpacity>
+                  )}
+                  contentContainerStyle={styles.contactsList}
+                />
+              )}
+            </View>
+          </View>
         </Modal>
       </View>
     </TouchableWithoutFeedback>
@@ -1038,5 +1165,140 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+  },
+  displayHeader: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    zIndex: 10,
+  },
+  contactButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.backgroundLight,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  // Contacts Modal Styles
+  contactsModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  contactsModalContent: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    height: "80%",
+    paddingTop: 16,
+  },
+  contactsModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  contactsModalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.textPrimary,
+  },
+  contactsModalCloseButton: {
+    padding: 4,
+  },
+  contactsSearchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 8,
+    backgroundColor: Colors.backgroundLight,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  contactsSearchIcon: {
+    marginRight: 8,
+  },
+  contactsSearchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: Colors.textPrimary,
+    paddingVertical: 12,
+  },
+  contactsSearchClear: {
+    padding: 4,
+  },
+  contactsLoadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  contactsEmptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 40,
+  },
+  contactsEmptyText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.textSecondary,
+    marginTop: 16,
+  },
+  contactsEmptySubtext: {
+    fontSize: 14,
+    color: Colors.textLight,
+    marginTop: 8,
+    textAlign: "center",
+  },
+  contactsList: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  contactItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    marginVertical: 4,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  contactAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  contactAvatarText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  contactInfo: {
+    flex: 1,
+  },
+  contactName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  contactPhone: {
+    fontSize: 14,
+    color: Colors.textSecondary,
   },
 });

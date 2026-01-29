@@ -56,6 +56,7 @@ export default function CallDetailsScreen() {
     showAddContactModal,
     contactName,
     contactNotes,
+    isLoadingContact,
     selectedPhoneNumber,
     existingContact,
     setShowAddContactModal,
@@ -141,20 +142,22 @@ export default function CallDetailsScreen() {
                 </View>
               ) : null}
             </View>
+            {displayAgent.name && (
+              <View style={styles.compactInfoRow}>
+                <View style={styles.infoIcon}>
+                  <Ionicons name="person" size={16} color={Colors.primary} />
+                </View>
 
-            <View style={styles.compactInfoRow}>
-              <View style={styles.infoIcon}>
-                <Ionicons name="person" size={16} color={Colors.primary} />
+                <View style={styles.infoContent}>
+                  <Text style={styles.compactInfoLabel}>
+                    {t("callDetails.agent")}
+                  </Text>
+                  <Text style={styles.compactInfoValue} selectable>
+                    {displayAgent.name || "Unknown Agent"}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.infoContent}>
-                <Text style={styles.compactInfoLabel}>
-                  {t("callDetails.agent")}
-                </Text>
-                <Text style={styles.compactInfoValue} selectable>
-                  {displayAgent.name || "Unknown Agent"}
-                </Text>
-              </View>
-            </View>
+            )}
 
             <View style={styles.compactInfoRow}>
               <View style={styles.infoIcon}>
@@ -165,7 +168,7 @@ export default function CallDetailsScreen() {
                   {t("callDetails.from")}
                 </Text>
                 <Text style={styles.compactInfoValue} selectable>
-                  {displayCall.from_number || "Unknown"}
+                  {formatPhoneNumber(displayCall.from_number) || "Unknown"}
                 </Text>
               </View>
             </View>
@@ -179,7 +182,7 @@ export default function CallDetailsScreen() {
                   {t("callDetails.to")}
                 </Text>
                 <Text style={styles.compactInfoValue} selectable>
-                  {displayCall.to_number || "Unknown"}
+                  {formatPhoneNumber(displayCall.to_number) || "Unknown"}
                 </Text>
               </View>
             </View>
@@ -193,7 +196,7 @@ export default function CallDetailsScreen() {
                   {t("callDetails.duration")}
                 </Text>
                 <Text style={styles.compactInfoValue}>
-                  {formatDuration(displayCall.duration_ms)}
+                  {formatDuration(displayCall.duration_ms ?? 0)}
                 </Text>
               </View>
             </View>
@@ -237,7 +240,7 @@ export default function CallDetailsScreen() {
                   {t("callDetails.cost")}
                 </Text>
                 <Text style={styles.compactInfoValue}>
-                  {estimateCost(displayCall.duration_ms)}
+                  {estimateCost(displayCall.price)}
                 </Text>
               </View>
             </View>
@@ -273,7 +276,14 @@ export default function CallDetailsScreen() {
                 </Text>
               </View>
 
-              {existingContact ? (
+              {isLoadingContact ? (
+                <View style={styles.loadingContactContainer}>
+                  <ActivityIndicator size="small" color={Colors.primary} />
+                  <Text style={styles.loadingContactText}>
+                    {t("callDetails.loadingContact", "Loading contact...")}
+                  </Text>
+                </View>
+              ) : existingContact ? (
                 <View style={styles.contactInfo}>
                   <View style={styles.contactRow}>
                     <Ionicons
@@ -990,6 +1000,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     color: Colors.primary,
+  },
+  loadingContactContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
+    gap: 10,
+  },
+  loadingContactText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
   },
   addContactPrompt: {
     alignItems: "center",
