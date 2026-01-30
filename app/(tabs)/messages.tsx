@@ -49,7 +49,7 @@ export default function MessagesScreen() {
     queryKey: ["conversations"],
     queryFn: async () => {
       const response = await apiClient.get("messages/conversations/");
-      return response.data;
+      return response;
     },
     enabled: !!phoneNumber,
   });
@@ -69,7 +69,7 @@ export default function MessagesScreen() {
           selectedConversation!.other_party,
         )}`,
       );
-      return response.data;
+      return response;
     },
     enabled: !!selectedConversation,
   });
@@ -82,7 +82,8 @@ export default function MessagesScreen() {
     queryKey: ["contacts"],
     queryFn: async () => {
       const response = await apiClient.get("contacts/");
-      return response.data;
+      console.log("Contacts data:", response);
+      return response;
     },
   });
 
@@ -238,7 +239,7 @@ export default function MessagesScreen() {
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 25}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 50}
       >
         {/* Thread Header */}
         <View style={styles.header}>
@@ -586,7 +587,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 16,
+    paddingBottom: 6,
     backgroundColor: Colors.cardBackground,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
@@ -595,13 +596,14 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: Colors.textPrimary,
-    flex: 1,
   },
   headerSubtitle: {
     fontSize: 12,
     color: Colors.textSecondary,
   },
   headerInfo: {
+    flexDirection: "column",
+
     flex: 1,
     marginLeft: 12,
   },
@@ -774,9 +776,9 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flexDirection: "row",
-    alignItems: "flex-end",
-    padding: 12,
-    paddingBottom: 32,
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
     backgroundColor: Colors.cardBackground,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
@@ -786,10 +788,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     borderRadius: 20,
     paddingHorizontal: 16,
-    paddingVertical: 10,
     paddingRight: 12,
     fontSize: 16,
     maxHeight: 100,
+    minHeight: 60,
     color: Colors.textPrimary,
   },
   sendButton: {

@@ -140,15 +140,6 @@
     "pauseRecording": "Pausar grabación",
     "outbound-dial": "Marcación Saliente"
   },
-  "messages": {
-    "title": "Mensajes",
-    "newMessage": "Nuevo Mensaje",
-    "to": "Para:",
-    "enterPhoneNumber": "Ingresa número de teléfono",
-    "startConversation": "Iniciar Conversación",
-    "noConversations": "Aún no hay conversaciones",
-    "startMessaging": "Toca el botón de redactar para comenzar a enviar mensajes"
-  },
   "phone": {
     "title": "Teléfono",
     "subtitle": "Realiza llamadas con tu agente IA",
@@ -556,6 +547,9 @@
     "metroNotes": "Metro by T-Mobile usa códigos de red T-Mobile. Mismo formato estándar GSM.",
     "boostNotes": "Los códigos de Boost Mobile pueden variar según la red. Si usas red T-Mobile, prueba los códigos de T-Mobile.",
     "visibleNotes": "Visible usa la red de Verizon. Aplican los códigos estándar de desvío de Verizon.",
-    "googlefiNotes": "Google Fi usa códigos GSM. Estos funcionan cuando estás conectado a las redes T-Mobile o US Cellular."
+    "googlefiNotes": "Google Fi usa códigos GSM. Estos funcionan cuando estás conectado a las redes T-Mobile o US Cellular.",
+    "noContacts": "No hay contactos disponibles",
+    "typeMessage": "Escribe un mensaje...",
+    "noMessages": "Aún no hay mensajes"
   }
 }

@@ -550,6 +550,9 @@
     "metroNotes": "Metro by T-Mobile uses T-Mobile network codes. Same GSM standard format.",
     "boostNotes": "Boost Mobile codes may vary by network. If using T-Mobile network, try T-Mobile codes instead.",
     "visibleNotes": "Visible uses Verizon network. Standard Verizon forwarding codes apply.",
-    "googlefiNotes": "Google Fi uses GSM codes. These work when connected to T-Mobile or US Cellular networks."
+    "googlefiNotes": "Google Fi uses GSM codes. These work when connected to T-Mobile or US Cellular networks.",
+    "noContacts": "No contacts available",
+    "typeMessage": "Type a message...",
+    "noMessages": "No messages yet"
   }
 }
