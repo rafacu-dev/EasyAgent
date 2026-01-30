@@ -55,7 +55,6 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const agentDbId = agentConfig?.id ?? null;
-  const currentLocale = i18n.language;
 
   // Recent calls limited to 10
   const {
@@ -111,7 +110,8 @@ export default function HomeScreen() {
 
   const callSections = useMemo(() => {
     const rawCalls: any[] = callsResp?.calls ?? [];
-    const callsByDate: { [key: string]: RecentCallItem[] } = {};
+    // Use a map with numeric day key for correct sorting
+    const callsByDay: { title: string; data: RecentCallItem[] }[] = [];
 
     rawCalls.forEach((c: any) => {
       // Skip calls with invalid duration or timestamp
@@ -123,14 +123,13 @@ export default function HomeScreen() {
       ) {
         return;
       }
-
       const direction = c?.direction;
       const number =
         direction === "inbound"
           ? formatPhoneNumber(c?.from_number)
           : formatPhoneNumber(c?.to_number);
       const timestamp = c?.start_timestamp || 0;
-      const date = formatDateWithWeekday(timestamp, currentLocale);
+      const dateTitle = `${formatDateWithWeekday(timestamp, i18n.language)}`;
 
       const call: RecentCallItem = {
         id: c?.call_id ?? `${c?.start_timestamp ?? Math.random()}`,
@@ -143,35 +142,20 @@ export default function HomeScreen() {
         direction: direction ?? "unknown",
         fromNumber: formatPhoneNumber(c?.from_number) ?? "Unknown",
         toNumber: formatPhoneNumber(c?.to_number) ?? "Unknown",
+        fromContactName: c?.from_contact_name ?? null,
+        toContactName: c?.to_contact_name ?? null,
         callType: c?.call_type ?? "",
         callSource: c?.call_source ?? "unknown",
       };
-
-      // Filter by search query
-      if (searchQuery.length > 0) {
-        const query = searchQuery.toLowerCase();
-        const matchesNumber = number?.toLowerCase().includes(query);
-        const matchesFrom = c?.from_number?.toLowerCase().includes(query);
-        const matchesTo = c?.to_number?.toLowerCase().includes(query);
-
-        if (!matchesNumber && !matchesFrom && !matchesTo) {
-          return;
-        }
+      if (!callsByDay.find((day) => day.title === dateTitle)) {
+        callsByDay.push({ title: dateTitle, data: [] });
       }
-
-      if (!callsByDate[date]) {
-        callsByDate[date] = [];
-      }
-      callsByDate[date].push(call);
+      const day = callsByDay.find((day) => day.title === dateTitle);
+      day?.data.push(call);
     });
 
-    return Object.keys(callsByDate)
-      .sort((a, b) => b.localeCompare(a))
-      .map((date) => ({
-        title: date,
-        data: callsByDate[date],
-      }));
-  }, [callsResp?.calls, currentLocale, searchQuery]);
+    return callsByDay;
+  }, [callsResp?.calls, i18n.language]);
 
   const error = callsErr?.message as string | undefined;
 
@@ -326,7 +310,13 @@ export default function HomeScreen() {
       </View>
       <View style={styles.callInfo}>
         <View style={styles.callNumberRow}>
-          <Text style={styles.callNumber}>{item.number}</Text>
+          {item.fromContactName && item.direction === "inbound" ? (
+            <Text style={styles.callNumber}>{item.fromContactName}</Text>
+          ) : item.toContactName && item.direction === "outbound" ? (
+            <Text style={styles.callNumber}>{item.toContactName}</Text>
+          ) : (
+            <Text style={styles.callNumber}>{item.number}</Text>
+          )}
         </View>
         <Text style={styles.callTime}>{item.duration}</Text>
       </View>
@@ -423,147 +413,8 @@ export default function HomeScreen() {
           )}
         </View>
       )}
-      {/* Agent Card
-      <View style={styles.agentCardContainer}>
-        <TouchableOpacity
-          style={styles.agentCard}
-          onPress={() => router.push("/edit-agent")}
-        >
-          <View style={styles.agentAvatar}>
-            <Ionicons
-              name={agentConfig?.agentGender === "female" ? "woman" : "man"}
-              size={32}
-              color={Colors.primary}
-            />
-          </View>
-          <View style={styles.agentDetails}>
-            <Text style={styles.agentName}>
-              {agentConfig?.agentName || t("home.agent", "Agent")}
-            </Text>
-            <Text style={styles.agentSector}>
-              {t(`templates.${agentConfig?.sector}` || "General")}
-            </Text>
-            {phoneNumber && (
-              <Text style={styles.agentNumber}>
-                {t("home.number", "Number")}: {phoneNumber}
-              </Text>
-            )}
-            {!phoneNumber && (
-              <Text style={styles.agentNumberMissing}>
-                {t("home.noNumber", "No number assigned")}
-              </Text>
-            )}
-          </View>
-          <Ionicons name="settings-outline" size={20} color={Colors.primary} />
-        </TouchableOpacity>
-      </View> */}
-
-      {/* Stats Container - Only show if phone number exists
-      {phoneNumber && (
-        <View style={styles.statsContainer}>
-          {statsLoading ? (
-            <>
-              <View style={styles.statCard}>
-                <SkeletonBar width={60} height={16} />
-                <SkeletonBar width={40} height={12} />
-              </View>
-              <View style={styles.statCard}>
-                <SkeletonBar width={60} height={16} />
-                <SkeletonBar width={40} height={12} />
-              </View>
-              <View style={styles.statCard}>
-                <SkeletonBar width={60} height={16} />
-                <SkeletonBar width={40} height={12} />
-              </View>
-            </>
-          ) : (
-            <>
-              <View style={styles.statCard}>
-                <View style={styles.statRow}>
-                  <Ionicons
-                    name="call"
-                    size={18}
-                    color={Colors.primary}
-                    style={styles.statIconInline}
-                  />
-                  <Text style={styles.statValue}>{stats.totalCalls}</Text>
-                </View>
-                <Text style={styles.statLabel}>
-                  {t("home.totalCalls", "Total Calls")}
-                </Text>
-              </View>
-
-              <View style={styles.statCard}>
-                <View style={styles.statRow}>
-                  <Ionicons
-                    name="time"
-                    size={18}
-                    color={Colors.success}
-                    style={styles.statIconInline}
-                  />
-                  <Text style={styles.statValue}>{stats.ongoingCalls}</Text>
-                </View>
-                <Text style={styles.statLabel}>
-                  {t("home.ongoingCalls", "Active Calls")}
-                </Text>
-              </View>
-
-              <View style={styles.statCard}>
-                <View style={styles.statRow}>
-                  <Ionicons
-                    name="trending-up"
-                    size={18}
-                    color={Colors.info}
-                    style={styles.statIconInline}
-                  />
-                  <Text style={styles.statValue}>
-                    {Math.round(stats.totalDurationMinutes)}m
-                  </Text>
-                </View>
-                <Text style={styles.statLabel}>
-                  {t("home.totalDuration", "Total Duration")}
-                </Text>
-              </View>
-            </>
-          )}
-        </View>
-      )} */}
-
-      {/* Quick Actions - Only show if phone number exists */}
       {phoneNumber && (
         <>
-          {/* <View style={styles.quickActionsContainer}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => router.push("/(tabs)/phone")}
-            >
-              <Ionicons name="call" size={18} color={Colors.primary} />
-              <Text style={styles.actionButtonText}>
-                {t("home.makeCall", "Make Call")}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => router.push("/call-history")}
-            >
-              <Ionicons name="document-text" size={18} color={Colors.primary} />
-              <Text style={styles.actionButtonText}>
-                {t("home.viewLogs", "Call Logs")}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => router.push("/analytics")}
-            >
-              <Ionicons name="analytics" size={18} color={Colors.primary} />
-              <Text style={styles.actionButtonText}>
-                {t("home.analytics", "Analytics")}
-              </Text>
-            </TouchableOpacity>
-          </View> */}
-
           {/* Section Title with Filter */}
           <View style={styles.callsListContainer}>
             <TouchableOpacity

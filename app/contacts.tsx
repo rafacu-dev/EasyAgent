@@ -51,7 +51,7 @@ export default function ContactsScreen() {
         ? `?search=${encodeURIComponent(searchQuery)}`
         : "";
       const response = await apiClient.get(`contacts/${params}`);
-      return response.data;
+      return response;
     },
   });
 
@@ -65,7 +65,7 @@ export default function ContactsScreen() {
       notes: string;
     }) => {
       const response = await apiClient.post("contacts/", data);
-      return response.data;
+      return response;
     },
     onSuccess: () => {
       showSuccess(
@@ -531,7 +531,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 16,
     backgroundColor: Colors.cardBackground,
     borderBottomWidth: 1,

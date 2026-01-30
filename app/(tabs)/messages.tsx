@@ -74,6 +74,7 @@ export default function MessagesScreen() {
     enabled: !!selectedConversation,
   });
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const messages: Message[] = messagesData?.data || [];
 
   // Fetch contacts for picker
@@ -584,7 +585,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 16,
     paddingBottom: 16,
     backgroundColor: Colors.cardBackground,
     borderBottomWidth: 1,

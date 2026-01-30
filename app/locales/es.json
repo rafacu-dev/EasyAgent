@@ -13,7 +13,8 @@
     "close": "Cerrar",
     "ok": "OK",
     "pro": "PRO",
-    "x": "✕"
+    "x": "x",
+    "call": "Llamar"
   },
   "index": {
     "checkingAuth": "Verificando autenticación...",
@@ -151,6 +152,8 @@
   "phone": {
     "title": "Teléfono",
     "subtitle": "Realiza llamadas con tu agente IA",
+    "confirmCallTitle": "Confirmar Llamada",
+    "confirmCallMessage": "¿Deseas llamar a ",
     "enterNumber": "Ingresa Número de Teléfono",
     "makeCall": "Hacer Llamada",
     "call": "Llamar",
@@ -540,6 +543,13 @@
     "confirmDeleteMessage": "¿Estás seguro de que quieres eliminar a {{name}}?"
   },
   "messages": {
+    "title": "Mensajes",
+    "newMessage": "Nuevo Mensaje",
+    "to": "Para:",
+    "enterPhoneNumber": "Ingresa número de teléfono",
+    "startConversation": "Iniciar Conversación",
+    "noConversations": "Aún no hay conversaciones",
+    "startMessaging": "Toca el botón de redactar para comenzar a enviar mensajes",
     "sprintNotes": "Códigos de red Sprint (ahora parte de T-Mobile). Si estás en un plan antiguo de Sprint, estos códigos deberían funcionar.",
     "uscellularNotes": "Códigos estándar de desvío de US Cellular. Pueden aplicar variaciones regionales - contacta servicio al cliente si es necesario.",
     "cricketNotes": "Cricket usa la red de AT&T. Estos códigos son compatibles con la mayoría de los planes de Cricket Wireless.",

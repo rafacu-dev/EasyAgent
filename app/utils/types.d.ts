@@ -42,8 +42,8 @@ export interface RecentCallItem {
   toNumber?: string;
   callType?: string;
   callSource?: string;
-  from_contact_name?: string | null;
-  to_contact_name?: string | null;
+  fromContactName?: string | null;
+  toContactName?: string | null;
 }
 
 export type AppointmentStatus =

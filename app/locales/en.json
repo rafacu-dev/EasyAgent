@@ -13,7 +13,8 @@
     "close": "Close",
     "ok": "OK",
     "pro": "PRO",
-    "x": "✕"
+    "x": "x",
+    "call": "Call"
   },
   "index": {
     "checkingAuth": "Checking authentication...",
@@ -142,6 +143,8 @@
   "phone": {
     "title": "Phone",
     "subtitle": "Make calls with your AI agent",
+    "confirmCallTitle": "Confirm Call",
+    "confirmCallMessage": "Do you want to call",
     "enterNumber": "Enter Phone Number",
     "makeCall": "Make Call",
     "call": "Call",
@@ -531,6 +534,13 @@
     "confirmDeleteMessage": "Are you sure you want to delete {{name}}?"
   },
   "messages": {
+    "title": "Messages",
+    "newMessage": "New Message",
+    "to": "To:",
+    "enterPhoneNumber": "Enter phone number",
+    "startConversation": "Start Conversation",
+    "noConversations": "No conversations yet",
+    "startMessaging": "Tap the compose button to start messaging",
     "attNotes": "AT&T codes work for most plans. If issues arise, dial *#21# to check forwarding status or call 611 for support.",
     "verizonNotes": "Verizon codes are standard. Wait for confirmation tone after dialing. Call *73 followed by call to confirm deactivation.",
     "tmobileNotes": "T-Mobile uses GSM standard codes. These work on most T-Mobile and T-Mobile MVNO plans.",

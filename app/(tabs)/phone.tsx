@@ -264,7 +264,7 @@ export default function PhoneScreen() {
     // Show confirmation dialog before making the call
     Alert.alert(
       t("phone.confirmCallTitle", "Confirm Call"),
-      t("phone.confirmCallMessage", `Do you want to call ${formattedInput}?`),
+      `${t("phone.confirmCallMessage", "Do you want to call")} ${formattedInput}?`,
       [
         {
           text: t("common.cancel", "Cancel"),

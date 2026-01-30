@@ -137,6 +137,8 @@ export default function CallHistoryScreen() {
         direction: direction ?? "unknown",
         fromNumber: formatPhoneNumber(c?.from_number) ?? "Unknown",
         toNumber: formatPhoneNumber(c?.to_number) ?? "Unknown",
+        fromContactName: c?.from_contact_name ?? null,
+        toContactName: c?.to_contact_name ?? null,
         callType: c?.call_type ?? "",
         callSource: c?.call_source ?? "unknown",
         from_contact_name: c?.from_contact_name,
@@ -154,7 +156,6 @@ export default function CallHistoryScreen() {
       // First load or filter change - always update even if empty
       setAllCalls(newCalls);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newCalls, paginationKey]);
 
   // Use allCalls as the final list
@@ -171,7 +172,6 @@ export default function CallHistoryScreen() {
     // Reset pagination - this will trigger a refetch via queryKey change
     setPaginationKey(null);
   };
-
   const renderCallItem = ({ item }: { item: RecentCallItem }) => (
     <TouchableOpacity
       style={styles.callItem}
@@ -197,16 +197,16 @@ export default function CallHistoryScreen() {
             {item.direction === "inbound" ? "From" : "To"}:
           </Text>
           {/* Display contact name if available */}
-          {item.direction === "inbound" && item.from_contact_name ? (
+          {item.direction === "inbound" && item.fromContactName ? (
             <View style={{ flex: 1 }}>
               <Text style={styles.callContactName} selectable>
-                {item.from_contact_name}
+                {item.fromContactName}
               </Text>
             </View>
-          ) : item.direction === "outbound" && item.to_contact_name ? (
+          ) : item.direction === "outbound" && item.toContactName ? (
             <View style={{ flex: 1 }}>
               <Text style={styles.callContactName} selectable>
-                {item.to_contact_name}
+                {item.toContactName}
               </Text>
             </View>
           ) : (
