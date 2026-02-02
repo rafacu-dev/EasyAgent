@@ -1,117 +1,103 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/app/utils/axios-interceptor";
-import { showError, showSuccess } from "@/app/utils/toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { showSuccess } from "@/app/utils/toast";
 import { normalizePhoneNumber } from "@/app/utils/formatters";
-import type { Contact } from "@/app/utils/types";
+import {
+  DeviceContact,
+  findContactByPhoneNumber,
+  presentNewContactForm,
+} from "@/app/utils/contactService";
 
 export const useContactManagement = (phoneNumber?: string) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const [showAddContactModal, setShowAddContactModal] = useState(false);
-  const [contactName, setContactName] = useState("");
-  const [contactNotes, setContactNotes] = useState("");
-  const [selectedPhoneNumber, setSelectedPhoneNumber] = useState("");
+  const [existingContact, setExistingContact] = useState<DeviceContact | null>(
+    null,
+  );
+  const [isLoadingContact, setIsLoadingContact] = useState(false);
 
-  // Contact lookup query
-  const {
-    data: contactLookupData,
-    refetch: refetchContact,
-    isLoading,
-  } = useQuery<{
-    data: Contact | null;
-    found: boolean;
-  }>({
-    queryKey: ["contact-lookup", phoneNumber],
-    queryFn: async () => {
-      const normalizedPhone = normalizePhoneNumber(phoneNumber!);
-      const response = await apiClient.get(
-        `contacts/lookup/?phone_number=${encodeURIComponent(normalizedPhone)}`,
-      );
-      return response;
-    },
-    enabled: !!phoneNumber,
-  });
+  // Look up contact by phone number from device contacts
+  useEffect(() => {
+    const lookupContact = async () => {
+      if (!phoneNumber) {
+        setExistingContact(null);
+        return;
+      }
 
-  const existingContact = contactLookupData?.found
-    ? contactLookupData.data
-    : null;
+      setIsLoadingContact(true);
+      try {
+        const contact = await findContactByPhoneNumber(
+          normalizePhoneNumber(phoneNumber),
+        );
+        setExistingContact(contact);
+      } catch (error) {
+        console.error("Error looking up contact:", error);
+        setExistingContact(null);
+      } finally {
+        setIsLoadingContact(false);
+      }
+    };
 
-  // Add contact mutation
-  const addContactMutation = useMutation({
-    mutationFn: async (contactData: {
-      name: string;
-      phone_number: string;
-      notes: string;
-    }) => {
-      const response = await apiClient.post("contacts/", contactData);
-      return response.data;
-    },
-    onSuccess: () => {
+    lookupContact();
+  }, [phoneNumber]);
+
+  // Open native contact form to add a new contact
+  const handleAddContact = async (phone: string, initialName?: string) => {
+    const newContact = await presentNewContactForm({
+      firstName: initialName,
+      phoneNumber: normalizePhoneNumber(phone),
+    });
+
+    if (newContact) {
       showSuccess(
         t("callDetails.contactAdded", "Contact Added"),
-        t("callDetails.contactAddedMessage", "Contact has been saved"),
+        t(
+          "callDetails.contactAddedMessage",
+          "Contact has been saved to your device",
+        ),
       );
-      setShowAddContactModal(false);
-      setContactName("");
-      setContactNotes("");
-      queryClient.invalidateQueries({ queryKey: ["contact-lookup"] });
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
-      refetchContact();
-    },
-    onError: (error: any) => {
-      showError(
-        t("callDetails.error", "Error"),
-        error.response?.data?.error ||
-          t("callDetails.contactAddFailed", "Failed to add contact"),
-      );
-    },
-  });
 
-  const handleAddContact = () => {
-    if (!contactName.trim()) {
-      showError(
-        t("callDetails.error", "Error"),
-        t("callDetails.nameRequired", "Please enter a name"),
-      );
-      return;
+      // Refresh device contacts cache
+      queryClient.invalidateQueries({ queryKey: ["device-contacts"] });
+
+      // Update local state
+      setExistingContact(newContact);
     }
 
-    addContactMutation.mutate({
-      name: contactName.trim(),
-      phone_number: normalizePhoneNumber(selectedPhoneNumber),
-      notes: contactNotes.trim(),
-    });
+    return newContact;
   };
 
-  const openAddContactModal = (phoneNumber: string) => {
-    setSelectedPhoneNumber(phoneNumber);
-    setContactName("");
-    setContactNotes("");
-    setShowAddContactModal(true);
+  // Refetch contact info (e.g., after editing)
+  const refetchContact = async () => {
+    if (!phoneNumber) return;
+
+    setIsLoadingContact(true);
+    try {
+      const contact = await findContactByPhoneNumber(
+        normalizePhoneNumber(phoneNumber),
+      );
+      setExistingContact(contact);
+    } catch (error) {
+      console.error("Error refetching contact:", error);
+    } finally {
+      setIsLoadingContact(false);
+    }
   };
 
   return {
     // State
     showAddContactModal,
-    contactName,
-    contactNotes,
-    selectedPhoneNumber,
     existingContact,
-    isLoadingContact: isLoading,
+    isLoadingContact,
 
     // Setters
     setShowAddContactModal,
-    setContactName,
-    setContactNotes,
 
     // Actions
     handleAddContact,
-    openAddContactModal,
-
-    // Mutation
-    addContactMutation,
+    refetchContact,
   };
 };

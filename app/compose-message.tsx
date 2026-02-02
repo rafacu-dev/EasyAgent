@@ -4,7 +4,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  FlatList,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
@@ -13,12 +12,14 @@ import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/app/utils/axios-interceptor";
 import { useAgentPhoneNumber, useAgentQuery } from "@/app/utils/hooks";
-import type { Contact } from "@/app/utils/types";
-import { formatPhoneNumber } from "@/app/utils/formatters";
+import {
+  formatPhoneNumber,
+  normalizePhoneNumber,
+} from "@/app/utils/formatters";
 import { showError } from "@/app/utils/toast";
+import { ContactPicker } from "@/app/components/ContactPicker";
+import type { DeviceContact } from "@/app/utils/contactService";
 
 export default function ComposeMessageScreen() {
   const { t } = useTranslation();
@@ -29,19 +30,8 @@ export default function ComposeMessageScreen() {
   const [showContactPicker, setShowContactPicker] = useState(false);
   const [messageText, setMessageText] = useState("");
 
-  // Fetch contacts for picker
-  const { data: contactsData } = useQuery({
-    queryKey: ["contacts"],
-    queryFn: async () => {
-      const response = await apiClient.get("contacts/");
-      return response;
-    },
-  });
-
-  const contacts: Contact[] = contactsData?.data || [];
-
-  const handleSelectContact = (contact: Contact) => {
-    setNewRecipient(contact.phone_number);
+  const handleSelectContact = (contact: DeviceContact, phone: string) => {
+    setNewRecipient(normalizePhoneNumber(phone));
     setShowContactPicker(false);
   };
 
@@ -71,10 +61,10 @@ export default function ComposeMessageScreen() {
     // Navigate back with the selected number and message
     router.push({
       pathname: "/(tabs)/messages",
-      params: { 
+      params: {
         newConversation: formattedNumber,
-        initialMessage: messageText.trim()
-      }
+        initialMessage: messageText.trim(),
+      },
     });
   };
 
@@ -93,102 +83,63 @@ export default function ComposeMessageScreen() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         <View style={styles.content}>
-        <View style={styles.recipientContainer}>
-          <Text style={styles.recipientLabel}>{t("messages.to", "To:")}</Text>
-          <TextInput
-            style={styles.recipientInput}
-            placeholder={t(
-              "messages.enterPhoneNumber",
-              "Enter phone number",
-            )}
-            placeholderTextColor={Colors.textLight}
-            value={newRecipient}
-            onChangeText={setNewRecipient}
-            keyboardType="phone-pad"
-            autoFocus
-          />
-          <TouchableOpacity
-            onPress={() => setShowContactPicker(!showContactPicker)}
-            style={styles.contactPickerButton}
-          >
-            <Ionicons
-              name={showContactPicker ? "chevron-up" : "person-add-outline"}
-              size={24}
-              color={Colors.primary}
+          <View style={styles.recipientContainer}>
+            <Text style={styles.recipientLabel}>{t("messages.to", "To:")}</Text>
+            <TextInput
+              style={styles.recipientInput}
+              placeholder={t("messages.enterPhoneNumber", "Enter phone number")}
+              placeholderTextColor={Colors.textLight}
+              value={newRecipient}
+              onChangeText={setNewRecipient}
+              keyboardType="phone-pad"
+              autoFocus
             />
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowContactPicker(true)}
+              style={styles.contactPickerButton}
+            >
+              <Ionicons
+                name="person-add-outline"
+                size={24}
+                color={Colors.primary}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {showContactPicker && (
-          <View style={styles.contactPickerList}>
-            <Text style={styles.contactsHeader}>
-              {t("messages.selectContact", "Select a contact")}
-            </Text>
-            <FlatList
-              data={contacts}
-              keyExtractor={(item) => item.id.toString()}
-              style={styles.contactsList}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.contactItem}
-                  onPress={() => handleSelectContact(item)}
-                >
-                  <View style={styles.contactAvatar}>
-                    <Ionicons
-                      name="person-circle-outline"
-                      size={40}
-                      color={Colors.primary}
-                    />
-                  </View>
-                  <View style={styles.contactInfo}>
-                    <Text style={styles.contactName}>{item.name}</Text>
-                    <Text style={styles.contactNumber}>
-                      {formatPhoneNumber(item.phone_number)}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-              ListEmptyComponent={
-                <View style={styles.emptyContacts}>
-                  <Ionicons
-                    name="people-outline"
-                    size={48}
-                    color={Colors.textLight}
-                  />
-                  <Text style={styles.noContactsText}>
-                    {t("messages.noContacts", "No contacts available")}
-                  </Text>
-                </View>
-              }
-            />
-          </View>
-        )}
-      </View>
-
-      <View style={styles.messageInputContainer}>
-        <TextInput
-          style={styles.messageInput}
-          placeholder={t("messages.typeMessage", "Type a message...")}
-          placeholderTextColor={Colors.textLight}
-          value={messageText}
-          onChangeText={setMessageText}
-          multiline
-          maxLength={1000}
-          returnKeyType="default"
-        />
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            (!newRecipient.trim() || !messageText.trim()) && styles.sendButtonDisabled
-          ]}
-          onPress={handleStartNewConversation}
-          disabled={!newRecipient.trim() || !messageText.trim()}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="send" size={22} color="#fff" />
-        </TouchableOpacity>
-      </View>
+        <View style={styles.messageInputContainer}>
+          <TextInput
+            style={styles.messageInput}
+            placeholder={t("messages.typeMessage", "Type a message...")}
+            placeholderTextColor={Colors.textLight}
+            value={messageText}
+            onChangeText={setMessageText}
+            multiline
+            maxLength={1000}
+            returnKeyType="default"
+          />
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              (!newRecipient.trim() || !messageText.trim()) &&
+                styles.sendButtonDisabled,
+            ]}
+            onPress={handleStartNewConversation}
+            disabled={!newRecipient.trim() || !messageText.trim()}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="send" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </KeyboardAvoidingView>
+
+      {/* Contact Picker Modal */}
+      <ContactPicker
+        visible={showContactPicker}
+        onClose={() => setShowContactPicker(false)}
+        onSelectContact={handleSelectContact}
+        title={t("messages.selectContact", "Select Contact")}
+      />
     </>
   );
 }

@@ -1,3 +1,15 @@
+/**
+ * Contacts Screen
+ *
+ * Uses expo-contacts to display and interact with device contacts.
+ * Features:
+ * - Browse device contacts
+ * - Search contacts by name or phone
+ * - Call or message contacts
+ * - Add new contacts via native form
+ * - Edit existing contacts
+ */
+
 import {
   View,
   Text,
@@ -7,142 +19,44 @@ import {
   TextInput,
   ActivityIndicator,
   RefreshControl,
-  Modal,
   Alert,
+  Linking,
 } from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useCallback } from "react";
 import { Colors } from "@/app/utils/colors";
-import { apiClient } from "@/app/utils/axios-interceptor";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Contact } from "@/app/utils/types";
+import { useDeviceContacts } from "@/app/hooks/useDeviceContacts";
+import { DeviceContact } from "@/app/utils/contactService";
 import {
   formatPhoneNumber,
   normalizePhoneNumber,
 } from "@/app/utils/formatters";
-import { showError, showSuccess } from "@/app/utils/toast";
 
 export default function ContactsScreen() {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [expandedContactId, setExpandedContactId] = useState<string | null>(
+    null,
+  );
 
-  // Form state
-  const [contactName, setContactName] = useState("");
-  const [contactPhone, setContactPhone] = useState("");
-  const [contactNotes, setContactNotes] = useState("");
-
-  // Fetch contacts
   const {
-    data: contactsData,
+    filteredContacts,
     isLoading,
+    hasPermission,
+    canAskPermission,
+    permissionChecked,
+    searchQuery,
+    setSearchQuery,
+    requestPermission,
+    openSettings,
     refetch,
-  } = useQuery({
-    queryKey: ["contacts", searchQuery],
-    queryFn: async () => {
-      const params = searchQuery
-        ? `?search=${encodeURIComponent(searchQuery)}`
-        : "";
-      const response = await apiClient.get(`contacts/${params}`);
-      return response;
-    },
-  });
-
-  const contacts: Contact[] = contactsData?.data || [];
-
-  // Add contact mutation
-  const addContactMutation = useMutation({
-    mutationFn: async (data: {
-      name: string;
-      phone_number: string;
-      notes: string;
-    }) => {
-      const response = await apiClient.post("contacts/", data);
-      return response;
-    },
-    onSuccess: () => {
-      showSuccess(
-        t("contacts.added", "Contact Added"),
-        t("contacts.addedMessage", "Contact has been saved"),
-      );
-      setShowAddModal(false);
-      resetForm();
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
-    },
-    onError: (error: any) => {
-      showError(
-        t("contacts.error", "Error"),
-        error.response?.data?.error ||
-          t("contacts.addFailed", "Failed to add contact"),
-      );
-    },
-  });
-
-  // Update contact mutation
-  const updateContactMutation = useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: number;
-      data: { name?: string; phone_number?: string; notes?: string };
-    }) => {
-      const response = await apiClient.put(`contacts/${id}/`, data);
-      return response.data;
-    },
-    onSuccess: () => {
-      showSuccess(
-        t("contacts.updated", "Contact Updated"),
-        t("contacts.updatedMessage", "Contact has been updated"),
-      );
-      setShowEditModal(false);
-      setSelectedContact(null);
-      resetForm();
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
-    },
-    onError: (error: any) => {
-      showError(
-        t("contacts.error", "Error"),
-        error.response?.data?.error ||
-          t("contacts.updateFailed", "Failed to update contact"),
-      );
-    },
-  });
-
-  // Delete contact mutation
-  const deleteContactMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await apiClient.delete(`contacts/${id}/`);
-      return response.data;
-    },
-    onSuccess: () => {
-      showSuccess(
-        t("contacts.deleted", "Contact Deleted"),
-        t("contacts.deletedMessage", "Contact has been removed"),
-      );
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
-    },
-    onError: (error: any) => {
-      showError(
-        t("contacts.error", "Error"),
-        error.response?.data?.error ||
-          t("contacts.deleteFailed", "Failed to delete contact"),
-      );
-    },
-  });
-
-  const resetForm = () => {
-    setContactName("");
-    setContactPhone("");
-    setContactNotes("");
-  };
+    addNewContact,
+    editExistingContact,
+    getContactPrimaryPhone,
+  } = useDeviceContacts();
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -150,79 +64,285 @@ export default function ContactsScreen() {
     setRefreshing(false);
   }, [refetch]);
 
-  const handleAddContact = () => {
-    if (!contactName.trim()) {
-      showError(
-        t("contacts.error", "Error"),
-        t("contacts.nameRequired", "Name is required"),
-      );
-      return;
-    }
-    if (!contactPhone.trim()) {
-      showError(
-        t("contacts.error", "Error"),
-        t("contacts.phoneRequired", "Phone number is required"),
-      );
-      return;
-    }
-
-    addContactMutation.mutate({
-      name: contactName.trim(),
-      phone_number: normalizePhoneNumber(contactPhone.trim()),
-      notes: contactNotes.trim(),
-    });
-  };
-
-  const handleUpdateContact = () => {
-    if (!selectedContact) return;
-    if (!contactName.trim()) {
-      showError(
-        t("contacts.error", "Error"),
-        t("contacts.nameRequired", "Name is required"),
-      );
-      return;
-    }
-
-    updateContactMutation.mutate({
-      id: selectedContact.id,
-      data: {
-        name: contactName.trim(),
-        phone_number: normalizePhoneNumber(contactPhone.trim()),
-        notes: contactNotes.trim(),
-      },
-    });
-  };
-
-  const handleDeleteContact = (contact: Contact) => {
-    Alert.alert(
-      t("contacts.confirmDelete", "Delete Contact"),
-      t(
-        "contacts.confirmDeleteMessage",
-        `Are you sure you want to delete ${contact.name}?`,
-      ),
-      [
-        { text: t("common.cancel", "Cancel"), style: "cancel" },
+  // Show action options for a contact
+  const showContactOptions = useCallback(
+    (contact: DeviceContact, phoneNumber: string) => {
+      Alert.alert(contact.name, formatPhoneNumber(phoneNumber), [
         {
-          text: t("common.delete", "Delete"),
-          style: "destructive",
-          onPress: () => deleteContactMutation.mutate(contact.id),
+          text: t("contacts.call", "Call"),
+          onPress: () => {
+            Linking.openURL(`tel:${phoneNumber}`);
+          },
         },
-      ],
+        {
+          text: t("contacts.message", "Message"),
+          onPress: () => {
+            router.push({
+              pathname: "/(tabs)/messages",
+              params: { other_party: normalizePhoneNumber(phoneNumber) },
+            });
+          },
+        },
+        {
+          text: t("contacts.edit", "Edit"),
+          onPress: async () => {
+            await editExistingContact(contact.id);
+          },
+        },
+        {
+          text: t("common.cancel", "Cancel"),
+          style: "cancel",
+        },
+      ]);
+    },
+    [t, editExistingContact],
+  );
+
+  // Handle contact press - expand if multiple phones, otherwise show options
+  const handleContactPress = useCallback(
+    (contact: DeviceContact) => {
+      if (contact.phoneNumbers.length > 1) {
+        setExpandedContactId(
+          expandedContactId === contact.id ? null : contact.id,
+        );
+      } else {
+        const phone = getContactPrimaryPhone(contact);
+        if (phone) {
+          showContactOptions(contact, phone);
+        }
+      }
+    },
+    [expandedContactId, getContactPrimaryPhone, showContactOptions],
+  );
+
+  // Handle phone number selection for multi-phone contacts
+  const handlePhoneSelect = useCallback(
+    (contact: DeviceContact, phoneNumber: string) => {
+      showContactOptions(contact, phoneNumber);
+      setExpandedContactId(null);
+    },
+    [showContactOptions],
+  );
+
+  // Handle add new contact
+  const handleAddContact = useCallback(async () => {
+    await addNewContact();
+  }, [addNewContact]);
+
+  // Render permission request view
+  const renderPermissionRequest = () => (
+    <View style={styles.permissionContainer}>
+      <Ionicons name="people-outline" size={80} color={Colors.textLight} />
+      <Text style={styles.permissionTitle}>
+        {t("contacts.permissionTitle", "Access Your Contacts")}
+      </Text>
+      <Text style={styles.permissionText}>
+        {t(
+          "contacts.permissionDescription",
+          "Grant access to view your device contacts. Your contacts stay on your device and are not uploaded to our servers.",
+        )}
+      </Text>
+
+      {canAskPermission ? (
+        <TouchableOpacity
+          style={styles.permissionButton}
+          onPress={requestPermission}
+        >
+          <Ionicons name="lock-open-outline" size={20} color="#FFFFFF" />
+          <Text style={styles.permissionButtonText}>
+            {t("contacts.grantPermission", "Grant Permission")}
+          </Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.permissionDeniedContainer}>
+          <Text style={styles.permissionDeniedText}>
+            {t(
+              "contacts.permissionDenied",
+              "Permission was denied. Please enable contacts access in your device settings.",
+            )}
+          </Text>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={openSettings}
+          >
+            <Ionicons
+              name="settings-outline"
+              size={20}
+              color={Colors.primary}
+            />
+            <Text style={styles.settingsButtonText}>
+              {t("contacts.openSettings", "Open Settings")}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+
+  // Render contact item
+  const renderContactItem = ({ item }: { item: DeviceContact }) => {
+    const isExpanded = expandedContactId === item.id;
+    const primaryPhone = getContactPrimaryPhone(item);
+
+    // Filter out duplicate phone numbers (normalize and deduplicate)
+    const uniquePhones = item.phoneNumbers.filter((phone, index, self) => {
+      const normalized = normalizePhoneNumber(phone.number);
+      return (
+        index ===
+        self.findIndex((p) => normalizePhoneNumber(p.number) === normalized)
+      );
+    });
+
+    const hasMultiplePhones = uniquePhones.length > 1;
+
+    return (
+      <View>
+        <TouchableOpacity
+          style={styles.contactItem}
+          onPress={() => handleContactPress(item)}
+          onLongPress={() => editExistingContact(item.id)}
+        >
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {item.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.contactInfo}>
+            <Text style={styles.contactName}>{item.name}</Text>
+            {primaryPhone && (
+              <Text style={styles.contactPhone}>
+                {formatPhoneNumber(primaryPhone)}
+              </Text>
+            )}
+            {hasMultiplePhones && (
+              <Text style={styles.multiplePhones}>
+                {t("contacts.phonesCount", "{{count}} phone numbers", {
+                  count: uniquePhones.length,
+                })}
+              </Text>
+            )}
+          </View>
+          <View style={styles.contactActions}>
+            {primaryPhone && !hasMultiplePhones && (
+              <>
+                <TouchableOpacity
+                  style={styles.iconButton}
+                  onPress={() => Linking.openURL(`tel:${primaryPhone}`)}
+                >
+                  <Ionicons
+                    name="call-outline"
+                    size={22}
+                    color={Colors.primary}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.iconButton}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(tabs)/messages",
+                      params: {
+                        other_party: normalizePhoneNumber(primaryPhone),
+                      },
+                    })
+                  }
+                >
+                  <Ionicons
+                    name="chatbubble-outline"
+                    size={22}
+                    color={Colors.primary}
+                  />
+                </TouchableOpacity>
+              </>
+            )}
+            {hasMultiplePhones && (
+              <Ionicons
+                name={isExpanded ? "chevron-up" : "chevron-down"}
+                size={22}
+                color={Colors.textLight}
+              />
+            )}
+          </View>
+        </TouchableOpacity>
+
+        {/* Expanded phone list for multi-phone contacts */}
+        {isExpanded && hasMultiplePhones && (
+          <View style={styles.phoneListContainer}>
+            {uniquePhones.map((phone, index) => (
+              <View key={phone.id || index} style={styles.phoneListItem}>
+                <View style={styles.phoneListInfo}>
+                  <Text style={styles.phoneListLabel}>
+                    {phone.label || t("contacts.phone", "Phone")}
+                  </Text>
+                  <Text style={styles.phoneListNumber}>
+                    {formatPhoneNumber(phone.number)}
+                  </Text>
+                </View>
+                <View style={styles.phoneListActions}>
+                  <TouchableOpacity
+                    style={styles.phoneListButton}
+                    onPress={() => Linking.openURL(`tel:${phone.number}`)}
+                  >
+                    <Ionicons
+                      name="call-outline"
+                      size={18}
+                      color={Colors.primary}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.phoneListButton}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/(tabs)/messages",
+                        params: {
+                          other_party: normalizePhoneNumber(phone.number),
+                        },
+                      })
+                    }
+                  >
+                    <Ionicons
+                      name="chatbubble-outline"
+                      size={18}
+                      color={Colors.primary}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
     );
   };
 
-  const openEditModal = (contact: Contact) => {
-    setSelectedContact(contact);
-    setContactName(contact.name);
-    setContactPhone(contact.phone_number);
-    setContactNotes(contact.notes || "");
-    setShowEditModal(true);
-  };
-
-  const openAddModal = () => {
-    resetForm();
-    setShowAddModal(true);
-  };
+  // Render empty state
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <Ionicons name="people-outline" size={64} color={Colors.textLight} />
+      <Text style={styles.emptyTitle}>
+        {searchQuery
+          ? t("contacts.noResults", "No contacts found")
+          : t("contacts.noContacts", "No contacts yet")}
+      </Text>
+      <Text style={styles.emptySubtitle}>
+        {searchQuery
+          ? t("contacts.tryDifferentSearch", "Try a different search term")
+          : t(
+              "contacts.addContactsToDevice",
+              "Add contacts to your device to see them here",
+            )}
+      </Text>
+      {!searchQuery && (
+        <TouchableOpacity style={styles.emptyButton} onPress={handleAddContact}>
+          <Ionicons name="add" size={20} color="#FFFFFF" />
+          <Text style={styles.emptyButtonText}>
+            {t("contacts.addContact", "Add Contact")}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -237,37 +357,57 @@ export default function ContactsScreen() {
         <Text style={styles.headerTitle}>
           {t("contacts.title", "Contacts")}
         </Text>
-        <TouchableOpacity onPress={openAddModal} style={styles.addButton}>
-          <Ionicons name="add" size={24} color={Colors.primary} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Search */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color={Colors.textLight} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder={t("contacts.search", "Search contacts...")}
-          placeholderTextColor={Colors.textLight}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery("")}>
-            <Ionicons name="close-circle" size={20} color={Colors.textLight} />
+        {hasPermission && (
+          <TouchableOpacity onPress={handleAddContact} style={styles.addButton}>
+            <Ionicons name="add" size={24} color={Colors.primary} />
           </TouchableOpacity>
         )}
       </View>
 
-      {/* Contacts List */}
-      {isLoading ? (
+      {/* Search - only show if we have permission */}
+      {hasPermission && (
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color={Colors.textLight} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t("contacts.search", "Search contacts...")}
+            placeholderTextColor={Colors.textLight}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <Ionicons
+                name="close-circle"
+                size={20}
+                color={Colors.textLight}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      {/* Content */}
+      {!permissionChecked ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
+      ) : !hasPermission ? (
+        renderPermissionRequest()
+      ) : isLoading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>
+            {t("contacts.loading", "Loading contacts...")}
+          </Text>
+        </View>
       ) : (
         <FlatList
-          data={contacts}
-          keyExtractor={(item) => item.id.toString()}
+          data={filteredContacts}
+          keyExtractor={(item) => item.id}
+          renderItem={renderContactItem}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -277,246 +417,14 @@ export default function ContactsScreen() {
             />
           }
           contentContainerStyle={
-            contacts.length === 0 ? styles.emptyList : undefined
+            filteredContacts.length === 0 ? styles.emptyList : undefined
           }
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.contactItem}
-              onPress={() => openEditModal(item)}
-            >
-              <View style={styles.avatarContainer}>
-                <Ionicons
-                  name="person-circle"
-                  size={50}
-                  color={Colors.primary}
-                />
-              </View>
-              <View style={styles.contactInfo}>
-                <Text style={styles.contactName}>{item.name}</Text>
-                <Text style={styles.contactPhone}>
-                  {formatPhoneNumber(item.phone_number)}
-                </Text>
-                {item.notes ? (
-                  <Text style={styles.contactNotes} numberOfLines={1}>
-                    {item.notes}
-                  </Text>
-                ) : null}
-              </View>
-              <View style={styles.contactActions}>
-                <TouchableOpacity
-                  style={styles.iconButton}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/(tabs)/messages",
-                      params: { other_party: item.phone_number },
-                    })
-                  }
-                >
-                  <Ionicons
-                    name="chatbubble-outline"
-                    size={22}
-                    color={Colors.primary}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.iconButton}
-                  onPress={() => handleDeleteContact(item)}
-                >
-                  <Ionicons
-                    name="trash-outline"
-                    size={22}
-                    color={Colors.error}
-                  />
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          )}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons
-                name="people-outline"
-                size={64}
-                color={Colors.textLight}
-              />
-              <Text style={styles.emptyTitle}>
-                {t("contacts.noContacts", "No contacts yet")}
-              </Text>
-              <Text style={styles.emptySubtitle}>
-                {t(
-                  "contacts.noContactsMessage",
-                  "Add contacts from call history or tap the + button",
-                )}
-              </Text>
-              <TouchableOpacity
-                style={styles.emptyButton}
-                onPress={openAddModal}
-              >
-                <Text style={styles.emptyButtonText}>
-                  {t("contacts.addContact", "Add Contact")}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          }
+          ListEmptyComponent={renderEmptyState()}
+          initialNumToRender={20}
+          maxToRenderPerBatch={20}
+          windowSize={10}
         />
       )}
-
-      {/* Add Contact Modal */}
-      <Modal
-        visible={showAddModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowAddModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {t("contacts.addContact", "Add Contact")}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setShowAddModal(false)}
-                style={styles.modalClose}
-              >
-                <Ionicons name="close" size={24} color={Colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalBody}>
-              <Text style={styles.inputLabel}>
-                {t("contacts.name", "Name")} *
-              </Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder={t("contacts.enterName", "Enter name")}
-                placeholderTextColor={Colors.textLight}
-                value={contactName}
-                onChangeText={setContactName}
-              />
-
-              <Text style={styles.inputLabel}>
-                {t("contacts.phone", "Phone")} *
-              </Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder={t("contacts.enterPhone", "+1234567890")}
-                placeholderTextColor={Colors.textLight}
-                value={contactPhone}
-                onChangeText={setContactPhone}
-                keyboardType="phone-pad"
-              />
-
-              <Text style={styles.inputLabel}>
-                {t("contacts.notes", "Notes")}
-              </Text>
-              <TextInput
-                style={[styles.textInput, styles.textInputMultiline]}
-                placeholder={t("contacts.enterNotes", "Optional notes...")}
-                placeholderTextColor={Colors.textLight}
-                value={contactNotes}
-                onChangeText={setContactNotes}
-                multiline
-                numberOfLines={3}
-              />
-            </View>
-
-            <TouchableOpacity
-              style={[
-                styles.saveButton,
-                addContactMutation.isPending && styles.saveButtonDisabled,
-              ]}
-              onPress={handleAddContact}
-              disabled={addContactMutation.isPending}
-            >
-              {addContactMutation.isPending ? (
-                <ActivityIndicator size="small" color={Colors.textWhite} />
-              ) : (
-                <Text style={styles.saveButtonText}>
-                  {t("contacts.save", "Save Contact")}
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Edit Contact Modal */}
-      <Modal
-        visible={showEditModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowEditModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {t("contacts.editContact", "Edit Contact")}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setShowEditModal(false)}
-                style={styles.modalClose}
-              >
-                <Ionicons name="close" size={24} color={Colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalBody}>
-              <Text style={styles.inputLabel}>
-                {t("contacts.name", "Name")} *
-              </Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder={t("contacts.enterName", "Enter name")}
-                placeholderTextColor={Colors.textLight}
-                value={contactName}
-                onChangeText={setContactName}
-              />
-
-              <Text style={styles.inputLabel}>
-                {t("contacts.phone", "Phone")} *
-              </Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder={t("contacts.enterPhone", "+1234567890")}
-                placeholderTextColor={Colors.textLight}
-                value={contactPhone}
-                onChangeText={setContactPhone}
-                keyboardType="phone-pad"
-              />
-
-              <Text style={styles.inputLabel}>
-                {t("contacts.notes", "Notes")}
-              </Text>
-              <TextInput
-                style={[styles.textInput, styles.textInputMultiline]}
-                placeholder={t("contacts.enterNotes", "Optional notes...")}
-                placeholderTextColor={Colors.textLight}
-                value={contactNotes}
-                onChangeText={setContactNotes}
-                multiline
-                numberOfLines={3}
-              />
-            </View>
-
-            <TouchableOpacity
-              style={[
-                styles.saveButton,
-                updateContactMutation.isPending && styles.saveButtonDisabled,
-              ]}
-              onPress={handleUpdateContact}
-              disabled={updateContactMutation.isPending}
-            >
-              {updateContactMutation.isPending ? (
-                <ActivityIndicator size="small" color={Colors.textWhite} />
-              ) : (
-                <Text style={styles.saveButtonText}>
-                  {t("contacts.update", "Update Contact")}
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -573,6 +481,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: Colors.textSecondary,
+  },
   emptyList: {
     flex: 1,
   },
@@ -587,6 +500,19 @@ const styles = StyleSheet.create({
   avatarContainer: {
     marginRight: 12,
   },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: Colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarText: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
   contactInfo: {
     flex: 1,
   },
@@ -600,18 +526,50 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 2,
   },
-  contactNotes: {
+  multiplePhones: {
     fontSize: 12,
-    color: Colors.textLight,
-    marginTop: 2,
-    fontStyle: "italic",
+    color: Colors.primary,
+    marginTop: 4,
   },
   contactActions: {
     flexDirection: "row",
-    gap: 12,
+    gap: 8,
   },
   iconButton: {
     padding: 8,
+  },
+  phoneListContainer: {
+    backgroundColor: Colors.backgroundLight,
+    paddingLeft: 78,
+  },
+  phoneListItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingRight: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  phoneListInfo: {
+    flex: 1,
+  },
+  phoneListLabel: {
+    fontSize: 12,
+    color: Colors.textLight,
+    textTransform: "capitalize",
+  },
+  phoneListNumber: {
+    fontSize: 14,
+    color: Colors.textPrimary,
+    marginTop: 2,
+  },
+  phoneListActions: {
+    flexDirection: "row",
+    gap: 16,
+  },
+  phoneListButton: {
+    padding: 4,
   },
   emptyContainer: {
     flex: 1,
@@ -632,6 +590,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   emptyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
     backgroundColor: Colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
@@ -639,71 +600,68 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   emptyButtonText: {
-    color: Colors.textWhite,
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
   },
-  modalOverlay: {
+  permissionContainer: {
     flex: 1,
-    backgroundColor: Colors.overlay,
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    backgroundColor: Colors.cardBackground,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 40,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
+    padding: 32,
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+  permissionTitle: {
+    fontSize: 22,
+    fontWeight: "700",
     color: Colors.textPrimary,
+    marginTop: 24,
+    textAlign: "center",
   },
-  modalClose: {
-    padding: 4,
-  },
-  modalBody: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: Colors.textSecondary,
-    marginBottom: 8,
-    marginTop: 12,
-  },
-  textInput: {
-    backgroundColor: Colors.background,
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+  permissionText: {
     fontSize: 16,
-    color: Colors.textPrimary,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginTop: 12,
+    lineHeight: 24,
+    paddingHorizontal: 16,
   },
-  textInputMultiline: {
-    height: 80,
-    textAlignVertical: "top",
-  },
-  saveButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 8,
-    paddingVertical: 14,
+  permissionButton: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 8,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginTop: 32,
   },
-  saveButtonDisabled: {
-    opacity: 0.6,
+  permissionButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
-  saveButtonText: {
-    color: Colors.textWhite,
+  permissionDeniedContainer: {
+    alignItems: "center",
+    marginTop: 24,
+  },
+  permissionDeniedText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  settingsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  settingsButtonText: {
+    color: Colors.primary,
     fontSize: 16,
     fontWeight: "600",
   },

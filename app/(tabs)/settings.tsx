@@ -20,7 +20,7 @@ import { apiClient } from "@/app/utils/axios-interceptor";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function SettingsScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { data: agentConfig } = useAgentQuery();
   const { phoneNumber } = useAgentPhoneNumber(agentConfig?.id);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -75,11 +75,6 @@ export default function SettingsScreen() {
     } else {
       setNotificationsEnabled(false);
     }
-  };
-
-  const changeLanguage = () => {
-    const newLang = i18n.language === "en" ? "es" : "en";
-    i18n.changeLanguage(newLang);
   };
 
   const handleLogout = () => {

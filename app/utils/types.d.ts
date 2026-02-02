@@ -142,3 +142,34 @@ export interface Conversation {
   phone_number_id: number;
   phone_number_display: string;
 }
+
+// Device Contact types (expo-contacts)
+export interface DeviceContact {
+  id: string;
+  name: string;
+  firstName: string;
+  lastName: string;
+  phoneNumbers: ContactPhoneNumber[];
+  emails: ContactEmail[];
+  imageAvailable: boolean;
+  image?: { uri: string };
+}
+
+export interface ContactPhoneNumber {
+  id?: string;
+  label?: string;
+  number: string;
+  isPrimary?: boolean;
+}
+
+export interface ContactEmail {
+  id?: string;
+  label?: string;
+  email: string;
+  isPrimary?: boolean;
+}
+
+export interface ContactPermissionResult {
+  granted: boolean;
+  canAskAgain: boolean;
+}

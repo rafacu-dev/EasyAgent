@@ -83,15 +83,6 @@ class NotificationService {
   private async registerForPushNotificationsAsync(): Promise<string | null> {
     let token: string | null = null;
 
-    if (Platform.OS === "android") {
-      await Notifications.setNotificationChannelAsync("default", {
-        name: "default",
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: "#1f5bff7c",
-      });
-    }
-
     if (Device.isDevice) {
       const { status: existingStatus } =
         await Notifications.getPermissionsAsync();
@@ -107,13 +98,41 @@ class NotificationService {
         return null;
       }
 
+      // Set up Android notification channel AFTER permissions are granted
+      if (Platform.OS === "android") {
+        await Notifications.setNotificationChannelAsync("default", {
+          name: "default",
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#1f5bff7c",
+        });
+      }
+
       try {
-        console.log(
-          "Getting Expo push token...",
-          Constants.expoConfig?.extra?.eas?.projectId,
-        );
-        const pushTokenData = await Notifications.getExpoPushTokenAsync();
-        token = pushTokenData.data;
+        const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+        console.log("Getting Expo push token with projectId:", projectId);
+
+        // Check if running in Expo Go or development build
+        const isExpoGo = Constants.appOwnership === "expo";
+
+        if (isExpoGo) {
+          console.log(
+            "Running in Expo Go - getting push token without projectId",
+          );
+          // For Expo Go, get token without projectId
+          const pushTokenData = await Notifications.getExpoPushTokenAsync();
+          token = pushTokenData.data;
+        } else {
+          // For standalone/development builds, use projectId
+          if (!projectId) {
+            console.error("No Expo project ID found in app.json");
+            return null;
+          }
+          const pushTokenData = await Notifications.getExpoPushTokenAsync({
+            projectId: projectId,
+          });
+          token = pushTokenData.data;
+        }
       } catch (error) {
         console.error("Error getting push token:", error);
       }

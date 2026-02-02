@@ -1,545 +1,76 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SectionList,
-  TextInput,
-  Linking,
-  Platform,
-  RefreshControl,
-} from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+/**
+ * Home Screen
+ *
+ * Dashboard with recent calls, notifications, and call filtering
+ * Uses useHome hook for state management and home components for UI
+ */
+
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import Constants from "expo-constants";
-import { Ionicons, SimpleLineIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useMemo, useState } from "react";
-import { Colors } from "@/app/utils/colors";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useAgentQuery, useAgentPhoneNumber } from "@/app/utils/hooks";
-import { apiClient } from "@/app/utils/axios-interceptor";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getLastLogin } from "@/app/utils/storage";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from "react-native-reanimated";
-import type { RecentCallItem } from "@/app/utils/types";
-import NoPhoneNumber from "../components/NoPhoneNumber";
+import { Colors } from "@/app/utils/colors";
+import { useHome } from "@/app/hooks/useHome";
+import NoPhoneNumber from "@/app/components/NoPhoneNumber";
 import {
-  formatDuration,
-  formatDateWithWeekday,
-  formatPhoneNumber,
-  formatDateTime,
-} from "@/app/utils/formatters";
-import { getConfig } from "@/app/utils/services";
-import { showWarning } from "@/app/utils/toast";
-
-// RecentCallItem type moved to global `utils/types.d.ts`
-
-// Removed mock data; now using live API via React Query
+  NotificationsCard,
+  CallsFilter,
+  SearchBar,
+  CallsList,
+} from "@/app/components/home";
 
 export default function HomeScreen() {
-  const { t, i18n } = useTranslation();
-  const queryClient = useQueryClient();
-  const { data: agentConfig, isLoading: isLoadingAgent } = useAgentQuery();
-  const { phoneNumber, isLoading: isLoadingPhone } = useAgentPhoneNumber(
-    agentConfig?.id,
-  );
-  const [callTypeFilter, setCallTypeFilter] = useState<
-    "all" | "inbound" | "outbound"
-  >("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
+  const { t } = useTranslation();
 
-  const agentDbId = agentConfig?.id ?? null;
-
-  // Recent calls limited to 10
   const {
-    data: callsResp,
-    isLoading: callsLoading,
-    error: callsErr,
-  } = useQuery({
-    queryKey: ["recent-calls", agentDbId, callTypeFilter],
-    enabled: !!agentDbId,
-    queryFn: () => {
-      const directionParam =
-        callTypeFilter === "all" ? "" : `&direction=${callTypeFilter}`;
-      return apiClient.get(
-        `calls/?agent_id=${encodeURIComponent(
-          String(agentDbId),
-        )}&limit=10&sort_order=descending${directionParam}`,
-      );
-    },
-  });
+    // Loading states
+    isLoadingAgent,
+    isLoadingPhone,
+    isLoadingCalls,
+    isLoadingNotifications,
 
-  // Notifications query - new items since last login
-  const { data: notificationsResp, isLoading: notificationsLoading } = useQuery(
-    {
-      queryKey: ["notifications", agentDbId],
-      enabled: !!agentDbId,
-      queryFn: async () => {
-        const lastLogin = await getLastLogin();
-        const lastLoginParam = lastLogin
-          ? `?after_datetime=${encodeURIComponent(lastLogin)}`
-          : "";
+    // Data
+    agentConfig,
+    phoneNumber,
+    callSections,
+    notifications,
+    error,
 
-        // Get new calls and appointments counts
-        const [callsData, appointmentsData] = await Promise.all([
-          apiClient.get(
-            `calls/?agent_id=${encodeURIComponent(
-              String(agentDbId),
-            )}&limit=5&sort_order=descending${
-              lastLogin
-                ? `&after_datetime=${encodeURIComponent(lastLogin)}`
-                : ""
-            }`,
-          ),
-          apiClient.get(`appointments/${lastLoginParam}`),
-        ]);
+    // Filter
+    callTypeFilter,
+    setCallTypeFilter,
 
-        return {
-          newCalls: callsData?.calls?.length ?? 0,
-          newAppointments: appointmentsData?.data?.length ?? 0,
-        };
-      },
-    },
-  );
+    // Search
+    searchQuery,
+    setSearchQuery,
 
-  const callSections = useMemo(() => {
-    const rawCalls: any[] = callsResp?.calls ?? [];
-    // Use a map with numeric day key for correct sorting
-    const callsByDay: { title: string; data: RecentCallItem[] }[] = [];
+    // Refresh
+    refreshing,
+    onRefresh,
+  } = useHome();
 
-    rawCalls.forEach((c: any) => {
-      // Skip calls with invalid duration or timestamp
-      if (
-        c?.duration_ms == null ||
-        isNaN(c?.duration_ms) ||
-        !c?.start_timestamp ||
-        c?.start_timestamp === 0
-      ) {
-        return;
-      }
-      const direction = c?.direction;
-      const number =
-        direction === "inbound"
-          ? formatPhoneNumber(c?.from_number)
-          : formatPhoneNumber(c?.to_number);
-      const timestamp = c?.start_timestamp || 0;
-      const dateTitle = `${formatDateWithWeekday(timestamp, i18n.language)}`;
-
-      const call: RecentCallItem = {
-        id: c?.call_id ?? `${c?.start_timestamp ?? Math.random()}`,
-        number: number ?? "Unknown",
-        duration: formatDuration(c?.duration_ms ?? c?.duration ?? 0),
-        date: c?.start_timestamp
-          ? formatDateTime(new Date(c.start_timestamp).getTime(), i18n.language)
-          : "",
-        status: c?.call_status ?? "",
-        direction: direction ?? "unknown",
-        fromNumber: formatPhoneNumber(c?.from_number) ?? "Unknown",
-        toNumber: formatPhoneNumber(c?.to_number) ?? "Unknown",
-        fromContactName: c?.from_contact_name ?? null,
-        toContactName: c?.to_contact_name ?? null,
-        callType: c?.call_type ?? "",
-        callSource: c?.call_source ?? "unknown",
-      };
-      if (!callsByDay.find((day) => day.title === dateTitle)) {
-        callsByDay.push({ title: dateTitle, data: [] });
-      }
-      const day = callsByDay.find((day) => day.title === dateTitle);
-      day?.data.push(call);
-    });
-
-    return callsByDay;
-  }, [callsResp?.calls, i18n.language]);
-
-  const error = callsErr?.message as string | undefined;
-
-  // Handle pull to refresh
-  const onRefresh = async () => {
-    setRefreshing(true);
-    try {
-      // Invalidate queries to refetch data
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["recent-calls"] }),
-        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
-      ]);
-    } catch (error) {
-      console.error("Error refreshing:", error);
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  // Initialize notifications system
-  useEffect(() => {
-    const initializeNotifications = async () => {
-      try {
-        const NotificationService = (
-          await import("../notifications/NotificationService")
-        ).default;
-        const notificationService = NotificationService.getInstance();
-
-        // First initialize (without permissions)
-        await notificationService.initialize();
-
-        // Check if user is authenticated before requesting permissions
-        const authToken = await AsyncStorage.getItem("authToken");
-        if (!authToken) {
-          console.log("⚠️ User not authenticated yet, will retry after login");
-          return;
-        }
-
-        // Then request permissions
-        const token = await notificationService.requestPermissionsAndRegister();
-        if (token) {
-          console.log("✅ Notification token obtained:", token);
-          // Send token to server
-          const success = await notificationService.sendTokenToServer();
-          if (success) {
-            console.log("✅ Token successfully registered with backend");
-          } else {
-            console.log("⚠️ Failed to register token with backend, will retry");
-            // Retry after 3 seconds
-            setTimeout(async () => {
-              await notificationService.sendTokenToServer();
-            }, 3000);
-          }
-        }
-      } catch (notifError) {
-        console.error("Error initializing notifications:", notifError);
-      }
-    };
-
-    initializeNotifications();
-  }, []);
-
-  useEffect(() => {
-    const checkForUpdates = () => {
-      const appVersion = parseFloat(Constants.expoConfig?.version || "0.0");
-
-      getConfig()
-        .then((response) => {
-          const storeUrl =
-            Platform.OS === "ios"
-              ? response["update_url_ios"]
-              : response["update_url_android"];
-          if (appVersion < response["min_version"]) {
-            showWarning(t("index.updateApp"), t("index.updateAppMsg"));
-            setTimeout(() => {
-              Linking.openURL(storeUrl);
-            }, 2000);
-          } else if (appVersion < response["current_version"]) {
-            showWarning(
-              t("index.updateAppAvailable"),
-              t("index.updateAppMsgAvailable"),
-            );
-          }
-        })
-        .catch(() => {});
-    };
-    checkForUpdates();
-  }, [t]);
-
-  // Animated loading skeleton helpers
-  const pulse = useSharedValue(0.6);
-  pulse.value = withTiming(1, { duration: 800 });
-  const skeletonStyle = useAnimatedStyle(() => ({
-    opacity: pulse.value,
-  }));
-
-  const SkeletonBar = ({
-    width,
-    height,
-    style,
-  }: {
-    width: number | string;
-    height: number;
-    style?: any;
-  }) => (
-    <Animated.View
-      style={[
-        {
-          width,
-          height,
-          borderRadius: 8,
-          backgroundColor: Colors.backgroundLight,
-          marginVertical: 6,
-        },
-        skeletonStyle,
-        style,
-      ]}
-    />
-  );
-
-  const renderCallItem = ({ item }: { item: RecentCallItem }) => (
-    <TouchableOpacity
-      style={styles.callItem}
-      onPress={() =>
-        router.push({ pathname: "/call-details/[id]", params: { id: item.id } })
-      }
-    >
-      <View style={styles.callAvatarContainer}>
-        <LinearGradient
-          colors={[Colors.primary, "#ffc09cff"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.callAvatar}
-        >
-          <Ionicons name="person" size={20} color="#fff" />
-        </LinearGradient>
-        <View
-          style={[
-            styles.callDirectionBadge,
-            {
-              backgroundColor:
-                item.direction === "inbound" ? "#10B981" : "#3B82F6",
-            },
-          ]}
-        >
-          <Ionicons
-            name={item.direction === "inbound" ? "arrow-down" : "arrow-up"}
-            size={10}
-            color="#fff"
-          />
-        </View>
+  // Header component used in all states
+  const Header = () => (
+    <View style={styles.header}>
+      <View style={styles.headerTopRow}>
+        <Text style={styles.headerTitle}>
+          {t("home.welcome", "Welcome")},{" "}
+          {agentConfig?.companyName || t("home.yourDashboard", "Your Dashboard")}
+        </Text>
       </View>
-      <View style={styles.callInfo}>
-        <View style={styles.callNumberRow}>
-          {item.fromContactName && item.direction === "inbound" ? (
-            <Text style={styles.callNumber}>{item.fromContactName}</Text>
-          ) : item.toContactName && item.direction === "outbound" ? (
-            <Text style={styles.callNumber}>{item.toContactName}</Text>
-          ) : (
-            <Text style={styles.callNumber}>{item.number}</Text>
-          )}
-        </View>
-        <Text style={styles.callTime}>{item.duration}</Text>
-      </View>
-      <Ionicons name="chevron-forward" size={16} color={Colors.textLight} />
-    </TouchableOpacity>
-  );
-
-  const renderSectionHeader = ({ section }: { section: { title: string } }) => (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionHeaderText}>{section.title}</Text>
+      {error && <Text style={styles.headerSubtitle}>{error}</Text>}
     </View>
   );
 
-  const ListHeaderComponent = () => (
-    <>
-      {/* Header with Welcome and Agent Name */}
-      <View style={styles.header}>
-        <View style={styles.headerTopRow}>
-          <Text style={styles.headerTitle}>
-            {t("home.welcome", "Welcome")},{" "}
-            {agentConfig?.companyName ||
-              t("home.yourDashboard", "Your Dashboard")}
-          </Text>
-        </View>
-        {error ? <Text style={styles.headerSubtitle}>{error}</Text> : null}
-      </View>
-      {Constants.appOwnership === "expo" && (
-        <TouchableOpacity
-          style={styles.expoGoButton}
-          onPress={() => router.push("/paywall/PaywallScreen")}
-        >
-          <Ionicons name="rocket" size={16} color="#fff" />
-          <Text style={styles.expoGoButtonText}>Paywall</Text>
-        </TouchableOpacity>
-      )}
-
-      {/* Notifications Card */}
-      {phoneNumber && (
-        <View style={styles.notificationsCard}>
-          <View style={styles.notificationsHeader}>
-            <Ionicons name="notifications" size={20} color={Colors.primary} />
-            <Text style={styles.notificationsTitle}>
-              {t("home.notifications", "New Activity")}
-            </Text>
-          </View>
-          {notificationsLoading ? (
-            <View style={styles.notificationsContent}>
-              <SkeletonBar width="100%" height={40} />
-            </View>
-          ) : (
-            <View style={styles.notificationsContent}>
-              <View style={styles.notificationItem}>
-                <View style={styles.notificationIconContainer}>
-                  <LinearGradient
-                    colors={["#3B82F6", "#60A5FA"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.notificationIconGradient}
-                  >
-                    <Ionicons name="call" size={16} color="#fff" />
-                  </LinearGradient>
-                </View>
-                <View style={styles.notificationInfo}>
-                  <Text style={styles.notificationCount}>
-                    {notificationsResp?.newCalls ?? 0}
-                  </Text>
-                  <Text style={styles.notificationLabel}>
-                    {t("home.newCalls", "New Calls")}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.notificationDivider} />
-              <View style={styles.notificationItem}>
-                <View style={styles.notificationIconContainer}>
-                  <LinearGradient
-                    colors={["#10B981", "#34D399"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.notificationIconGradient}
-                  >
-                    <Ionicons name="calendar" size={16} color="#fff" />
-                  </LinearGradient>
-                </View>
-                <View style={styles.notificationInfo}>
-                  <Text style={styles.notificationCount}>
-                    {notificationsResp?.newAppointments ?? 0}
-                  </Text>
-                  <Text style={styles.notificationLabel}>
-                    {t("home.upcomingAppointments", "Upcoming")}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          )}
-        </View>
-      )}
-      {phoneNumber && (
-        <>
-          {/* Section Title with Filter */}
-          <View style={styles.callsListContainer}>
-            <TouchableOpacity
-              style={[
-                styles.filterButton,
-                callTypeFilter === "all" && styles.filterButtonActiveAll,
-              ]}
-              onPress={() => setCallTypeFilter("all")}
-            >
-              <Ionicons
-                name="swap-vertical"
-                size={14}
-                color={
-                  callTypeFilter === "all"
-                    ? Colors.primary
-                    : Colors.textSecondary
-                }
-                style={styles.filterIcon}
-              />
-              <Text
-                style={[
-                  styles.filterButtonText,
-                  callTypeFilter === "all" && styles.filterButtonTextActiveAll,
-                ]}
-              >
-                {t("home.filterAll", "All")}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.filterButton,
-                callTypeFilter === "inbound" &&
-                  styles.filterButtonActiveInbound,
-              ]}
-              onPress={() => setCallTypeFilter("inbound")}
-            >
-              <SimpleLineIcons
-                name="call-in"
-                size={14}
-                color={
-                  callTypeFilter === "inbound"
-                    ? "#10B981"
-                    : Colors.textSecondary
-                }
-                style={styles.filterIcon}
-              />
-              <Text
-                style={[
-                  styles.filterButtonText,
-                  callTypeFilter === "inbound" &&
-                    styles.filterButtonTextActiveInbound,
-                ]}
-              >
-                {t("home.filterInbound", "Inbound")}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.filterButton,
-                callTypeFilter === "outbound" &&
-                  styles.filterButtonActiveOutbound,
-              ]}
-              onPress={() => setCallTypeFilter("outbound")}
-            >
-              <SimpleLineIcons
-                name="call-out"
-                size={14}
-                color={
-                  callTypeFilter === "outbound"
-                    ? "#3B82F6"
-                    : Colors.textSecondary
-                }
-                style={styles.filterIcon}
-              />
-              <Text
-                style={[
-                  styles.filterButtonText,
-                  callTypeFilter === "outbound" &&
-                    styles.filterButtonTextActiveOutbound,
-                ]}
-              >
-                {t("home.filterOutbound", "Outbound")}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Search Bar */}
-          <View style={styles.searchContainer}>
-            <Ionicons
-              name="search"
-              size={18}
-              color={Colors.textLight}
-              style={styles.searchIcon}
-            />
-            <TextInput
-              style={styles.searchInput}
-              placeholder={t("home.searchCalls", "Search calls...")}
-              placeholderTextColor={Colors.textLight}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery("")}>
-                <Ionicons
-                  name="close-circle"
-                  size={18}
-                  color={Colors.textLight}
-                />
-              </TouchableOpacity>
-            )}
-          </View>
-        </>
-      )}
-    </>
-  );
-
-  // Loading state - wait for both agent config and phone number
+  // Loading state
   if (isLoadingAgent || isLoadingPhone || !agentConfig) {
     return (
       <View style={styles.container}>
-        <ListHeaderComponent />
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <Text style={{ color: Colors.textSecondary }}>
+        <Header />
+        <View style={styles.centered}>
+          <Text style={styles.loadingText}>
             {t("home.loading", "Loading...")}
           </Text>
         </View>
@@ -551,7 +82,7 @@ export default function HomeScreen() {
   if (!phoneNumber) {
     return (
       <View style={styles.container}>
-        <ListHeaderComponent />
+        <Header />
         <NoPhoneNumber variant="detailed" translationPrefix="home" />
       </View>
     );
@@ -559,66 +90,41 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <ListHeaderComponent />
+      {/* Header */}
+      <Header />
+
+      {/* Expo Go Dev Button */}
+      {Constants.appOwnership === "expo" && (
+        <TouchableOpacity
+          style={styles.expoGoButton}
+          onPress={() => router.push("/paywall/PaywallScreen")}
+        >
+          <Ionicons name="rocket" size={16} color="#fff" />
+          <Text style={styles.expoGoButtonText}>Paywall</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Notifications Card */}
+      <NotificationsCard
+        newCalls={notifications?.newCalls ?? 0}
+        newAppointments={notifications?.newAppointments ?? 0}
+        isLoading={isLoadingNotifications}
+      />
+
+      {/* Calls Filter */}
+      <CallsFilter filter={callTypeFilter} onFilterChange={setCallTypeFilter} />
+
+      {/* Search Bar */}
+      <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
+
+      {/* Calls List */}
       <View style={styles.callsListWrapper}>
-        {callsLoading ? (
-          <View style={styles.callsListCard}>
-            {[...Array(5)].map((_, idx) => (
-              <View
-                key={idx}
-                style={{
-                  padding: 10,
-                  borderBottomWidth: 1,
-                  borderBottomColor: Colors.borderLight,
-                }}
-              >
-                <SkeletonBar width={"60%"} height={12} />
-                <SkeletonBar width={"40%"} height={10} />
-              </View>
-            ))}
-          </View>
-        ) : callSections.length === 0 ? (
-          <View style={styles.callsListCard}>
-            <View style={styles.emptyCallsContainer}>
-              <View style={styles.emptyCallsIconContainer}>
-                <Ionicons
-                  name="call-outline"
-                  size={48}
-                  color={Colors.textLight}
-                />
-              </View>
-              <Text style={styles.emptyCallsTitle}>
-                {t("home.noCallsYet", "No Calls Yet")}
-              </Text>
-              <Text style={styles.emptyCallsSubtitle}>
-                {t(
-                  "home.noCallsDescription",
-                  "Your recent calls will appear here once you start making or receiving calls.",
-                )}
-              </Text>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.callsListCard}>
-            <SectionList
-              sections={callSections}
-              renderItem={renderCallItem}
-              renderSectionHeader={renderSectionHeader}
-              keyExtractor={(item) => item.id}
-              showsVerticalScrollIndicator={false}
-              style={styles.callsList}
-              stickySectionHeadersEnabled={false}
-              refreshControl={
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={onRefresh}
-                  tintColor={Colors.primary}
-                  colors={[Colors.primary]}
-                />
-              }
-            />
-          </View>
-        )}
+        <CallsList
+          sections={callSections}
+          isLoading={isLoadingCalls}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+        />
       </View>
     </View>
   );
@@ -628,25 +134,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  callsListWrapper: {
-    flex: 1,
-    marginBottom: 20,
-  },
-  callsListCard: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    borderRadius: 0,
-    marginHorizontal: 0,
-    paddingVertical: 0,
-    paddingHorizontal: 0,
-    shadowColor: "transparent",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
-    borderWidth: 0,
-    borderColor: "transparent",
   },
   header: {
     padding: 24,
@@ -664,12 +151,27 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     color: Colors.textPrimary,
-    wordWrap: "break-word",
     marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: Colors.textSecondary,
+    fontWeight: "500",
+  },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    color: Colors.textSecondary,
   },
   expoGoButton: {
     flexDirection: "row",
     alignItems: "center",
+    alignSelf: "flex-start",
+    marginLeft: 20,
+    marginBottom: 16,
     backgroundColor: Colors.primary,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -686,376 +188,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "bold",
   },
-  headerSubtitle: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    fontWeight: "500",
-  },
-  notificationsCard: {
-    marginHorizontal: 20,
+  callsListWrapper: {
+    flex: 1,
     marginBottom: 20,
-    backgroundColor: Colors.cardBackground,
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-  },
-  notificationsHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 16,
-  },
-  notificationsTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: Colors.textPrimary,
-  },
-  notificationsContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-  },
-  notificationItem: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  notificationIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  notificationIconGradient: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  notificationInfo: {
-    flex: 1,
-  },
-  notificationCount: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: Colors.textPrimary,
-    marginBottom: 2,
-  },
-  notificationLabel: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    fontWeight: "500",
-  },
-  notificationDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: Colors.borderLight,
-    marginHorizontal: 16,
-  },
-  agentCardContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  agentCard: {
-    backgroundColor: Colors.cardBackground,
-    borderRadius: 12,
-    padding: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    shadowColor: Colors.shadowOrange,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.primary,
-  },
-  agentAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: Colors.backgroundLight,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  agentDetails: {
-    flex: 1,
-  },
-  agentName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: Colors.textPrimary,
-    marginBottom: 2,
-  },
-  agentSector: {
-    fontSize: 12,
-    color: Colors.primary,
-    fontWeight: "500",
-  },
-  agentNumber: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  agentNumberMissing: {
-    fontSize: 12,
-    color: Colors.textLight,
-    marginTop: 2,
-    fontStyle: "italic",
-  },
-  statsContainer: {
-    flexDirection: "row",
-    paddingHorizontal: 20,
-    marginBottom: 16,
-    gap: 10,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: Colors.cardBackground,
-    borderRadius: 12,
-    padding: 12,
-    alignItems: "center",
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  statRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  statIconInline: {
-    marginRight: 6,
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: Colors.textPrimary,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    textAlign: "center",
-  },
-  quickActionsContainer: {
-    flexDirection: "row",
-    paddingHorizontal: 20,
-    marginBottom: 20,
-    gap: 10,
-  },
-  actionButton: {
-    flex: 1,
-    backgroundColor: Colors.cardBackground,
-    borderRadius: 10,
-    padding: 12,
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  actionButtonText: {
-    fontSize: 12,
-    color: Colors.textPrimary,
-    marginTop: 6,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  callsListContainer: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    marginBottom: 12,
-    gap: 8,
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.cardBackground,
-    borderRadius: 12,
-    marginHorizontal: 20,
-    marginBottom: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.textPrimary,
-    padding: 0,
-  },
-  filterButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 20,
-    backgroundColor: "transparent",
-  },
-  filterIcon: {
-    marginRight: 6,
-  },
-  filterButtonActiveAll: {
-    backgroundColor: Colors.primaryTransparent,
-  },
-  filterButtonActiveInbound: {
-    backgroundColor: "#10B98120",
-  },
-  filterButtonActiveOutbound: {
-    backgroundColor: "#3B82F620",
-  },
-  filterButtonText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: Colors.textSecondary,
-  },
-  filterButtonTextActiveAll: {
-    color: Colors.primary,
-  },
-  filterButtonTextActiveInbound: {
-    color: "#10B981",
-  },
-  filterButtonTextActiveOutbound: {
-    color: "#3B82F6",
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: Colors.textPrimary,
-  },
-  callsList: {
-    flex: 1,
-    backgroundColor: "transparent",
-    paddingBottom: 20,
-  },
-  callItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    marginHorizontal: 20,
-    marginVertical: 6,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-  },
-  callAvatarContainer: {
-    position: "relative",
-    marginRight: 12,
-  },
-  callAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.backgroundLight,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  callDirectionBadge: {
-    position: "absolute",
-    bottom: -2,
-    right: -2,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#fff",
-  },
-  callInfo: {
-    flex: 1,
-  },
-  callNumberRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 2,
-  },
-  callDirectionLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: Colors.textSecondary,
-    marginRight: 4,
-  },
-  callNumber: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.textPrimary,
-  },
-  callDate: {
-    fontSize: 12,
-    color: Colors.textLight,
-  },
-  callTime: {
-    fontSize: 12,
-    color: Colors.textLight,
-    marginTop: 2,
-  },
-  callDuration: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    marginRight: 8,
-    fontWeight: "500",
-  },
-  sectionHeader: {
-    backgroundColor: Colors.background,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    marginTop: 8,
-  },
-  sectionHeaderText: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: Colors.textSecondary,
-  },
-  emptyCallsContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 60,
-    paddingHorizontal: 40,
-  },
-  emptyCallsIconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: Colors.backgroundLight,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: Colors.borderLight,
-  },
-  emptyCallsTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: Colors.textPrimary,
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  emptyCallsSubtitle: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: "center",
-    lineHeight: 20,
   },
 });

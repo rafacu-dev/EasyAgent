@@ -83,3 +83,6 @@ yarn-error.*
 *.tsbuildinfo
 
 # @end expo-cli
+
+# DO NOT ignore google-services.json - it contains public identifiers only
+# Only the Firebase Service Account Key (for backend) should be ignored

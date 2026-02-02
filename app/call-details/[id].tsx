@@ -5,8 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Modal,
-  TextInput,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -54,17 +52,10 @@ export default function CallDetailsScreen() {
 
   const {
     showAddContactModal,
-    contactName,
-    contactNotes,
     isLoadingContact,
-    selectedPhoneNumber,
     existingContact,
     setShowAddContactModal,
-    setContactName,
-    setContactNotes,
     handleAddContact,
-    openAddContactModal,
-    addContactMutation,
   } = useContactManagement(otherPartyNumber);
 
   return (
@@ -296,13 +287,11 @@ export default function CallDetailsScreen() {
                         {existingContact.name}
                       </Text>
                       <Text style={styles.contactNumber}>
-                        {formatPhoneNumber(existingContact.phone_number)}
+                        {formatPhoneNumber(
+                          existingContact.phoneNumbers[0]?.number ||
+                            otherPartyNumber,
+                        )}
                       </Text>
-                      {existingContact.notes ? (
-                        <Text style={styles.contactNotes} numberOfLines={2}>
-                          {existingContact.notes}
-                        </Text>
-                      ) : null}
                     </View>
                   </View>
                   <View style={styles.contactActions}>
@@ -310,8 +299,30 @@ export default function CallDetailsScreen() {
                       style={styles.contactActionButton}
                       onPress={() =>
                         router.push({
+                          pathname: "/(tabs)/phone",
+                          params: {
+                            phoneNumber:
+                              existingContact.phoneNumbers[0]?.number ||
+                              otherPartyNumber,
+                          },
+                        })
+                      }
+                    >
+                      <Ionicons name="call" size={20} color={Colors.primary} />
+                      <Text style={styles.contactActionText}>
+                        {t("callDetails.call", "Call")}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.contactActionButton}
+                      onPress={() =>
+                        router.push({
                           pathname: "/(tabs)/messages",
-                          params: { other_party: existingContact.phone_number },
+                          params: {
+                            other_party:
+                              existingContact.phoneNumbers[0]?.number ||
+                              otherPartyNumber,
+                          },
                         })
                       }
                     >
@@ -336,7 +347,7 @@ export default function CallDetailsScreen() {
                   </Text>
                   <TouchableOpacity
                     style={styles.addContactButton}
-                    onPress={() => openAddContactModal(otherPartyNumber)}
+                    onPress={() => handleAddContact(otherPartyNumber)}
                   >
                     <Ionicons
                       name="person-add"
@@ -609,83 +620,6 @@ export default function CallDetailsScreen() {
           <View style={{ height: 40 }} />
         </ScrollView>
       )}
-
-      {/* Add Contact Modal */}
-      <Modal
-        visible={showAddContactModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowAddContactModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {t("callDetails.addContact", "Add Contact")}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setShowAddContactModal(false)}
-                style={styles.modalClose}
-              >
-                <Ionicons name="close" size={24} color={Colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalBody}>
-              <Text style={styles.inputLabel}>
-                {t("callDetails.phoneNumber", "Phone Number")}
-              </Text>
-              <View style={styles.phoneNumberDisplay}>
-                <Ionicons name="call" size={20} color={Colors.primary} />
-                <Text style={styles.phoneNumberText}>
-                  {formatPhoneNumber(selectedPhoneNumber)}
-                </Text>
-              </View>
-
-              <Text style={styles.inputLabel}>
-                {t("callDetails.name", "Name")} *
-              </Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder={t("callDetails.enterName", "Enter contact name")}
-                placeholderTextColor={Colors.textLight}
-                value={contactName}
-                onChangeText={setContactName}
-              />
-
-              <Text style={styles.inputLabel}>
-                {t("callDetails.notes", "Notes")}
-              </Text>
-              <TextInput
-                style={[styles.textInput, styles.textInputMultiline]}
-                placeholder={t("callDetails.enterNotes", "Optional notes...")}
-                placeholderTextColor={Colors.textLight}
-                value={contactNotes}
-                onChangeText={setContactNotes}
-                multiline
-                numberOfLines={3}
-              />
-            </View>
-
-            <TouchableOpacity
-              style={[
-                styles.saveButton,
-                addContactMutation.isPending && styles.saveButtonDisabled,
-              ]}
-              onPress={handleAddContact}
-              disabled={addContactMutation.isPending}
-            >
-              {addContactMutation.isPending ? (
-                <ActivityIndicator size="small" color={Colors.textWhite} />
-              ) : (
-                <Text style={styles.saveButtonText}>
-                  {t("callDetails.saveContact", "Save Contact")}
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }

@@ -5,231 +5,28 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Linking,
-  Image,
 } from "react-native";
-import { Colors } from "@/app/utils/colors";
-import { useTranslation } from "react-i18next";
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useAgentQuery, usePhoneNumbersQuery } from "@/app/utils/hooks";
-import * as Clipboard from "expo-clipboard";
+import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
+import { Colors } from "@/app/utils/colors";
 import { US_CARRIERS } from "@/app/utils/constants";
-import type { USCarrier } from "@/app/utils/types.d";
-import { showError, showSuccess } from "@/app/utils/toast";
-
-interface CarrierCardProps {
-  carrier: USCarrier;
-  twilioNumber: string;
-  onDial: (code: string, label: string) => void;
-  t: ReturnType<typeof useTranslation>["t"];
-  expanded: boolean;
-  onToggle: () => void;
-}
-
-function CarrierCard({
-  carrier,
-  twilioNumber,
-  onDial,
-  t,
-  expanded,
-  onToggle,
-}: CarrierCardProps) {
-  const formatCode = (code: string) => {
-    const cleanNumber = twilioNumber.replace(/\D/g, "");
-    return code.replace("{number}", cleanNumber);
-  };
-
-  return (
-    <View style={styles.carrierCard}>
-      <TouchableOpacity style={styles.carrierHeader} onPress={onToggle}>
-        <View style={styles.carrierInfo}>
-          <Image source={carrier.logo} style={styles.carrierLogo} />
-          <Text style={styles.carrierName}>{carrier.name}</Text>
-        </View>
-        <Ionicons
-          name={expanded ? "chevron-up" : "chevron-down"}
-          size={20}
-          color={Colors.textSecondary}
-        />
-      </TouchableOpacity>
-
-      {expanded && (
-        <View style={styles.carrierContent}>
-          {/* Activate All Calls */}
-          <View style={styles.codeSection}>
-            <Text style={styles.codeLabel}>
-              {t("callForwarding.forwardAll", "Forward All Calls")}
-            </Text>
-            <TouchableOpacity
-              style={styles.codeContainer}
-              onPress={() =>
-                onDial(
-                  formatCode(carrier.activateAll),
-                  t("callForwarding.forwardAll", "Forward All Calls"),
-                )
-              }
-            >
-              <Text style={styles.codeText}>
-                {formatCode(carrier.activateAll)}
-              </Text>
-              <Ionicons name="call-outline" size={18} color={Colors.primary} />
-            </TouchableOpacity>
-            <Text style={styles.codeHint}>
-              {t(
-                "callForwarding.forwardAllHint",
-                "Dial this code to forward all incoming calls",
-              )}
-            </Text>
-          </View>
-
-          {/* Deactivate */}
-          <View style={styles.codeSection}>
-            <Text style={styles.codeLabel}>
-              {t("callForwarding.deactivate", "Deactivate Forwarding")}
-            </Text>
-            <TouchableOpacity
-              style={styles.codeContainer}
-              onPress={() =>
-                onDial(
-                  carrier.deactivate,
-                  t("callForwarding.deactivate", "Deactivate Forwarding"),
-                )
-              }
-            >
-              <Text style={styles.codeText}>{carrier.deactivate}</Text>
-              <Ionicons name="call-outline" size={18} color={Colors.primary} />
-            </TouchableOpacity>
-            <Text style={styles.codeHint}>
-              {t(
-                "callForwarding.deactivateHint",
-                "Dial this code to stop call forwarding",
-              )}
-            </Text>
-          </View>
-
-          {/* Forward on No Answer */}
-          <View style={styles.codeSection}>
-            <Text style={styles.codeLabel}>
-              {t("callForwarding.noAnswer", "Forward When No Answer")}
-            </Text>
-            <TouchableOpacity
-              style={styles.codeContainer}
-              onPress={() =>
-                onDial(
-                  formatCode(carrier.activateNoAnswer),
-                  t("callForwarding.noAnswer", "Forward When No Answer"),
-                )
-              }
-            >
-              <Text style={styles.codeText}>
-                {formatCode(carrier.activateNoAnswer)}
-              </Text>
-              <Ionicons name="call-outline" size={18} color={Colors.primary} />
-            </TouchableOpacity>
-            <Text style={styles.codeHint}>
-              {t(
-                "callForwarding.noAnswerHint",
-                "Forward calls only when you don't answer",
-              )}
-            </Text>
-          </View>
-
-          {/* Forward on Busy */}
-          <View style={styles.codeSection}>
-            <Text style={styles.codeLabel}>
-              {t("callForwarding.busy", "Forward When Busy")}
-            </Text>
-            <TouchableOpacity
-              style={styles.codeContainer}
-              onPress={() =>
-                onDial(
-                  formatCode(carrier.activateBusy),
-                  t("callForwarding.busy", "Forward When Busy"),
-                )
-              }
-            >
-              <Text style={styles.codeText}>
-                {formatCode(carrier.activateBusy)}
-              </Text>
-              <Ionicons name="call-outline" size={18} color={Colors.primary} />
-            </TouchableOpacity>
-            <Text style={styles.codeHint}>
-              {t(
-                "callForwarding.busyHint",
-                "Forward calls only when your line is busy",
-              )}
-            </Text>
-          </View>
-
-          {/* Carrier Notes */}
-          <View style={styles.notesSection}>
-            <Ionicons
-              name="information-circle-outline"
-              size={16}
-              color={Colors.textSecondary}
-            />
-            <Text style={styles.notesText}>
-              {t(
-                carrier.notes,
-                "Dial these codes from your phone's dialer app. Some carriers may require calling customer service to enable call forwarding.",
-              )}
-            </Text>
-          </View>
-        </View>
-      )}
-    </View>
-  );
-}
+import { useCallForwarding } from "@/app/hooks/useCallForwarding";
+import { CarrierCard } from "@/app/components/call-forwarding";
 
 export default function CallForwardingScreen() {
   const { t } = useTranslation();
-  const { data: agentConfig } = useAgentQuery();
-  const { data: phoneNumbers } = usePhoneNumbersQuery();
+  const {
+    twilioNumber,
+    hasTwilioNumber,
+    expandedCarrier,
+    setExpandedCarrier,
+    handleDial,
+    copyTwilioNumber,
+    formatCode,
+  } = useCallForwarding();
 
-  // Get the phone number associated with the agent
-  const phoneNumberData = phoneNumbers?.find(
-    (pn) => pn.agent === Number(agentConfig?.id),
-  );
-  const twilioNumber = phoneNumberData?.phone_number || "";
-
-  const [expandedCarrier, setExpandedCarrier] = React.useState<string | null>(
-    null,
-  );
-
-  const handleDial = async (code: string, label: string) => {
-    try {
-      const url = `tel:${code}`;
-      const canOpen = await Linking.canOpenURL(url);
-      if (canOpen) {
-        await Linking.openURL(url);
-      } else {
-        showError(
-          t("common.error", "Error"),
-          t(
-            "callForwarding.cannotDial",
-            "Unable to open dialer on this device",
-          ),
-        );
-      }
-    } catch (error) {
-      console.log("Dialing error:", error);
-      showError(
-        t("common.error", "Error"),
-        t("callForwarding.dialError", "Failed to dial code"),
-      );
-    }
-  };
-
-  const copyTwilioNumber = async () => {
-    await Clipboard.setStringAsync(twilioNumber);
-    showSuccess(
-      t("common.success", "Success"),
-      t("callForwarding.numberCopied", "Phone number copied to clipboard"),
-    );
-  };
-
-  if (!twilioNumber) {
+  if (!hasTwilioNumber) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -255,7 +52,7 @@ export default function CallForwardingScreen() {
           <Text style={styles.noPhoneMessage}>
             {t(
               "callForwarding.noPhoneMessage",
-              "You need a phone number to set up call forwarding",
+              "You need a phone number to set up call forwarding"
             )}
           </Text>
           <TouchableOpacity
@@ -296,7 +93,7 @@ export default function CallForwardingScreen() {
           <Text style={styles.infoBannerText}>
             {t(
               "callForwarding.infoBanner",
-              "Forward calls from your personal phone to your AI agent. When someone calls your personal number, the call will be handled by your AI agent.",
+              "Forward calls from your personal phone to your AI agent. When someone calls your personal number, the call will be handled by your AI agent."
             )}
           </Text>
         </View>
@@ -319,7 +116,7 @@ export default function CallForwardingScreen() {
           <Text style={styles.sectionHint}>
             {t(
               "callForwarding.numberHint",
-              "This is the number you'll forward calls to",
+              "This is the number you'll forward calls to"
             )}
           </Text>
         </View>
@@ -341,7 +138,7 @@ export default function CallForwardingScreen() {
                 <Text style={styles.stepDescription}>
                   {t(
                     "callForwarding.step1Description",
-                    "Select your mobile carrier from the list below",
+                    "Select your mobile carrier from the list below"
                   )}
                 </Text>
               </View>
@@ -357,7 +154,7 @@ export default function CallForwardingScreen() {
                 <Text style={styles.stepDescription}>
                   {t(
                     "callForwarding.step2Description",
-                    "Open your phone's dialer and dial the forwarding code",
+                    "Open your phone's dialer and dial the forwarding code"
                   )}
                 </Text>
               </View>
@@ -373,7 +170,7 @@ export default function CallForwardingScreen() {
                 <Text style={styles.stepDescription}>
                   {t(
                     "callForwarding.step3Description",
-                    "You'll hear a confirmation tone or receive a message",
+                    "You'll hear a confirmation tone or receive a message"
                   )}
                 </Text>
               </View>
@@ -392,11 +189,11 @@ export default function CallForwardingScreen() {
               carrier={carrier}
               twilioNumber={twilioNumber}
               onDial={handleDial}
-              t={t}
+              formatCode={formatCode}
               expanded={expandedCarrier === carrier.id}
               onToggle={() =>
                 setExpandedCarrier(
-                  expandedCarrier === carrier.id ? null : carrier.id,
+                  expandedCarrier === carrier.id ? null : carrier.id
                 )
               }
             />
@@ -413,7 +210,7 @@ export default function CallForwardingScreen() {
           <Text style={styles.helpText}>
             {t(
               "callForwarding.needHelp",
-              "If these codes don't work, contact your carrier's customer service. Some plans may require additional features to enable call forwarding.",
+              "If these codes don't work, contact your carrier's customer service. Some plans may require additional features to enable call forwarding."
             )}
           </Text>
         </View>
@@ -497,7 +294,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   numberText: {
-    fontSize: 38,
+    fontSize: 18,
     fontWeight: "600",
     color: Colors.textPrimary,
   },
@@ -542,88 +339,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textSecondary,
     lineHeight: 20,
-  },
-  carrierCard: {
-    backgroundColor: Colors.cardBackground,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-    overflow: "hidden",
-  },
-  carrierHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-  },
-  carrierInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  carrierLogo: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    resizeMode: "contain" as const,
-  },
-  carrierName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.textPrimary,
-  },
-  carrierContent: {
-    padding: 16,
-    paddingTop: 0,
-  },
-  codeSection: {
-    marginBottom: 16,
-  },
-  codeLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.textPrimary,
-    marginBottom: 8,
-  },
-  codeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: Colors.backgroundLight || "#F5F5F5",
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-  },
-  codeText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.primary,
-    fontFamily: "monospace",
-  },
-  codeHint: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginTop: 4,
-  },
-  notesSection: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    marginTop: 8,
-    padding: 12,
-    backgroundColor: Colors.backgroundLight || "#F5F5F5",
-    borderRadius: 8,
-  },
-  notesText: {
-    flex: 1,
-    fontSize: 13,
-    color: Colors.textSecondary,
-    lineHeight: 18,
   },
   helpSection: {
     flexDirection: "row",

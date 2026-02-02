@@ -1,110 +1,34 @@
-import { router } from "expo-router";
-import { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import React from "react";
 import {
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
   View,
-  ActivityIndicator,
+  Text,
+  StyleSheet,
+  ScrollView,
   TouchableOpacity,
+  TextInput,
+  ActivityIndicator,
+  Pressable,
   KeyboardAvoidingView,
 } from "react-native";
+import { router } from "expo-router";
+import { useTranslation } from "react-i18next";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
-import { apiClient } from "@/app/utils/axios-interceptor";
-import { Colors } from "@/app/utils/colors";
-import { showError, showSuccess } from "@/app/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
-import { useAgentQuery, useUpdateAgentMutation } from "@/app/utils/hooks";
-import type { AgentConfig } from "@/app/utils/types";
+import { Colors } from "@/app/utils/colors";
+import { useEditAgent } from "@/app/hooks/useEditAgent";
+import { GenderSelector } from "@/app/components/edit-agent";
 
 export default function EditAgent() {
   const { t } = useTranslation();
-  const { data: agentConfig, isLoading: isLoadingData } = useAgentQuery();
-  const updateAgentMutation = useUpdateAgentMutation();
-
-  const [formData, setFormData] = useState({
-    agentName: agentConfig?.agentName || "",
-    agentGender: (agentConfig?.agentGender || "male") as "male" | "female",
-    agentDescription: agentConfig?.agentDescription || "",
-    sector: agentConfig?.sector || "",
-    companyName: agentConfig?.companyName || "",
-    socialMediaAndWeb: agentConfig?.socialMediaAndWeb || "",
-    agentId: agentConfig?.id,
-  });
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (agentConfig) {
-      setFormData({
-        agentName: agentConfig.agentName || "",
-        agentGender: agentConfig.agentGender || "male",
-        agentDescription: agentConfig.agentDescription || "",
-        sector: agentConfig.sector || "",
-        companyName: agentConfig.companyName || "",
-        socialMediaAndWeb: agentConfig.socialMediaAndWeb || "",
-        agentId: agentConfig.id,
-      });
-    }
-  }, [agentConfig]);
-
-  const handleUpdate = async () => {
-    if (isLoading) return;
-
-    if (!formData.agentId) {
-      showError(
-        t("common.error", "Error"),
-        t("editAgent.noAgentId", "Agent ID not found. Cannot update."),
-      );
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Update user profile (company info)
-      await apiClient.patch("profile/", {
-        company_name: formData.companyName,
-        sector: formData.sector,
-      });
-
-      // Update agent via mutation
-      const updatedConfig: AgentConfig = {
-        id: formData.agentId,
-        sector: formData.sector,
-        companyName: formData.companyName,
-        socialMediaAndWeb: formData.socialMediaAndWeb,
-        agentGender: formData.agentGender,
-        agentName: formData.agentName,
-        agentDescription: formData.agentDescription,
-      };
-
-      await updateAgentMutation.mutateAsync(updatedConfig);
-
-      showSuccess(
-        t("common.success", "Success"),
-        t("editAgent.updateSuccess", "Agent updated successfully"),
-      );
-      router.back();
-    } catch (error: any) {
-      console.error("Error updating agent:", error);
-      const errorMessage =
-        error.response?.data?.error ||
-        error.message ||
-        t("editAgent.updateError", "Failed to update agent");
-      showError(t("common.error", "Error"), errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const isDisabled =
-    formData.agentName.trim() === "" ||
-    isLoading ||
-    isLoadingData ||
-    formData.companyName.trim() === "";
+  const {
+    formData,
+    isLoading,
+    isLoadingData,
+    isDisabled,
+    handleUpdate,
+    setGender,
+    updateField,
+  } = useEditAgent();
 
   if (isLoadingData) {
     return (
@@ -140,7 +64,7 @@ export default function EditAgent() {
             <Text style={styles.subtitle}>
               {t(
                 "editAgent.subtitle",
-                "Update your agent's properties and configuration",
+                "Update your agent's properties and configuration"
               )}
             </Text>
           </Animated.View>
@@ -150,69 +74,10 @@ export default function EditAgent() {
             style={styles.form}
           >
             <View style={styles.inputContainer}>
-              <View style={styles.genderContainer}>
-                <Animated.View>
-                  <Pressable
-                    style={styles.genderButton}
-                    onPress={() =>
-                      setFormData({ ...formData, agentGender: "male" })
-                    }
-                  >
-                    <View
-                      style={[
-                        styles.imageContainer,
-                        formData.agentGender === "male" &&
-                          styles.selectedImageContainer,
-                      ]}
-                    >
-                      <Image
-                        source={require("@/assets/images/agent-m.jpg")}
-                        style={styles.genderImage}
-                      />
-                    </View>
-                    <Text
-                      style={[
-                        styles.genderText,
-                        formData.agentGender === "male" &&
-                          styles.selectedGenderText,
-                      ]}
-                    >
-                      {t("agentSetup.masculine", "Masculine")}
-                    </Text>
-                  </Pressable>
-                </Animated.View>
-
-                <Animated.View>
-                  <Pressable
-                    style={styles.genderButton}
-                    onPress={() =>
-                      setFormData({ ...formData, agentGender: "female" })
-                    }
-                  >
-                    <View
-                      style={[
-                        styles.imageContainer,
-                        formData.agentGender === "female" &&
-                          styles.selectedImageContainer,
-                      ]}
-                    >
-                      <Image
-                        source={require("@/assets/images/agent-f.jpg")}
-                        style={styles.genderImage}
-                      />
-                    </View>
-                    <Text
-                      style={[
-                        styles.genderText,
-                        formData.agentGender === "female" &&
-                          styles.selectedGenderText,
-                      ]}
-                    >
-                      {t("agentSetup.feminine", "Feminine")}
-                    </Text>
-                  </Pressable>
-                </Animated.View>
-              </View>
+              <GenderSelector
+                selectedGender={formData.agentGender}
+                onSelectGender={setGender}
+              />
             </View>
 
             <View style={styles.inputContainer}>
@@ -223,13 +88,11 @@ export default function EditAgent() {
                 style={styles.input}
                 placeholder={t(
                   "agentSetup.agentNamePlaceholder",
-                  "Enter agent name",
+                  "Enter agent name"
                 )}
                 placeholderTextColor="#B0B0B0"
                 value={formData.agentName}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, agentName: text })
-                }
+                onChangeText={(text) => updateField("agentName", text)}
               />
             </View>
 
@@ -241,13 +104,11 @@ export default function EditAgent() {
                 style={styles.input}
                 placeholder={t(
                   "companyInfo.companyNamePlaceholder",
-                  "Enter company name",
+                  "Enter company name"
                 )}
                 placeholderTextColor="#B0B0B0"
                 value={formData.companyName}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, companyName: text })
-                }
+                onChangeText={(text) => updateField("companyName", text)}
               />
             </View>
 
@@ -260,13 +121,11 @@ export default function EditAgent() {
                 style={[styles.input, styles.textArea]}
                 placeholder={t(
                   "agentSetup.descriptionPlaceholder",
-                  "Describe your agent's personality...",
+                  "Describe your agent's personality..."
                 )}
                 placeholderTextColor="#B0B0B0"
                 value={formData.agentDescription}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, agentDescription: text })
-                }
+                onChangeText={(text) => updateField("agentDescription", text)}
                 multiline
                 numberOfLines={4}
               />
@@ -281,13 +140,11 @@ export default function EditAgent() {
                 style={[styles.input, styles.textArea]}
                 placeholder={t(
                   "companyInfo.socialMediaPlaceholder",
-                  "Add social media links...",
+                  "Add social media links..."
                 )}
                 placeholderTextColor="#B0B0B0"
                 value={formData.socialMediaAndWeb}
-                onChangeText={(text) =>
-                  setFormData({ ...formData, socialMediaAndWeb: text })
-                }
+                onChangeText={(text) => updateField("socialMediaAndWeb", text)}
                 multiline
                 numberOfLines={4}
               />
@@ -306,7 +163,7 @@ export default function EditAgent() {
               <Text style={styles.helperText}>
                 {t(
                   "editAgent.sectorHelper",
-                  "To change sector, create a new agent",
+                  "To change sector, create a new agent"
                 )}
               </Text>
             </View>
@@ -395,42 +252,6 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     borderWidth: 1,
     borderColor: Colors.border,
-  },
-  genderContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  genderButton: {
-    alignItems: "center",
-    justifyContent: "center",
-    width: 150,
-    margin: 10,
-  },
-  imageContainer: {
-    padding: 2,
-    borderWidth: 3,
-    borderColor: "transparent",
-    borderRadius: 68,
-    marginBottom: 12,
-  },
-  selectedImageContainer: {
-    borderColor: Colors.primary,
-  },
-  genderImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-  },
-  genderText: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    fontWeight: "500",
-  },
-  selectedGenderText: {
-    color: Colors.primary,
-    fontWeight: "600",
   },
   textArea: {
     height: 120,
