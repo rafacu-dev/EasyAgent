@@ -172,7 +172,20 @@ export default function RootLayout() {
                 backgroundColor: Colors.background,
               },
             }}
-          />
+          >
+            <Stack.Screen
+              name="create-appointment"
+              options={{
+                presentation: "modal",
+              }}
+            />
+            <Stack.Screen
+              name="compose-message"
+              options={{
+                presentation: "modal",
+              }}
+            />
+          </Stack>
           <Toast config={toastConfig} />
         </NotificationProvider>
       </AppStateHandler>

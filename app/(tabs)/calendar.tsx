@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
-  TextInput,
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
@@ -22,12 +21,8 @@ import type {
   MonthResponse,
   AppointmentStatus,
 } from "@/app/utils/types";
-import {
-  onAppointmentScheduled,
-  scheduleAppointmentReminder,
-} from "../notifications/notificationHelpers";
-import type { AppointmentNotificationData } from "../notifications/easyAgentNotifications";
-import { showError, showSuccess } from "@/app/utils/toast";
+import { showError } from "@/app/utils/toast";
+import { useRouter } from "expo-router";
 
 const STATUS_COLORS: { [key in AppointmentStatus]: string } = {
   scheduled: Colors.info,
@@ -40,28 +35,15 @@ const STATUS_COLORS: { [key in AppointmentStatus]: string } = {
 
 export default function CalendarScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { data: agentConfig } = useAgentQuery();
   const { phoneNumber } = useAgentPhoneNumber(agentConfig?.id);
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-
-  // Form state for new appointment
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    date: "",
-    start_time: "",
-    duration_minutes: "",
-    client_name: "",
-    client_phone: "",
-    client_email: "",
-    notes: "",
-  });
 
   // Fetch appointments for the month
   const { data: monthData, isLoading } = useQuery<MonthResponse>({
@@ -90,62 +72,6 @@ export default function CalendarScreen() {
   const dayAppointments = appointments.filter(
     (apt) => apt.date === selectedDateStr,
   );
-
-  // Create appointment mutation
-  const createMutation = useMutation({
-    mutationFn: (data: any) => apiClient.post("appointments/", data),
-    onSuccess: (response) => {
-      // Refetch the current month's data immediately
-      queryClient.invalidateQueries({ queryKey: ["appointments-month"] });
-      queryClient.refetchQueries({
-        queryKey: [
-          "appointments-month",
-          selectedDate.getFullYear(),
-          selectedDate.getMonth() + 1,
-        ],
-      });
-      setShowAddModal(false);
-      resetForm();
-
-      // Send notifications for new appointment
-      const appointmentData = response?.data || response;
-      if (appointmentData) {
-        const notificationPayload: AppointmentNotificationData = {
-          id: String(appointmentData.id),
-          date: appointmentData.date || formData.date,
-          time: appointmentData.start_time || formData.start_time,
-          client_name: appointmentData.client_name || formData.client_name,
-        };
-        onAppointmentScheduled(notificationPayload).catch((err) =>
-          console.error("Failed to send appointment notification:", err),
-        );
-
-        // Schedule reminder notification if appointment has a valid date/time
-        if (appointmentData.date && appointmentData.start_time) {
-          scheduleAppointmentReminder({
-            id: String(appointmentData.id),
-            date: new Date(
-              appointmentData.date + "T" + appointmentData.start_time,
-            ),
-            client_name: appointmentData.client_name || formData.client_name,
-          }).catch((err) =>
-            console.error("Failed to schedule appointment reminder:", err),
-          );
-        }
-      }
-
-      showSuccess(
-        t("calendar.success", "Success"),
-        t("calendar.appointmentCreated", "Appointment created successfully"),
-      );
-    },
-    onError: (error: any) => {
-      showError(
-        t("common.error", "Error"),
-        error.response?.data?.error || "Failed to create appointment",
-      );
-    },
-  });
 
   // Cancel appointment mutation
   const cancelMutation = useMutation({
@@ -178,50 +104,6 @@ export default function CalendarScreen() {
       );
     },
   });
-
-  const resetForm = () => {
-    const currentDateStr = selectedDate.toISOString().split("T")[0];
-    setFormData({
-      title: "",
-      description: "",
-      date: currentDateStr,
-      start_time: "",
-      duration_minutes: "",
-      client_name: "",
-      client_phone: "",
-      client_email: "",
-      notes: "",
-    });
-  };
-
-  const handleCreateAppointment = () => {
-    if (
-      !formData.title ||
-      !formData.date ||
-      !formData.start_time ||
-      !formData.client_name
-    ) {
-      showError(
-        t("common.error", "Error"),
-        t("calendar.fillRequired", "Please fill all required fields"),
-      );
-      return;
-    }
-
-    const payload: any = {
-      ...formData,
-      agent: agentConfig?.id,
-    };
-
-    // Only include duration_minutes if it has a value
-    if (formData.duration_minutes && formData.duration_minutes.trim() !== "") {
-      payload.duration_minutes = parseInt(formData.duration_minutes, 10);
-    } else {
-      payload.duration_minutes = null;
-    }
-
-    createMutation.mutate(payload);
-  };
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -514,8 +396,11 @@ export default function CalendarScreen() {
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => {
-              resetForm();
-              setShowAddModal(true);
+              const currentDateStr = selectedDate.toISOString().split("T")[0];
+              router.push({
+                pathname: "/create-appointment",
+                params: { date: currentDateStr },
+              });
             }}
           >
             <Ionicons name="add-circle" size={24} color={Colors.primary} />
@@ -525,193 +410,6 @@ export default function CalendarScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-
-      {/* Add Appointment Modal */}
-      <Modal visible={showAddModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {t("calendar.newAppointment", "New Appointment")}
-              </Text>
-              <TouchableOpacity onPress={() => setShowAddModal(false)}>
-                <Ionicons name="close" size={24} color={Colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalBody}>
-              <Text style={styles.inputLabel}>
-                {t("calendar.appointmentTitle", "Title")} *
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={formData.title}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, title: text }))
-                }
-                placeholder={t(
-                  "calendar.titlePlaceholder",
-                  "Appointment title",
-                )}
-                placeholderTextColor={Colors.textLight}
-              />
-
-              <Text style={styles.inputLabel}>
-                {t("calendar.date", "Date")} *
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={formData.date}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, date: text }))
-                }
-                placeholder={t("calendar.datePlaceholder", "YYYY-MM-DD")}
-                placeholderTextColor={Colors.textLight}
-              />
-
-              <Text style={styles.inputLabel}>
-                {t("calendar.time", "Time")} *
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={formData.start_time}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, start_time: text }))
-                }
-                placeholder={t(
-                  "calendar.timePlaceholder",
-                  "HH:MM (e.g., 14:30)",
-                )}
-                placeholderTextColor={Colors.textLight}
-              />
-
-              <Text style={styles.inputLabel}>
-                {t("calendar.duration", "Duration (minutes)")}
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={formData.duration_minutes}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, duration_minutes: text }))
-                }
-                placeholder={t("calendar.durationPlaceholder", "30")}
-                keyboardType="numeric"
-                placeholderTextColor={Colors.textLight}
-              />
-
-              <Text style={styles.inputLabel}>
-                {t("calendar.clientName", "Client Name")} *
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={formData.client_name}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, client_name: text }))
-                }
-                placeholder={t(
-                  "calendar.clientNamePlaceholder",
-                  "Client's name",
-                )}
-                placeholderTextColor={Colors.textLight}
-              />
-
-              <Text style={styles.inputLabel}>
-                {t("calendar.clientPhone", "Client Phone")}
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={formData.client_phone}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, client_phone: text }))
-                }
-                placeholder={t(
-                  "calendar.clientPhonePlaceholder",
-                  "+1234567890",
-                )}
-                keyboardType="phone-pad"
-                placeholderTextColor={Colors.textLight}
-              />
-
-              <Text style={styles.inputLabel}>
-                {t("calendar.clientEmail", "Client Email")}
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={formData.client_email}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, client_email: text }))
-                }
-                placeholder={t(
-                  "calendar.clientEmailPlaceholder",
-                  "email@example.com",
-                )}
-                keyboardType="email-address"
-                placeholderTextColor={Colors.textLight}
-              />
-
-              <Text style={styles.inputLabel}>
-                {t("calendar.description", "Description")}
-              </Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={formData.description}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, description: text }))
-                }
-                placeholder={t(
-                  "calendar.descriptionPlaceholder",
-                  "Appointment details...",
-                )}
-                multiline
-                numberOfLines={3}
-                placeholderTextColor={Colors.textLight}
-              />
-
-              <Text style={styles.inputLabel}>
-                {t("calendar.notes", "Notes")}
-              </Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={formData.notes}
-                onChangeText={(text) =>
-                  setFormData((prev) => ({ ...prev, notes: text }))
-                }
-                placeholder={t(
-                  "calendar.notesPlaceholder",
-                  "Additional notes...",
-                )}
-                multiline
-                numberOfLines={3}
-                placeholderTextColor={Colors.textLight}
-              />
-            </ScrollView>
-
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setShowAddModal(false)}
-              >
-                <Text style={styles.cancelButtonText}>
-                  {t("common.cancel", "Cancel")}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.saveButton}
-                onPress={handleCreateAppointment}
-                disabled={createMutation.isPending}
-              >
-                {createMutation.isPending ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.saveButtonText}>
-                    {t("common.save", "Save")}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* Appointment Detail Modal */}
       <Modal visible={showDetailModal} animationType="slide" transparent>
@@ -1152,26 +850,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.borderLight,
   },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.textPrimary,
-    marginBottom: 8,
-    marginTop: 12,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: Colors.textPrimary,
-    backgroundColor: Colors.backgroundLight,
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: "top",
-  },
   cancelButton: {
     flex: 1,
     padding: 14,
@@ -1182,18 +860,6 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     color: Colors.error,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  saveButton: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 8,
-    backgroundColor: Colors.primary,
-    alignItems: "center",
-  },
-  saveButtonText: {
-    color: "#fff",
     fontSize: 16,
     fontWeight: "600",
   },

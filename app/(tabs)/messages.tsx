@@ -7,8 +7,6 @@ import {
   TextInput,
   ActivityIndicator,
   RefreshControl,
-  Modal,
-  KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -18,14 +16,17 @@ import { Colors } from "@/app/utils/colors";
 import { apiClient } from "@/app/utils/axios-interceptor";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAgentPhoneNumber, useAgentQuery } from "@/app/utils/hooks";
-import type { Conversation, Message, Contact } from "@/app/utils/types";
+import type { Conversation, Message } from "@/app/utils/types";
 import { formatPhoneNumber } from "@/app/utils/formatters";
 import { showError } from "@/app/utils/toast";
 import NoPhoneNumber from "../components/NoPhoneNumber";
+import { useRouter, useLocalSearchParams } from "expo-router";
 
 export default function MessagesScreen() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const params = useLocalSearchParams();
   const { data: agentConfig, isLoading: isLoadingAgent } = useAgentQuery();
   const { phoneNumber, isLoading: isLoadingPhone } = useAgentPhoneNumber(
     agentConfig?.id,
@@ -33,11 +34,8 @@ export default function MessagesScreen() {
 
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
-  const [showNewMessageModal, setShowNewMessageModal] = useState(false);
-  const [newRecipient, setNewRecipient] = useState("");
   const [messageText, setMessageText] = useState("");
   const [refreshing, setRefreshing] = useState(false);
-  const [showContactPicker, setShowContactPicker] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   // Fetch conversations
@@ -76,18 +74,6 @@ export default function MessagesScreen() {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const messages: Message[] = messagesData?.data || [];
-
-  // Fetch contacts for picker
-  const { data: contactsData } = useQuery({
-    queryKey: ["contacts"],
-    queryFn: async () => {
-      const response = await apiClient.get("contacts/");
-      console.log("Contacts data:", response);
-      return response;
-    },
-  });
-
-  const contacts: Contact[] = contactsData?.data || [];
 
   // Send message mutation
   const sendMessageMutation = useMutation({
@@ -153,40 +139,6 @@ export default function MessagesScreen() {
     });
   };
 
-  const handleStartNewConversation = () => {
-    if (!newRecipient.trim()) {
-      showError(
-        t("messages.error", "Error"),
-        t("messages.enterNumber", "Please enter a phone number"),
-      );
-      return;
-    }
-
-    // Format the number
-    let formattedNumber = newRecipient.replace(/[\s\-\(\)]/g, "");
-    if (!formattedNumber.startsWith("+")) {
-      formattedNumber = "+1" + formattedNumber; // Default to US
-    }
-
-    setSelectedConversation({
-      other_party: formattedNumber,
-      contact_name: null,
-      contact_id: null,
-      last_message: "",
-      last_message_time: new Date().toISOString(),
-      unread_count: 0,
-      phone_number_id: 0,
-      phone_number_display: phoneNumber || "",
-    });
-    setShowNewMessageModal(false);
-    setNewRecipient("");
-  };
-
-  const handleSelectContact = (contact: Contact) => {
-    setNewRecipient(contact.phone_number);
-    setShowContactPicker(false);
-  };
-
   // Scroll to bottom when messages change
   useEffect(() => {
     if (messages.length > 0 && flatListRef.current) {
@@ -195,6 +147,45 @@ export default function MessagesScreen() {
       }, 100);
     }
   }, [messages]);
+
+  // Handle new conversation from compose screen
+  useEffect(() => {
+    const newConversation = params.newConversation as string;
+    const initialMessage = params.initialMessage as string;
+    
+    if (newConversation && phoneNumber) {
+      // Create the conversation first
+      const newConv: Conversation = {
+        other_party: newConversation,
+        contact_name: null,
+        contact_id: null,
+        last_message: "",
+        last_message_time: new Date().toISOString(),
+        unread_count: 0,
+        phone_number_id: 0,
+        phone_number_display: phoneNumber,
+      };
+      
+      setSelectedConversation(newConv);
+      
+      // If there's an initial message, send it after a small delay
+      if (initialMessage && initialMessage.trim()) {
+        setTimeout(() => {
+          sendMessageMutation.mutate({
+            from_number: phoneNumber,
+            to_number: newConversation,
+            body: initialMessage.trim(),
+          });
+        }, 100);
+      }
+      
+      // Clear the params
+      router.setParams({ 
+        newConversation: undefined,
+        initialMessage: undefined 
+      });
+    }
+  }, [params.newConversation, params.initialMessage, phoneNumber, router]);
 
   // Loading state
   if (isLoadingAgent || isLoadingPhone) {
@@ -392,7 +383,7 @@ export default function MessagesScreen() {
           {t("messages.title", "Messages")}
         </Text>
         <TouchableOpacity
-          onPress={() => setShowNewMessageModal(true)}
+          onPress={() => router.push("/compose-message")}
           style={styles.newMessageButton}
         >
           <Ionicons name="create-outline" size={24} color={Colors.primary} />
@@ -469,7 +460,7 @@ export default function MessagesScreen() {
               </Text>
               <TouchableOpacity
                 style={styles.emptyButton}
-                onPress={() => setShowNewMessageModal(true)}
+                onPress={() => router.push("/compose-message")}
               >
                 <Text style={styles.emptyButtonText}>
                   {t("messages.newMessage", "New Message")}
@@ -479,99 +470,6 @@ export default function MessagesScreen() {
           }
         />
       )}
-
-      {/* New Message Modal */}
-      <Modal
-        visible={showNewMessageModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowNewMessageModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {t("messages.newMessage", "New Message")}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setShowNewMessageModal(false)}
-                style={styles.modalClose}
-              >
-                <Ionicons name="close" size={24} color={Colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.recipientContainer}>
-              <Text style={styles.recipientLabel}>
-                {t("messages.to", "To:")}
-              </Text>
-              <TextInput
-                style={styles.recipientInput}
-                placeholder={t(
-                  "messages.enterPhoneNumber",
-                  "Enter phone number",
-                )}
-                placeholderTextColor={Colors.textLight}
-                value={newRecipient}
-                onChangeText={setNewRecipient}
-                keyboardType="phone-pad"
-              />
-              <TouchableOpacity
-                onPress={() => setShowContactPicker(true)}
-                style={styles.contactPickerButton}
-              >
-                <Ionicons
-                  name="person-add-outline"
-                  size={24}
-                  color={Colors.primary}
-                />
-              </TouchableOpacity>
-            </View>
-
-            {showContactPicker && (
-              <View style={styles.contactPickerList}>
-                <FlatList
-                  data={contacts}
-                  keyExtractor={(item) => item.id.toString()}
-                  style={styles.contactsList}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={styles.contactItem}
-                      onPress={() => handleSelectContact(item)}
-                    >
-                      <Ionicons
-                        name="person-circle-outline"
-                        size={40}
-                        color={Colors.primary}
-                      />
-                      <View style={styles.contactInfo}>
-                        <Text style={styles.contactName}>{item.name}</Text>
-                        <Text style={styles.contactNumber}>
-                          {formatPhoneNumber(item.phone_number)}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  )}
-                  ListEmptyComponent={
-                    <Text style={styles.noContactsText}>
-                      {t("messages.noContacts", "No contacts available")}
-                    </Text>
-                  }
-                />
-              </View>
-            )}
-
-            <TouchableOpacity
-              style={styles.startButton}
-              onPress={handleStartNewConversation}
-            >
-              <Text style={styles.startButtonText}>
-                {t("messages.startConversation", "Start Conversation")}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -805,98 +703,5 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: Colors.textLight,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: Colors.overlay,
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    backgroundColor: Colors.cardBackground,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: "70%",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: Colors.textPrimary,
-  },
-  modalClose: {
-    padding: 4,
-  },
-  recipientContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  recipientLabel: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    marginRight: 8,
-  },
-  recipientInput: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: Colors.textPrimary,
-  },
-  contactPickerButton: {
-    padding: 10,
-    marginLeft: 8,
-  },
-  contactPickerList: {
-    maxHeight: 200,
-    marginBottom: 16,
-  },
-  contactsList: {
-    backgroundColor: Colors.background,
-    borderRadius: 8,
-  },
-  contactItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  contactInfo: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  contactName: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: Colors.textPrimary,
-  },
-  contactNumber: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  noContactsText: {
-    padding: 16,
-    textAlign: "center",
-    color: Colors.textSecondary,
-  },
-  startButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  startButtonText: {
-    color: Colors.textWhite,
-    fontSize: 16,
-    fontWeight: "600",
   },
 });
