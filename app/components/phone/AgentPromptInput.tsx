@@ -5,34 +5,23 @@
  */
 
 import React, { memo } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, TextInput, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Colors } from "@/app/utils/colors";
+import { VoiceInput } from "@/app/components/VoiceInput";
 
 interface AgentPromptInputProps {
   value: string;
   onChangeText: (text: string) => void;
-  isRecording: boolean;
-  isTranscribing: boolean;
-  onToggleRecording: () => void;
   placeholder?: string;
+  language?: string;
 }
 
 export const AgentPromptInput = memo(function AgentPromptInput({
   value,
   onChangeText,
-  isRecording,
-  isTranscribing,
-  onToggleRecording,
   placeholder,
+  language,
 }: AgentPromptInputProps) {
   const { t } = useTranslation();
   const defaultPlaceholder =
@@ -44,45 +33,19 @@ export const AgentPromptInput = memo(function AgentPromptInput({
 
   return (
     <View style={styles.container}>
-      {/* Header with label and microphone button */}
+      {/* Header with label and voice input button */}
       <View style={styles.headerRow}>
         <Text style={styles.label}>
           {t("phone.promptLabel", "Instructions for the agent")}
         </Text>
-        <TouchableOpacity
-          style={[
-            styles.microphoneButton,
-            isRecording && styles.microphoneButtonActive,
-            isTranscribing && styles.microphoneButtonDisabled,
-          ]}
-          onPress={onToggleRecording}
-          disabled={isTranscribing}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name={isRecording ? "stop" : "mic"}
-            size={18}
-            color={isRecording ? "#fff" : Colors.primary}
-          />
-        </TouchableOpacity>
+        <VoiceInput
+          onTranscription={onChangeText}
+          currentValue={value}
+          appendMode={true}
+          size="small"
+          language={language}
+        />
       </View>
-
-      {/* Recording indicator */}
-      {isRecording && (
-        <Text style={styles.recordingIndicator}>
-          {t("phone.recording", "Recording...")}
-        </Text>
-      )}
-
-      {/* Transcribing indicator */}
-      {isTranscribing && (
-        <View style={styles.transcribingIndicator}>
-          <ActivityIndicator size="small" color={Colors.primary} />
-          <Text style={styles.transcribingText}>
-            {t("phone.transcribing", "Transcribing...")}
-          </Text>
-        </View>
-      )}
 
       {/* Text input */}
       <TextInput
@@ -123,42 +86,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: Colors.textPrimary,
     flex: 1,
-  },
-  microphoneButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.backgroundLight,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: Colors.primary,
-  },
-  microphoneButtonActive: {
-    backgroundColor: Colors.error,
-    borderColor: Colors.error,
-  },
-  microphoneButtonDisabled: {
-    opacity: 0.5,
-  },
-  recordingIndicator: {
-    fontSize: 12,
-    color: Colors.error,
-    fontWeight: "600",
-    marginTop: 8,
-    textAlign: "center",
-  },
-  transcribingIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
-    gap: 8,
-  },
-  transcribingText: {
-    fontSize: 12,
-    color: Colors.primary,
-    fontWeight: "600",
   },
   input: {
     fontSize: 14,

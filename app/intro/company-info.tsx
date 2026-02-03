@@ -109,9 +109,9 @@ export default function CompanyInfo() {
         sector: sector as string,
       });
 
-      // Continue to agent setup (pass social_media_and_web for agent creation)
+      // Continue to company services screen (pass social_media_and_web for scraping)
       router.push({
-        pathname: "/intro/agent-setup",
+        pathname: "/intro/company-services",
         params: {
           sector,
           companyName,

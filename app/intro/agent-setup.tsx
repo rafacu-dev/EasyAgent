@@ -13,10 +13,25 @@ import {
   View,
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
 import { apiClient } from "@/app/utils/axios-interceptor";
 import { Colors } from "@/app/utils/colors";
 import { useUpdateAgentMutation } from "@/app/utils/hooks";
 import { showError } from "@/app/utils/toast";
+import { VoiceInput } from "@/app/components/VoiceInput";
+
+// Language options for the agent
+const LANGUAGE_OPTIONS = [
+  { code: "auto", label: "Auto-detect", icon: "globe" },
+  { code: "es", label: "Español", icon: "language" },
+  { code: "en", label: "English", icon: "language" },
+  { code: "fr", label: "Français", icon: "language" },
+  { code: "de", label: "Deutsch", icon: "language" },
+  { code: "pt", label: "Português", icon: "language" },
+  { code: "it", label: "Italiano", icon: "language" },
+] as const;
+
+type LanguageCode = (typeof LANGUAGE_OPTIONS)[number]["code"];
 
 export default function AgentSetup() {
   const { t } = useTranslation();
@@ -25,6 +40,7 @@ export default function AgentSetup() {
   const [agentName, setAgentName] = useState("Alex");
   const [agentGender, setAgentGender] = useState<"male" | "female">("male");
   const [agentDescription, setAgentDescription] = useState("");
+  const [language, setLanguage] = useState<LanguageCode>("auto");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async () => {
@@ -38,6 +54,9 @@ export default function AgentSetup() {
         agent_gender: agentGender,
         agent_description: agentDescription,
         social_media_and_web: (params.socialMediaAndWeb as string) || "",
+        company_services: (params.companyServices as string) || "",
+        company_description: (params.companyDescription as string) || "",
+        language: language,
       });
 
       if (response.data && response.data.id) {
@@ -45,10 +64,13 @@ export default function AgentSetup() {
           id: response.data.id,
           sector: params.sector as string,
           companyName: params.companyName as string,
-          socialMediaAndWeb: params.socialMediaAndWeb as string,
+          socialMediaAndWeb: (params.socialMediaAndWeb as string) || "",
           agentGender: agentGender,
           agentName: agentName,
           agentDescription: agentDescription,
+          companyServices: (params.companyServices as string) || "",
+          companyDescription: (params.companyDescription as string) || "",
+          language: language,
         };
         await updateAgentMutation.mutateAsync(newConfig);
       }
@@ -158,9 +180,18 @@ export default function AgentSetup() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>
-                {t("agentSetup.description")} ({t("common.optional")})
-              </Text>
+              <View style={styles.labelRow}>
+                <Text style={styles.label}>
+                  {t("agentSetup.description")} ({t("common.optional")})
+                </Text>
+                <VoiceInput
+                  onTranscription={setAgentDescription}
+                  currentValue={agentDescription}
+                  appendMode={true}
+                  size="small"
+                  language={language}
+                />
+              </View>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder={t("agentSetup.descriptionPlaceholder")}
@@ -170,6 +201,49 @@ export default function AgentSetup() {
                 multiline
                 numberOfLines={4}
               />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>
+                {t("agentSetup.language", "Agent Language")}
+              </Text>
+              <Text style={styles.languageHelper}>
+                {t(
+                  "agentSetup.languageHelper",
+                  "Choose the language your agent will speak",
+                )}
+              </Text>
+              <View style={styles.languageGrid}>
+                {LANGUAGE_OPTIONS.map((option) => (
+                  <Pressable
+                    key={option.code}
+                    style={[
+                      styles.languageButton,
+                      language === option.code && styles.languageButtonSelected,
+                    ]}
+                    onPress={() => setLanguage(option.code)}
+                  >
+                    <Ionicons
+                      name={option.icon as any}
+                      size={18}
+                      color={
+                        language === option.code
+                          ? Colors.primary
+                          : Colors.textSecondary
+                      }
+                    />
+                    <Text
+                      style={[
+                        styles.languageButtonText,
+                        language === option.code &&
+                          styles.languageButtonTextSelected,
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
           </Animated.View>
 
@@ -229,6 +303,12 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     marginBottom: 16,
   },
+  labelRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
   input: {
     backgroundColor: Colors.cardBackground,
     borderRadius: 12,
@@ -277,6 +357,40 @@ const styles = StyleSheet.create({
   textArea: {
     height: 120,
     textAlignVertical: "top",
+  },
+  languageHelper: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginBottom: 12,
+  },
+  languageGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  languageButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.cardBackground,
+    gap: 6,
+  },
+  languageButtonSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primaryLight,
+  },
+  languageButtonText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    fontWeight: "500",
+  },
+  languageButtonTextSelected: {
+    color: Colors.primary,
+    fontWeight: "600",
   },
   buttonContainer: {
     paddingVertical: 20,

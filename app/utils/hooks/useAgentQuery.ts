@@ -17,6 +17,9 @@ const fetchAgent = async (): Promise<AgentConfig | null> => {
       sector: agentData.sector,
       agentDescription: agentData.agent_description,
       socialMediaAndWeb: agentData.social_media_and_web,
+      companyServices: agentData.company_services || "",
+      companyDescription: agentData.company_description || "",
+      language: agentData.language || "auto",
     };
 
     // Save to cache
@@ -28,13 +31,16 @@ const fetchAgent = async (): Promise<AgentConfig | null> => {
 
 // Update agent on backend
 const updateAgentOnBackend = async (
-  config: AgentConfig
+  config: AgentConfig,
 ): Promise<AgentConfig> => {
   await apiClient.patch(`/agents/${config.id}/`, {
     name: config.agentName,
     agent_gender: config.agentGender,
     agent_description: config.agentDescription,
     social_media_and_web: config.socialMediaAndWeb,
+    company_services: config.companyServices || "",
+    company_description: config.companyDescription || "",
+    language: config.language || "auto",
   });
 
   await saveAgentConfig(config);

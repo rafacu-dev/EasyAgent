@@ -20,6 +20,9 @@ export interface AgentConfig {
   agentGender: "male" | "female";
   agentName: string;
   agentDescription: string;
+  companyServices?: string;
+  companyDescription?: string;
+  language?: string;
 }
 
 export interface AgentContextType {

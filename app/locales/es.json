@@ -305,9 +305,32 @@
     "agentNamePlaceholder": "Ingresa un nombre para tu agente",
     "description": "Descripción",
     "descriptionPlaceholder": "Describe la personalidad o características especiales de tu agente",
+    "language": "Idioma del Agente",
+    "languageHelper": "Selecciona el idioma que hablará tu agente",
     "finish": "Finalizar",
     "creating": "Creando agente...",
     "agentCreated": "¡Tu agente ha sido creado exitosamente y está listo para usar!"
+  },
+  "companyServices": {
+    "title": "Servicios de la Empresa",
+    "subtitle": "Define lo que ofrece tu empresa",
+    "description": "Descripción de la Empresa",
+    "services": "Servicios Ofrecidos",
+    "descriptionHelper": "Breve descripción de tu empresa",
+    "servicesHelper": "Lista los principales servicios o productos que ofreces",
+    "descriptionPlaceholder": "Somos una empresa dedicada a...",
+    "servicesPlaceholder": "Servicio 1, Servicio 2, Servicio 3...",
+    "noUrls": "No se encontraron URLs para analizar",
+    "scraping": "Analizando tu sitio web...",
+    "scrapeFromLinks": "Auto-completar desde tu sitio web",
+    "scrapeSuccess": "¡Información de la empresa extraída exitosamente!",
+    "scrapeFailed": "No se pudo extraer información de las URLs proporcionadas"
+  },
+  "voiceInput": {
+    "permissionDenied": "Permiso de micrófono denegado",
+    "startFailed": "Error al iniciar la grabación",
+    "noSpeech": "No se detectó voz",
+    "processFailed": "Error al procesar el audio"
   },
   "editAgent": {
     "title": "Editar Agente",

@@ -5,7 +5,6 @@
  * Uses useCalendar hook for state management and calendar components for UI
  */
 
-import React from "react";
 import {
   View,
   Text,

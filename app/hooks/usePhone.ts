@@ -11,13 +11,11 @@
 import { useState, useCallback } from "react";
 import { Alert } from "react-native";
 import { useTranslation } from "react-i18next";
-import { Audio } from "expo-av";
 import {
   useAgentQuery,
   useAgentPhoneNumber,
   useVoiceCall,
 } from "@/app/utils/hooks";
-import { transcribeAudio, getTextFromResult } from "@/app/utils/transcription";
 import {
   showError,
   showSuccess,
@@ -50,11 +48,6 @@ export interface UsePhoneReturn {
   setIsAgentMode: (value: boolean) => void;
   callPrompt: string;
   setCallPrompt: (value: string) => void;
-
-  // Recording
-  isRecording: boolean;
-  isTranscribing: boolean;
-  toggleRecording: () => Promise<void>;
 
   // Call Actions
   isLoading: boolean;
@@ -95,11 +88,6 @@ export const usePhone = (): UsePhoneReturn => {
   // Call mode state
   const [isAgentMode, setIsAgentMode] = useState(true);
   const [callPrompt, setCallPrompt] = useState("");
-
-  // Recording state
-  const [isRecording, setIsRecording] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
 
   // Loading state
   const [isLoading, setIsLoading] = useState(false);
@@ -153,99 +141,6 @@ export const usePhone = (): UsePhoneReturn => {
     },
     [],
   );
-
-  // Start recording
-  const startRecording = async () => {
-    try {
-      const permission = await Audio.requestPermissionsAsync();
-
-      if (permission.status !== "granted") {
-        showError(
-          t("phone.permissionDenied", "Permission Denied"),
-          t("phone.microphonePermission", "Microphone access is required"),
-        );
-        return;
-      }
-
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY,
-      );
-      setRecording(recording);
-      setIsRecording(true);
-    } catch (err) {
-      if (__DEV__) console.error("Recording error:", err);
-      showError(
-        t("phone.error", "Error"),
-        t("phone.recordingFailed", "Failed to start recording"),
-      );
-    }
-  };
-
-  // Stop recording and transcribe
-  const stopRecording = async () => {
-    if (!recording) return;
-
-    setIsRecording(false);
-    await recording.stopAndUnloadAsync();
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-    });
-
-    const uri = recording.getURI();
-    setRecording(null);
-
-    if (!uri) {
-      showError(
-        t("phone.error", "Error"),
-        t("phone.recordingFailed", "Failed to save recording"),
-      );
-      return;
-    }
-
-    // Transcribe audio
-    setIsTranscribing(true);
-    try {
-      const result = await transcribeAudio({
-        audioUri: uri,
-        language: "es",
-        translate: false,
-      });
-
-      const text = getTextFromResult(result);
-
-      if (text) {
-        setCallPrompt((prev) => (prev ? `${prev} ${text}` : text));
-      } else {
-        showInfo(
-          t("phone.info", "Info"),
-          t("phone.noTranscription", "No speech detected in the recording"),
-        );
-      }
-    } catch (error: any) {
-      console.error("Transcription error:", error);
-      showError(
-        t("phone.error", "Error"),
-        error.message ||
-          t("phone.transcriptionFailed", "Failed to transcribe audio"),
-      );
-    } finally {
-      setIsTranscribing(false);
-    }
-  };
-
-  // Toggle recording
-  const toggleRecording = async () => {
-    if (isRecording) {
-      await stopRecording();
-    } else {
-      await startRecording();
-    }
-  };
 
   // Execute call
   const executeCall = async (formattedInput: string) => {
@@ -345,11 +240,6 @@ export const usePhone = (): UsePhoneReturn => {
     setIsAgentMode,
     callPrompt,
     setCallPrompt,
-
-    // Recording
-    isRecording,
-    isTranscribing,
-    toggleRecording,
 
     // Call Actions
     isLoading,

@@ -305,9 +305,32 @@
     "agentNamePlaceholder": "Enter a name for your agent",
     "description": "Description",
     "descriptionPlaceholder": "Describe your agent's personality or special characteristics",
+    "language": "Agent Language",
+    "languageHelper": "Select the language your agent will speak",
     "finish": "Finish",
     "creating": "Creating agent...",
     "agentCreated": "Your agent has been successfully created and is ready to use!"
+  },
+  "companyServices": {
+    "title": "Company Services",
+    "subtitle": "Define what your company offers",
+    "description": "Company Description",
+    "services": "Services Offered",
+    "descriptionHelper": "Brief description of your company",
+    "servicesHelper": "List the main services or products you offer",
+    "descriptionPlaceholder": "We are a company dedicated to...",
+    "servicesPlaceholder": "Service 1, Service 2, Service 3...",
+    "noUrls": "No URLs found to scrape",
+    "scraping": "Analyzing your website...",
+    "scrapeFromLinks": "Auto-fill from your website",
+    "scrapeSuccess": "Successfully extracted company information!",
+    "scrapeFailed": "Could not extract information from the provided URLs"
+  },
+  "voiceInput": {
+    "permissionDenied": "Microphone permission denied",
+    "startFailed": "Failed to start recording",
+    "noSpeech": "No speech detected",
+    "processFailed": "Failed to process audio"
   },
   "editAgent": {
     "title": "Edit Agent",

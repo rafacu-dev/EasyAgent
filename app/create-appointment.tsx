@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Colors } from "@/app/utils/colors";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
@@ -43,13 +44,51 @@ export default function CreateAppointmentScreen() {
     notes: "",
   });
 
+  // Date and time picker visibility states
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedTime, setSelectedTime] = useState<Date>(new Date());
+
   // Set the date from params only once when component mounts
   useEffect(() => {
-    const selectedDate = params.date as string;
-    if (selectedDate) {
-      setFormData((prev) => ({ ...prev, date: selectedDate }));
+    const dateParam = params.date as string;
+    if (dateParam) {
+      setFormData((prev) => ({ ...prev, date: dateParam }));
+      // Parse the date parameter and set it to the date picker
+      const parsedDate = new Date(dateParam);
+      if (!isNaN(parsedDate.getTime())) {
+        setSelectedDate(parsedDate);
+      }
     }
   }, []);
+
+  // Handle date change
+  const onDateChange = (event: any, date?: Date) => {
+    setShowDatePicker(Platform.OS === "ios");
+    if (date) {
+      setSelectedDate(date);
+      // Format date as YYYY-MM-DD
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const formattedDate = `${year}-${month}-${day}`;
+      setFormData((prev) => ({ ...prev, date: formattedDate }));
+    }
+  };
+
+  // Handle time change
+  const onTimeChange = (event: any, time?: Date) => {
+    setShowTimePicker(Platform.OS === "ios");
+    if (time) {
+      setSelectedTime(time);
+      // Format time as HH:MM
+      const hours = String(time.getHours()).padStart(2, "0");
+      const minutes = String(time.getMinutes()).padStart(2, "0");
+      const formattedTime = `${hours}:${minutes}`;
+      setFormData((prev) => ({ ...prev, start_time: formattedTime }));
+    }
+  };
 
   // Create appointment mutation
   const createMutation = useMutation({
@@ -144,165 +183,191 @@ export default function CreateAppointmentScreen() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         <ScrollView style={styles.scrollView}>
-        <View style={styles.formContainer}>
-          <Text style={styles.inputLabel}>
-            {t("calendar.appointmentTitle", "Title")} *
-          </Text>
-          <TextInput
-            style={styles.input}
-            value={formData.title}
-            onChangeText={(text) =>
-              setFormData((prev) => ({ ...prev, title: text }))
-            }
-            placeholder={t("calendar.titlePlaceholder", "Appointment title")}
-            placeholderTextColor={Colors.textLight}
-          />
-
-          <Text style={styles.inputLabel}>
-            {t("calendar.date", "Date")} *
-          </Text>
-          <TextInput
-            style={styles.input}
-            value={formData.date}
-            onChangeText={(text) =>
-              setFormData((prev) => ({ ...prev, date: text }))
-            }
-            placeholder={t("calendar.datePlaceholder", "YYYY-MM-DD")}
-            placeholderTextColor={Colors.textLight}
-          />
-
-          <Text style={styles.inputLabel}>
-            {t("calendar.time", "Time")} *
-          </Text>
-          <TextInput
-            style={styles.input}
-            value={formData.start_time}
-            onChangeText={(text) =>
-              setFormData((prev) => ({ ...prev, start_time: text }))
-            }
-            placeholder={t(
-              "calendar.timePlaceholder",
-              "HH:MM (e.g., 14:30)",
-            )}
-            placeholderTextColor={Colors.textLight}
-          />
-
-          <Text style={styles.inputLabel}>
-            {t("calendar.duration", "Duration (minutes)")}
-          </Text>
-          <TextInput
-            style={styles.input}
-            value={formData.duration_minutes}
-            onChangeText={(text) =>
-              setFormData((prev) => ({ ...prev, duration_minutes: text }))
-            }
-            placeholder={t("calendar.durationPlaceholder", "30")}
-            keyboardType="numeric"
-            placeholderTextColor={Colors.textLight}
-          />
-
-          <Text style={styles.inputLabel}>
-            {t("calendar.clientName", "Client Name")} *
-          </Text>
-          <TextInput
-            style={styles.input}
-            value={formData.client_name}
-            onChangeText={(text) =>
-              setFormData((prev) => ({ ...prev, client_name: text }))
-            }
-            placeholder={t("calendar.clientNamePlaceholder", "Client's name")}
-            placeholderTextColor={Colors.textLight}
-          />
-
-          <Text style={styles.inputLabel}>
-            {t("calendar.clientPhone", "Client Phone")}
-          </Text>
-          <TextInput
-            style={styles.input}
-            value={formData.client_phone}
-            onChangeText={(text) =>
-              setFormData((prev) => ({ ...prev, client_phone: text }))
-            }
-            placeholder={t("calendar.clientPhonePlaceholder", "+1234567890")}
-            keyboardType="phone-pad"
-            placeholderTextColor={Colors.textLight}
-          />
-
-          <Text style={styles.inputLabel}>
-            {t("calendar.clientEmail", "Client Email")}
-          </Text>
-          <TextInput
-            style={styles.input}
-            value={formData.client_email}
-            onChangeText={(text) =>
-              setFormData((prev) => ({ ...prev, client_email: text }))
-            }
-            placeholder={t(
-              "calendar.clientEmailPlaceholder",
-              "email@example.com",
-            )}
-            keyboardType="email-address"
-            placeholderTextColor={Colors.textLight}
-          />
-
-          <Text style={styles.inputLabel}>
-            {t("calendar.description", "Description")}
-          </Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={formData.description}
-            onChangeText={(text) =>
-              setFormData((prev) => ({ ...prev, description: text }))
-            }
-            placeholder={t(
-              "calendar.descriptionPlaceholder",
-              "Appointment details...",
-            )}
-            multiline
-            numberOfLines={3}
-            placeholderTextColor={Colors.textLight}
-          />
-
-          <Text style={styles.inputLabel}>
-            {t("calendar.notes", "Notes")}
-          </Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={formData.notes}
-            onChangeText={(text) =>
-              setFormData((prev) => ({ ...prev, notes: text }))
-            }
-            placeholder={t("calendar.notesPlaceholder", "Additional notes...")}
-            multiline
-            numberOfLines={3}
-            placeholderTextColor={Colors.textLight}
-          />
-        </View>
-      </ScrollView>
-
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.cancelButton}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.cancelButtonText}>
-            {t("common.cancel", "Cancel")}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={handleCreateAppointment}
-          disabled={createMutation.isPending}
-        >
-          {createMutation.isPending ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.saveButtonText}>
-              {t("common.save", "Save")}
+          <View style={styles.formContainer}>
+            <Text style={styles.inputLabel}>
+              {t("calendar.appointmentTitle", "Title")} *
             </Text>
-          )}
-        </TouchableOpacity>
-      </View>
+            <TextInput
+              style={styles.input}
+              value={formData.title}
+              onChangeText={(text) =>
+                setFormData((prev) => ({ ...prev, title: text }))
+              }
+              placeholder={t("calendar.titlePlaceholder", "Appointment title")}
+              placeholderTextColor={Colors.textLight}
+            />
+
+            <Text style={styles.inputLabel}>
+              {t("calendar.date", "Date")} *
+            </Text>
+            <TouchableOpacity
+              style={styles.input}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text
+                style={
+                  formData.date ? styles.inputText : styles.placeholderText
+                }
+              >
+                {formData.date || t("calendar.datePlaceholder", "YYYY-MM-DD")}
+              </Text>
+            </TouchableOpacity>
+            {showDatePicker && (
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                onChange={onDateChange}
+              />
+            )}
+
+            <Text style={styles.inputLabel}>
+              {t("calendar.time", "Time")} *
+            </Text>
+            <TouchableOpacity
+              style={styles.input}
+              onPress={() => setShowTimePicker(true)}
+            >
+              <Text
+                style={
+                  formData.start_time
+                    ? styles.inputText
+                    : styles.placeholderText
+                }
+              >
+                {formData.start_time ||
+                  t("calendar.timePlaceholder", "HH:MM (e.g., 14:30)")}
+              </Text>
+            </TouchableOpacity>
+            {showTimePicker && (
+              <DateTimePicker
+                value={selectedTime}
+                mode="time"
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                onChange={onTimeChange}
+                is24Hour={true}
+              />
+            )}
+
+            <Text style={styles.inputLabel}>
+              {t("calendar.duration", "Duration (minutes)")}
+            </Text>
+            <TextInput
+              style={styles.input}
+              value={formData.duration_minutes}
+              onChangeText={(text) =>
+                setFormData((prev) => ({ ...prev, duration_minutes: text }))
+              }
+              placeholder={t("calendar.durationPlaceholder", "30")}
+              keyboardType="numeric"
+              placeholderTextColor={Colors.textLight}
+            />
+
+            <Text style={styles.inputLabel}>
+              {t("calendar.clientName", "Client Name")} *
+            </Text>
+            <TextInput
+              style={styles.input}
+              value={formData.client_name}
+              onChangeText={(text) =>
+                setFormData((prev) => ({ ...prev, client_name: text }))
+              }
+              placeholder={t("calendar.clientNamePlaceholder", "Client's name")}
+              placeholderTextColor={Colors.textLight}
+            />
+
+            <Text style={styles.inputLabel}>
+              {t("calendar.clientPhone", "Client Phone")}
+            </Text>
+            <TextInput
+              style={styles.input}
+              value={formData.client_phone}
+              onChangeText={(text) =>
+                setFormData((prev) => ({ ...prev, client_phone: text }))
+              }
+              placeholder={t("calendar.clientPhonePlaceholder", "+1234567890")}
+              keyboardType="phone-pad"
+              placeholderTextColor={Colors.textLight}
+            />
+
+            <Text style={styles.inputLabel}>
+              {t("calendar.clientEmail", "Client Email")}
+            </Text>
+            <TextInput
+              style={styles.input}
+              value={formData.client_email}
+              onChangeText={(text) =>
+                setFormData((prev) => ({ ...prev, client_email: text }))
+              }
+              placeholder={t(
+                "calendar.clientEmailPlaceholder",
+                "email@example.com",
+              )}
+              keyboardType="email-address"
+              placeholderTextColor={Colors.textLight}
+            />
+
+            <Text style={styles.inputLabel}>
+              {t("calendar.description", "Description")}
+            </Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={formData.description}
+              onChangeText={(text) =>
+                setFormData((prev) => ({ ...prev, description: text }))
+              }
+              placeholder={t(
+                "calendar.descriptionPlaceholder",
+                "Appointment details...",
+              )}
+              multiline
+              numberOfLines={3}
+              placeholderTextColor={Colors.textLight}
+            />
+
+            <Text style={styles.inputLabel}>
+              {t("calendar.notes", "Notes")}
+            </Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={formData.notes}
+              onChangeText={(text) =>
+                setFormData((prev) => ({ ...prev, notes: text }))
+              }
+              placeholder={t(
+                "calendar.notesPlaceholder",
+                "Additional notes...",
+              )}
+              multiline
+              numberOfLines={3}
+              placeholderTextColor={Colors.textLight}
+            />
+          </View>
+        </ScrollView>
+
+        <View style={styles.footer}>
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.cancelButtonText}>
+              {t("common.cancel", "Cancel")}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleCreateAppointment}
+            disabled={createMutation.isPending}
+          >
+            {createMutation.isPending ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.saveButtonText}>
+                {t("common.save", "Save")}
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </KeyboardAvoidingView>
     </>
   );
@@ -368,6 +433,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.textPrimary,
     backgroundColor: Colors.backgroundLight,
+  },
+  inputText: {
+    fontSize: 16,
+    color: Colors.textPrimary,
+  },
+  placeholderText: {
+    fontSize: 16,
+    color: Colors.textLight,
   },
   textArea: {
     height: 80,

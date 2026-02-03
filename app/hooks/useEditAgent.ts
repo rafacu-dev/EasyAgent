@@ -13,6 +13,9 @@ export interface AgentFormData {
   sector: string;
   companyName: string;
   socialMediaAndWeb: string;
+  companyServices: string;
+  companyDescription: string;
+  language: string;
   agentId: string | undefined;
 }
 
@@ -39,6 +42,9 @@ export function useEditAgent(): UseEditAgentReturn {
     sector: agentConfig?.sector || "",
     companyName: agentConfig?.companyName || "",
     socialMediaAndWeb: agentConfig?.socialMediaAndWeb || "",
+    companyServices: agentConfig?.companyServices || "",
+    companyDescription: agentConfig?.companyDescription || "",
+    language: agentConfig?.language || "auto",
     agentId: agentConfig?.id,
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -52,6 +58,9 @@ export function useEditAgent(): UseEditAgentReturn {
         sector: agentConfig.sector || "",
         companyName: agentConfig.companyName || "",
         socialMediaAndWeb: agentConfig.socialMediaAndWeb || "",
+        companyServices: agentConfig.companyServices || "",
+        companyDescription: agentConfig.companyDescription || "",
+        language: agentConfig.language || "auto",
         agentId: agentConfig.id,
       });
     }
@@ -85,6 +94,9 @@ export function useEditAgent(): UseEditAgentReturn {
         agentGender: formData.agentGender,
         agentName: formData.agentName,
         agentDescription: formData.agentDescription,
+        companyServices: formData.companyServices,
+        companyDescription: formData.companyDescription,
+        language: formData.language,
       };
 
       await updateAgentMutation.mutateAsync(updatedConfig);

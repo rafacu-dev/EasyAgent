@@ -34,6 +34,7 @@ export default function PhoneScreen() {
 
   const {
     // Data
+    agentConfig,
     phoneNumber,
     isLoadingAgent,
     isLoadingPhone,
@@ -50,11 +51,6 @@ export default function PhoneScreen() {
     setIsAgentMode,
     callPrompt,
     setCallPrompt,
-
-    // Recording
-    isRecording,
-    isTranscribing,
-    toggleRecording,
 
     // Call Actions
     isLoading,
@@ -159,9 +155,7 @@ export default function PhoneScreen() {
             <AgentPromptInput
               value={callPrompt}
               onChangeText={setCallPrompt}
-              isRecording={isRecording}
-              isTranscribing={isTranscribing}
-              onToggleRecording={toggleRecording}
+              language={agentConfig?.language}
             />
           )}
           {/* Phone Number Display */}
