@@ -155,7 +155,6 @@ export const getAllContacts = async (
 
     // Filter out contacts without proper names (likely auto-added by WhatsApp, etc.)
     const validContacts = data.filter((contact) => {
-      console.log("Checking contact:", contact);
       if (!contact.phoneNumbers) {
         return false;
       }

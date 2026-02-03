@@ -71,7 +71,7 @@ export const MessageThread = memo(function MessageThread({
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 50}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 50}
     >
       {/* Thread Header */}
       <View style={styles.header}>

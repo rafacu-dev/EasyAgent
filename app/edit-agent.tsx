@@ -195,7 +195,6 @@ export default function EditAgent() {
                   currentValue={formData.agentDescription}
                   appendMode={true}
                   size="small"
-                  language={formData.language}
                 />
               </View>
               <TextInput
@@ -287,7 +286,6 @@ export default function EditAgent() {
                   currentValue={formData.companyDescription}
                   appendMode={true}
                   size="small"
-                  language={formData.language}
                 />
               </View>
               <Text style={styles.helperText}>
@@ -324,7 +322,6 @@ export default function EditAgent() {
                   currentValue={formData.companyServices}
                   appendMode={true}
                   size="small"
-                  language={formData.language}
                 />
               </View>
               <Text style={styles.helperText}>

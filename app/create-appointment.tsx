@@ -180,7 +180,7 @@ export default function CreateAppointmentScreen() {
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 30}
       >
         <ScrollView style={styles.scrollView}>
           <View style={styles.formContainer}>
@@ -376,14 +376,12 @@ export default function CreateAppointmentScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
   },
   formContainer: {
     padding: 20,
-    paddingBottom: 100,
   },
   footer: {
     flexDirection: "row",

@@ -5,7 +5,7 @@ import { Colors } from "@/app/utils/colors";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { queryClient } from "@/app/utils/queryClient";
 import { useEffect, useRef } from "react";
-import { AppState, AppStateStatus, Platform } from "react-native";
+import { AppState, AppStateStatus, Platform, StatusBar } from "react-native";
 import { saveLastLogin, getAuthToken } from "@/app/utils/storage";
 import * as Updates from "expo-updates";
 import Purchases, { LOG_LEVEL } from "react-native-purchases";
@@ -162,14 +162,20 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent={true}
+      />
       <AppStateHandler>
         <NotificationProvider>
           <Stack
             screenOptions={{
               headerShown: false,
               contentStyle: {
-                paddingTop: Constants.statusBarHeight,
                 backgroundColor: Colors.background,
+                paddingTop:
+                  Platform.OS === "android" ? Constants.statusBarHeight : 0,
               },
             }}
           >
@@ -177,12 +183,14 @@ export default function RootLayout() {
               name="create-appointment"
               options={{
                 presentation: "modal",
+                contentStyle: { backgroundColor: Colors.background },
               }}
             />
             <Stack.Screen
               name="compose-message"
               options={{
                 presentation: "modal",
+                contentStyle: { backgroundColor: Colors.background },
               }}
             />
           </Stack>

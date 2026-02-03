@@ -189,7 +189,6 @@ export default function AgentSetup() {
                   currentValue={agentDescription}
                   appendMode={true}
                   size="small"
-                  language={language}
                 />
               </View>
               <TextInput

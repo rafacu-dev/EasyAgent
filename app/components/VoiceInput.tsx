@@ -27,8 +27,6 @@ export interface VoiceInputProps {
   appendMode?: boolean;
   /** Current value (used in append mode) */
   currentValue?: string;
-  /** Language code for transcription (ISO-639-1) */
-  language?: string;
   /** Custom size for the button */
   size?: "small" | "medium" | "large";
   /** Whether the component is disabled */
@@ -43,7 +41,6 @@ export function VoiceInput({
   onTranscription,
   appendMode = false,
   currentValue = "",
-  language,
   size = "medium",
   disabled = false,
   buttonStyle,
@@ -51,7 +48,7 @@ export function VoiceInput({
   const { t, i18n } = useTranslation();
 
   // Use i18n language if no language prop is provided
-  const transcriptionLanguage = language || i18n.language;
+  const transcriptionLanguage = i18n.language;
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);

@@ -80,7 +80,7 @@ export default function ComposeMessageScreen() {
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 30}
       >
         <View style={styles.content}>
           <View style={styles.recipientContainer}>
