@@ -1,5 +1,4 @@
-export const BaseUrl =
-  "https://coeternally-pedatifid-elana.ngrok-free.dev/api/";
+export const BaseUrl = "https://apieasyagent.onrender.com/api/";
 
 // Centralized storage keys to avoid typos and ensure consistency
 export const STORAGE_KEYS = {

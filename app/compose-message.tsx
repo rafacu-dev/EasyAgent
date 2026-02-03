@@ -12,11 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Stack, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useAgentPhoneNumber, useAgentQuery } from "@/app/utils/hooks";
-import {
-  formatPhoneNumber,
-  normalizePhoneNumber,
-} from "@/app/utils/formatters";
+import { normalizePhoneNumber } from "@/app/utils/formatters";
 import { showError } from "@/app/utils/toast";
 import { ContactPicker } from "@/app/components/ContactPicker";
 import type { DeviceContact } from "@/app/utils/contactService";
@@ -24,8 +20,6 @@ import type { DeviceContact } from "@/app/utils/contactService";
 export default function ComposeMessageScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { data: agentConfig } = useAgentQuery();
-  const { phoneNumber } = useAgentPhoneNumber(agentConfig?.id);
   const [newRecipient, setNewRecipient] = useState("");
   const [showContactPicker, setShowContactPicker] = useState(false);
   const [messageText, setMessageText] = useState("");
