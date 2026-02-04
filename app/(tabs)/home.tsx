@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useTranslation } from "react-i18next";
 import Constants from "expo-constants";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,6 +23,11 @@ import {
 
 export default function HomeScreen() {
   const { t } = useTranslation();
+
+  // Test alert
+  React.useEffect(() => {
+    Alert.alert("Prueba", "Este es un alert de prueba en home.tsx");
+  }, []);
 
   const {
     // Loading states
