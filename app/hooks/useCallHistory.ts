@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/app/utils/axios-interceptor";
-import { useAgentQuery } from "@/app/utils/hooks";
+import { useAgentQuery } from "@/app/hooks";
 import type { RecentCallItem } from "@/app/utils/types";
 import {
   formatDuration,

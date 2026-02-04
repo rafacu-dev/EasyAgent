@@ -140,13 +140,6 @@ export default function CompanyServices() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Auto-scrape if we have URLs from social media field
-  useEffect(() => {
-    if (socialMediaAndWeb && socialMediaAndWeb.trim() !== "") {
-      handleScrape();
-    }
-  }, [socialMediaAndWeb, handleScrape]);
-
   const handleSubmit = () => {
     // Continue to agent setup with all collected data
     router.push({

@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Updates from "expo-updates";
 import FirstLoginView from "./intro/FirstLoginView";
-import { useAgentQuery } from "@/app/utils/hooks";
+import { useAgentQuery } from "@/app/hooks";
 import { useTranslation } from "react-i18next";
 import { Colors } from "@/app/utils/colors";
 
@@ -20,18 +20,24 @@ export default function Index() {
     const checkForUpdates = async () => {
       const startTime = Date.now();
       const minimumSplashDuration = 3000; // 3 seconds
-      
+
       try {
         if (!__DEV__) {
-          setUpdateStatus(t("index.checkingUpdates", "Buscando actualizaciones..."));
-          
+          setUpdateStatus(
+            t("index.checkingUpdates", "Buscando actualizaciones..."),
+          );
+
           const update = await Updates.checkForUpdateAsync();
-          
+
           if (update.isAvailable) {
-            setUpdateStatus(t("index.downloadingUpdate", "Descargando actualización..."));
+            setUpdateStatus(
+              t("index.downloadingUpdate", "Descargando actualización..."),
+            );
             await Updates.fetchUpdateAsync();
-            
-            setUpdateStatus(t("index.applyingUpdate", "Aplicando actualización..."));
+
+            setUpdateStatus(
+              t("index.applyingUpdate", "Aplicando actualización..."),
+            );
             await Updates.reloadAsync();
             // Si llegamos aquí, la app se reinició con la nueva versión
           }
@@ -43,11 +49,11 @@ export default function Index() {
         // Ensure splash screen shows for at least 3 seconds
         const elapsedTime = Date.now() - startTime;
         const remainingTime = minimumSplashDuration - elapsedTime;
-        
+
         if (remainingTime > 0) {
-          await new Promise(resolve => setTimeout(resolve, remainingTime));
+          await new Promise((resolve) => setTimeout(resolve, remainingTime));
         }
-        
+
         setIsCheckingUpdates(false);
       }
     };
@@ -87,7 +93,11 @@ export default function Index() {
           style={styles.splashIcon}
           resizeMode="contain"
         />
-        <ActivityIndicator size="large" color={Colors.primary} style={styles.loader} />
+        <ActivityIndicator
+          size="large"
+          color={Colors.primary}
+          style={styles.loader}
+        />
         <Text style={styles.updateText}>{updateStatus}</Text>
       </View>
     );

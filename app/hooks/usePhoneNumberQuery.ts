@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "../axios-interceptor";
-import type { PhoneNumberData } from "../types.d";
+import { apiClient } from "@/app/utils/axios-interceptor";
+import type { PhoneNumberData } from "@/app/utils/types.d";
 
 // Fetch phone numbers
 const fetchPhoneNumbers = async (): Promise<PhoneNumberData[]> => {

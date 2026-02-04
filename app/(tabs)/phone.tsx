@@ -61,7 +61,6 @@ export default function PhoneScreen() {
     formattedDuration,
     hangUp,
     toggleMute,
-    toggleHold,
     toggleSpeaker,
 
     // Contact Picker
@@ -119,7 +118,6 @@ export default function PhoneScreen() {
         phoneNumber={phoneNumberInput}
         onHangUp={hangUp}
         onToggleMute={toggleMute}
-        onToggleHold={toggleHold}
         onToggleSpeaker={toggleSpeaker}
       />
     );
@@ -163,6 +161,7 @@ export default function PhoneScreen() {
             phoneNumber={phoneNumberInput}
             onClear={handleClear}
             onOpenContacts={() => setShowContactsModal(true)}
+            onChange={setPhoneNumberInput}
           />
         </ScrollView>
 

@@ -11,16 +11,18 @@ import { Colors } from "@/app/utils/colors";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
-import { clearAuthData } from "@/app/utils/storage";
+import { clearAllData } from "@/app/utils/storage";
 import { router } from "expo-router";
-import { useAgentQuery, useAgentPhoneNumber } from "@/app/utils/hooks";
+import { useAgentQuery, useAgentPhoneNumber } from "@/app/hooks";
 import { showWarning, showError, showSuccess } from "@/app/utils/toast";
 import { showDestructiveAlert } from "@/app/utils/alert";
 import { apiClient } from "@/app/utils/axios-interceptor";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { data: agentConfig } = useAgentQuery();
   const { phoneNumber } = useAgentPhoneNumber(agentConfig?.id);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -82,8 +84,20 @@ export default function SettingsScreen() {
       t("settings.logoutTitle", "Logout"),
       t("settings.logoutMessage", "Are you sure you want to logout?"),
       async () => {
-        await clearAuthData();
-        router.replace("/login" as any);
+        try {
+          // Clear all AsyncStorage data
+          await clearAllData();
+
+          // Clear React Query cache
+          queryClient.clear();
+
+          // Navigate to login
+          router.replace("/login" as any);
+        } catch (error) {
+          console.error("Error during logout:", error);
+          // Still navigate to login even if clearing fails
+          router.replace("/login" as any);
+        }
       },
       t("settings.logout", "Logout"),
       t("common.cancel", "Cancel"),
@@ -108,7 +122,9 @@ export default function SettingsScreen() {
               "Your company has been deleted successfully.",
             ),
           );
-          await clearAuthData();
+          // Clear all data after company deletion
+          await clearAllData();
+          queryClient.clear();
           router.replace("/login" as any);
         } catch (error: any) {
           const errorMessage =

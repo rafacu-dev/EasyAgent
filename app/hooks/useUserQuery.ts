@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiClient } from "../axios-interceptor";
-import { STORAGE_KEYS } from "../storage";
-import type { UserProfile, UserTier } from "../types";
+import { apiClient } from "@/app/utils/axios-interceptor";
+import { STORAGE_KEYS } from "@/app/utils/storage";
+import type { UserProfile, UserTier } from "@/app/utils/types";
 
 // Fetch user profile from API
 const fetchUserProfile = async (): Promise<UserProfile> => {

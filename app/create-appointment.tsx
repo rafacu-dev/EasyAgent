@@ -13,7 +13,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Colors } from "@/app/utils/colors";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
-import { useAgentQuery } from "@/app/utils/hooks";
+import { useAgentQuery } from "@/app/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/app/utils/axios-interceptor";
 import { showError, showSuccess } from "@/app/utils/toast";
@@ -65,7 +65,10 @@ export default function CreateAppointmentScreen() {
 
   // Handle date change
   const onDateChange = (event: any, date?: Date) => {
-    setShowDatePicker(Platform.OS === "ios");
+    if (event.type === "dismissed") {
+      setShowDatePicker(false);
+      return;
+    }
     if (date) {
       setSelectedDate(date);
       // Format date as YYYY-MM-DD
@@ -74,12 +77,19 @@ export default function CreateAppointmentScreen() {
       const day = String(date.getDate()).padStart(2, "0");
       const formattedDate = `${year}-${month}-${day}`;
       setFormData((prev) => ({ ...prev, date: formattedDate }));
+      // Hide picker after selection on Android, keep open on iOS until dismissed
+      if (Platform.OS === "android") {
+        setShowDatePicker(false);
+      }
     }
   };
 
   // Handle time change
   const onTimeChange = (event: any, time?: Date) => {
-    setShowTimePicker(Platform.OS === "ios");
+    if (event.type === "dismissed") {
+      setShowTimePicker(false);
+      return;
+    }
     if (time) {
       setSelectedTime(time);
       // Format time as HH:MM
@@ -87,6 +97,10 @@ export default function CreateAppointmentScreen() {
       const minutes = String(time.getMinutes()).padStart(2, "0");
       const formattedTime = `${hours}:${minutes}`;
       setFormData((prev) => ({ ...prev, start_time: formattedTime }));
+      // Hide picker after selection on Android, keep open on iOS until dismissed
+      if (Platform.OS === "android") {
+        setShowTimePicker(false);
+      }
     }
   };
 
@@ -216,7 +230,7 @@ export default function CreateAppointmentScreen() {
               <DateTimePicker
                 value={selectedDate}
                 mode="date"
-                display={Platform.OS === "ios" ? "spinner" : "default"}
+                display="default"
                 onChange={onDateChange}
               />
             )}
@@ -243,7 +257,7 @@ export default function CreateAppointmentScreen() {
               <DateTimePicker
                 value={selectedTime}
                 mode="time"
-                display={Platform.OS === "ios" ? "spinner" : "default"}
+                display="default"
                 onChange={onTimeChange}
                 is24Hour={true}
               />

@@ -73,9 +73,13 @@ export const ContactPicker: React.FC<ContactPickerProps> = ({
   // Handle contact selection
   const handleSelectContact = useCallback(
     (contact: DeviceContact) => {
-      // If contact has multiple phone numbers, show selection
+      // If contact has multiple phone numbers, toggle expansion
       if (contact.phoneNumbers.length > 1) {
-        setSelectedPhoneIndex({ contactId: contact.id, index: -1 });
+        setSelectedPhoneIndex((prev) =>
+          prev?.contactId === contact.id
+            ? null
+            : { contactId: contact.id, index: -1 },
+        );
         return;
       }
 

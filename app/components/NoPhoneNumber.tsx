@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 import { Colors } from "@/app/utils/colors";
-import { useUserQuery } from "@/app/utils/hooks";
+import { useUserQuery } from "@/app/hooks";
 import { showWarning } from "@/app/utils/toast";
 
 interface NoPhoneNumberProps {

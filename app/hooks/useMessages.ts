@@ -15,7 +15,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useLocalSearchParams, Href } from "expo-router";
 import { apiClient } from "@/app/utils/axios-interceptor";
-import { useAgentPhoneNumber, useAgentQuery } from "@/app/utils/hooks";
+import { useAgentPhoneNumber, useAgentQuery } from "@/app/hooks";
 import { showError } from "@/app/utils/toast";
 import type { Conversation, Message } from "@/app/utils/types";
 import { useContactLookup } from "./useContactLookup";

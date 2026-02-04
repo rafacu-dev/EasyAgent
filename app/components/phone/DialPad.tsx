@@ -38,7 +38,7 @@ export const DialPad = memo(function DialPad({
   showBackspace = true,
 }: DialPadProps) {
   const handleDigitPress = (digit: string) => {
-    Vibration.vibrate(10);
+    Vibration.vibrate(1);
     onDigitPress(digit);
   };
 

@@ -145,7 +145,7 @@
     "subtitle": "Realiza llamadas con tu agente IA",
     "confirmCallTitle": "Confirmar Llamada",
     "confirmCallMessage": "¿Deseas llamar a ",
-    "enterNumber": "Ingresa Número de Teléfono",
+    "enterNumber": "Número de Teléfono",
     "makeCall": "Hacer Llamada",
     "call": "Llamar",
     "agentMode": "Llamada con IA",
@@ -554,13 +554,20 @@
     "updateFailed": "Error al actualizar contacto",
     "deleteFailed": "Error al eliminar contacto",
     "confirmDelete": "Eliminar Contacto",
-    "confirmDeleteMessage": "¿Estás seguro de que quieres eliminar a {{name}}?"
+    "confirmDeleteMessage": "¿Estás seguro de que quieres eliminar a ?",
+    "addContactsToDevice": "Agrega contactos a tu dispositivo para verlos aquí",
+    "multiplePhones": "{{count}} números de teléfono",
+    "loading": "Cargando contactos...",
+    "searchPlaceholder": "Buscar contactos...",
+    "noResults": "No se encontraron contactos",
+    "tryDifferentSearch": "Prueba con otra búsqueda",
+    "phonesCount": "{{count}} números de teléfono"
   },
   "messages": {
     "title": "Mensajes",
     "newMessage": "Nuevo Mensaje",
     "to": "Para:",
-    "enterPhoneNumber": "Ingresa número de teléfono",
+    "enterPhoneNumber": "Número teléfono",
     "startConversation": "Iniciar Conversación",
     "noConversations": "Aún no hay conversaciones",
     "startMessaging": "Toca el botón de redactar para comenzar a enviar mensajes",
@@ -573,6 +580,7 @@
     "googlefiNotes": "Google Fi usa códigos GSM. Estos funcionan cuando estás conectado a las redes T-Mobile o US Cellular.",
     "noContacts": "No hay contactos disponibles",
     "typeMessage": "Escribe un mensaje...",
-    "noMessages": "Aún no hay mensajes"
+    "noMessages": "Aún no hay mensajes",
+    "sendMessage": "Enviar Mensaje"
   }
 }

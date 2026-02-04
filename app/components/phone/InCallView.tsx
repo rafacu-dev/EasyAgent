@@ -15,7 +15,7 @@ interface CallState {
   isConnecting: boolean;
   isMuted: boolean;
   isOnHold: boolean;
-  isSpeaker: boolean;
+  isSpeakerOn: boolean;
   remoteParticipant: string | null;
 }
 
@@ -25,8 +25,8 @@ interface InCallViewProps {
   phoneNumber: string;
   onHangUp: () => void;
   onToggleMute: () => void;
-  onToggleHold: () => void;
   onToggleSpeaker: () => void;
+  onOpenDialPad?: () => void;
 }
 
 export const InCallView = memo(function InCallView({
@@ -35,15 +35,12 @@ export const InCallView = memo(function InCallView({
   phoneNumber,
   onHangUp,
   onToggleMute,
-  onToggleHold,
   onToggleSpeaker,
+  onOpenDialPad,
 }: InCallViewProps) {
   const { t } = useTranslation();
 
   const getCallStatus = () => {
-    if (callState.isOnHold) {
-      return t("phone.onHold", "On Hold");
-    }
     if (callState.isConnecting) {
       return t("phone.connecting", "Connecting...");
     }
@@ -91,49 +88,34 @@ export const InCallView = memo(function InCallView({
           </Text>
         </TouchableOpacity>
 
+        {/* Dial Pad Button */}
+        <TouchableOpacity style={styles.controlButton} onPress={onOpenDialPad}>
+          <Ionicons name="keypad" size={28} color={Colors.textSecondary} />
+          <Text style={styles.controlLabel}>
+            {t("phone.dialPad", "Dial Pad")}
+          </Text>
+        </TouchableOpacity>
+
         {/* Speaker Button */}
         <TouchableOpacity
           style={[
             styles.controlButton,
-            callState.isSpeaker && styles.controlButtonActive,
+            callState.isSpeakerOn && styles.controlButtonSpeakerActive,
           ]}
           onPress={onToggleSpeaker}
         >
           <Ionicons
-            name={callState.isSpeaker ? "volume-high" : "volume-medium"}
+            name={callState.isSpeakerOn ? "volume-high" : "volume-medium"}
             size={28}
-            color={callState.isSpeaker ? "#fff" : Colors.textSecondary}
+            color={callState.isSpeakerOn ? "#fff" : Colors.textSecondary}
           />
           <Text
             style={[
               styles.controlLabel,
-              callState.isSpeaker && styles.controlLabelActive,
+              callState.isSpeakerOn && styles.controlLabelActive,
             ]}
           >
             {t("phone.speaker", "Speaker")}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Hold Button */}
-        <TouchableOpacity
-          style={[
-            styles.controlButton,
-            callState.isOnHold && styles.controlButtonActive,
-          ]}
-          onPress={onToggleHold}
-        >
-          <Ionicons
-            name={callState.isOnHold ? "pause" : "pause-outline"}
-            size={28}
-            color={callState.isOnHold ? "#fff" : Colors.textSecondary}
-          />
-          <Text
-            style={[
-              styles.controlLabel,
-              callState.isOnHold && styles.controlLabelActive,
-            ]}
-          >
-            {t("phone.hold", "Hold")}
           </Text>
         </TouchableOpacity>
       </View>
@@ -197,6 +179,9 @@ const styles = StyleSheet.create({
   },
   controlButtonActive: {
     backgroundColor: Colors.primary,
+  },
+  controlButtonSpeakerActive: {
+    backgroundColor: Colors.success,
   },
   controlLabel: {
     fontSize: 12,

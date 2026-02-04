@@ -9,13 +9,10 @@
  */
 
 import { useState, useCallback } from "react";
-import { Alert } from "react-native";
+import { Alert, Vibration } from "react-native";
 import { useTranslation } from "react-i18next";
-import {
-  useAgentQuery,
-  useAgentPhoneNumber,
-  useVoiceCall,
-} from "@/app/utils/hooks";
+import { useAgentQuery, useAgentPhoneNumber } from "@/app/hooks";
+import { useVoiceCall } from "@/app/hooks/useVoiceCall";
 import {
   showError,
   showSuccess,
@@ -86,7 +83,7 @@ export const usePhone = (): UsePhoneReturn => {
   const [phoneNumberInput, setPhoneNumberInput] = useState("");
 
   // Call mode state
-  const [isAgentMode, setIsAgentMode] = useState(true);
+  const [isAgentMode, setIsAgentMode] = useState(false);
   const [callPrompt, setCallPrompt] = useState("");
 
   // Loading state
@@ -125,6 +122,7 @@ export const usePhone = (): UsePhoneReturn => {
 
   // Handle backspace
   const handleBackspace = useCallback(() => {
+    Vibration.vibrate(1);
     setPhoneNumberInput((prev) => prev.slice(0, -1));
   }, []);
 
@@ -187,6 +185,8 @@ export const usePhone = (): UsePhoneReturn => {
 
   // Handle make call with confirmation
   const handleMakeCall = async () => {
+    Vibration.vibrate(1);
+
     if (!phoneNumberInput || phoneNumberInput.length < 10) {
       showError(
         t("phone.error", "Error"),

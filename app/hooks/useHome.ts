@@ -16,7 +16,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/app/utils/axios-interceptor";
-import { useAgentQuery, useAgentPhoneNumber } from "@/app/utils/hooks";
+import { useAgentQuery, useAgentPhoneNumber } from "@/app/hooks";
 import { getLastLogin } from "@/app/utils/storage";
 import { getConfig } from "@/app/utils/services";
 import { showWarning } from "@/app/utils/toast";

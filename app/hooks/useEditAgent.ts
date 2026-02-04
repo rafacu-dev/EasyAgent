@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { apiClient } from "@/app/utils/axios-interceptor";
 import { showError, showSuccess } from "@/app/utils/toast";
-import { useAgentQuery, useUpdateAgentMutation } from "@/app/utils/hooks";
+import { useAgentQuery, useUpdateAgentMutation } from "@/app/hooks";
 import type { AgentConfig } from "@/app/utils/types";
 
 export interface AgentFormData {

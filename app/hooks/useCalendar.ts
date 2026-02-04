@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, Href } from "expo-router";
 import { apiClient } from "@/app/utils/axios-interceptor";
-import { useAgentQuery, useAgentPhoneNumber } from "@/app/utils/hooks";
+import { useAgentQuery, useAgentPhoneNumber } from "@/app/hooks";
 import { showError } from "@/app/utils/toast";
 import type {
   Appointment,

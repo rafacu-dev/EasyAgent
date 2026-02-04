@@ -19,6 +19,7 @@ import {
   editContact,
   ContactPermissionResult,
 } from "@/app/utils/contactService";
+import { normalizePhoneNumber } from "../utils/formatters";
 
 export interface UseDeviceContactsOptions {
   /** Enable auto-fetch on mount */
@@ -122,7 +123,14 @@ export const useDeviceContacts = (
   // Filter contacts based on search query
   const filteredContacts = useCallback(() => {
     if (!debouncedQuery.trim()) {
-      return contacts;
+      return contacts.map((c) => {
+        c.phoneNumbers = c.phoneNumbers.filter(
+          (p, i, arr) =>
+            normalizePhoneNumber(p.number) !==
+            normalizePhoneNumber(arr[i + 1]?.number),
+        );
+        return c;
+      });
     }
 
     const lowerQuery = debouncedQuery.toLowerCase();

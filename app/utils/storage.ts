@@ -43,7 +43,7 @@ export const clearStorage = async (): Promise<void> => {
 // Auth storage functions
 export const saveAuthTokens = async (
   accessToken: string,
-  refreshToken: string
+  refreshToken: string,
 ): Promise<void> => {
   try {
     await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, accessToken);
@@ -74,6 +74,22 @@ export const clearAuthData = async (): Promise<void> => {
   } catch (error) {
     console.error("Error clearing auth data:", error);
     throw new Error("Failed to clear auth data");
+  }
+};
+
+// Clear all app data (for logout)
+export const clearAllData = async (): Promise<void> => {
+  try {
+    // Get all keys
+    const allKeys = await AsyncStorage.getAllKeys();
+
+    // Remove all keys
+    await AsyncStorage.multiRemove(allKeys);
+
+    console.log("All app data cleared successfully");
+  } catch (error) {
+    console.error("Error clearing all data:", error);
+    throw new Error("Failed to clear all data");
   }
 };
 

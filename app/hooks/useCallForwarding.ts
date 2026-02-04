@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { Linking } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { useTranslation } from "react-i18next";
-import { useAgentQuery, usePhoneNumbersQuery } from "@/app/utils/hooks";
+import { useAgentQuery, usePhoneNumbersQuery } from "@/app/hooks";
 import { showError, showSuccess } from "@/app/utils/toast";
 
 export interface UseCallForwardingReturn {

@@ -16,7 +16,7 @@ import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { apiClient } from "@/app/utils/axios-interceptor";
 import { Colors } from "@/app/utils/colors";
-import { useUpdateAgentMutation } from "@/app/utils/hooks";
+import { useUpdateAgentMutation } from "@/app/hooks";
 import { showError } from "@/app/utils/toast";
 import { VoiceInput } from "@/app/components/VoiceInput";
 

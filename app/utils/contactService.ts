@@ -372,6 +372,19 @@ export const presentNewContactForm = async (initialData?: {
       return null;
     }
 
+    // Format and check for duplicates if phone number provided
+    if (initialData?.phoneNumber) {
+      const cleanNumber = initialData.phoneNumber.replace(/[\s\-\(\)\+]/g, "");
+      const existingContact = await findContactByPhoneNumber(
+        initialData.phoneNumber,
+      );
+
+      if (existingContact) {
+        console.warn("Contact already exists with this phone number");
+        return existingContact;
+      }
+    }
+
     const contact: Partial<Contacts.Contact> = {};
 
     if (initialData?.firstName) {
@@ -379,10 +392,17 @@ export const presentNewContactForm = async (initialData?: {
     }
 
     if (initialData?.phoneNumber) {
+      // Format phone number before adding
+      const formattedNumber = initialData.phoneNumber.replace(
+        /[\s\-\(\)]/g,
+        "",
+      );
       contact[Contacts.Fields.PhoneNumbers] = [
         {
           label: "mobile",
-          number: initialData.phoneNumber,
+          number: formattedNumber.startsWith("+")
+            ? formattedNumber
+            : `+${formattedNumber}`,
         },
       ];
     }

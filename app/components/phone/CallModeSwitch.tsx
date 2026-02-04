@@ -38,15 +38,9 @@ export const CallModeSwitch = memo(function CallModeSwitch({
     <>
       <View style={styles.container}>
         <View style={styles.labelRow}>
-          <Ionicons
-            name={isAgentMode ? "sparkles" : "call"}
-            size={20}
-            color={isAgentMode ? Colors.primary : Colors.success}
-          />
+          <Ionicons name={"sparkles"} size={20} color={Colors.primary} />
           <Text style={styles.label}>
-            {isAgentMode
-              ? t("phone.agentMode", "AI Agent Call")
-              : t("phone.manualMode", "Direct Call")}
+            {t("phone.agentMode", "AI Agent Call")}
           </Text>
           <TouchableOpacity style={styles.infoButton} onPress={onOpenInfo}>
             <Ionicons

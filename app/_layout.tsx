@@ -174,8 +174,7 @@ export default function RootLayout() {
               headerShown: false,
               contentStyle: {
                 backgroundColor: Colors.background,
-                paddingTop:
-                  Platform.OS === "android" ? Constants.statusBarHeight : 0,
+                paddingTop: Constants.statusBarHeight,
               },
             }}
           >

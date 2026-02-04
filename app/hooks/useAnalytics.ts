@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/app/utils/axios-interceptor";
-import { useAgentQuery } from "@/app/utils/hooks";
+import { useAgentQuery } from "@/app/hooks";
 
 export interface AnalyticsStats {
   total_calls: number;

@@ -528,6 +528,8 @@
   },
   "contacts": {
     "title": "Contacts",
+    "noResults": "No contacts found",
+    "tryDifferentSearch": "Try a different search",
     "search": "Search contacts...",
     "addContact": "Add Contact",
     "name": "Name",
@@ -554,7 +556,12 @@
     "updateFailed": "Failed to update contact",
     "deleteFailed": "Failed to delete contact",
     "confirmDelete": "Delete Contact",
-    "confirmDeleteMessage": "Are you sure you want to delete {{name}}?"
+    "confirmDeleteMessage": "Are you sure you want to delete {{name}}?",
+    "addContactsToDevice": "Add contacts to your device to see them here",
+    "multiplePhones": "{{count}} phone numbers",
+    "searchPlaceholder": "Search contacts...",
+    "loading": "Loading contacts...",
+    "phonesCount": "{{count}} phone numbers"
   },
   "messages": {
     "title": "Messages",
@@ -576,6 +583,8 @@
     "googlefiNotes": "Google Fi uses GSM codes. These work when connected to T-Mobile or US Cellular networks.",
     "noContacts": "No contacts available",
     "typeMessage": "Type a message...",
-    "noMessages": "No messages yet"
+    "noMessages": "No messages yet",
+    "searchPlaceholder": "Search contacts...",
+    "loading": "Loading contacts..."
   }
 }

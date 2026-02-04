@@ -5,9 +5,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Platform } from "react-native";
-import { apiClient } from "../axios-interceptor";
+import { apiClient } from "@/app/utils/axios-interceptor";
 import { Audio } from "expo-av";
-import { showError, showInfo } from "../toast";
+import { showError, showInfo } from "@/app/utils/toast";
 
 // Types for the Voice SDK
 interface VoiceToken {

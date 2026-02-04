@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "../axios-interceptor";
-import { saveAgentConfig } from "../storage";
-import type { AgentConfig } from "../types";
+import { apiClient } from "@/app/utils/axios-interceptor";
+import { saveAgentConfig } from "@/app/utils/storage";
+import type { AgentConfig } from "@/app/utils/types";
 
 // Fetch agent from API
 const fetchAgent = async (): Promise<AgentConfig | null> => {
