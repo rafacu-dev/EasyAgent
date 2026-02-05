@@ -71,7 +71,7 @@ const AnimatedView = ({
 };
 
 export default function CompanyServices() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const params = useLocalSearchParams();
   const [companyDescription, setCompanyDescription] = useState("");
   const [companyServices, setCompanyServices] = useState("");
@@ -102,6 +102,7 @@ export default function CompanyServices() {
         urls: socialMediaAndWeb,
         company_name: companyName,
         sector: sector,
+        language: i18n.language,
       });
 
       const data = response.data;
@@ -134,7 +135,7 @@ export default function CompanyServices() {
     } finally {
       setIsScraping(false);
     }
-  }, [socialMediaAndWeb, companyName, sector, t]);
+  }, [socialMediaAndWeb, companyName, sector, i18n.language, t]);
 
   useEffect(() => {
     const timer = setTimeout(() => setShowContent(true), 100);
