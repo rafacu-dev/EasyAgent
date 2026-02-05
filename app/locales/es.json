@@ -97,6 +97,7 @@
   },
   "callDetails": {
     "title": "Detalles de Llamada",
+    "call": "Llamada",
     "loading": "Cargando detalles de llamada...",
     "callInfo": "Información de Llamada",
     "agent": "Agente",

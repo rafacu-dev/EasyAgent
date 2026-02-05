@@ -10,6 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { Colors } from "@/app/utils/colors";
+import { getCallStatusConfig } from "@/app/utils/callStatusHelpers";
 import type { RecentCallItem } from "@/app/utils/types";
 
 interface CallItemProps {
@@ -25,6 +26,8 @@ export const CallItem = memo(function CallItem({ item }: CallItemProps) {
     item.direction === "inbound"
       ? item.fromContactName || item.number
       : item.toContactName || item.number;
+  console.log(item.status);
+  const statusConfig = getCallStatusConfig(item.status);
 
   return (
     <TouchableOpacity style={styles.container} onPress={handlePress}>
@@ -54,10 +57,22 @@ export const CallItem = memo(function CallItem({ item }: CallItemProps) {
         </View>
       </View>
       <View style={styles.info}>
-        <View style={styles.numberRow}>
-          <Text style={styles.number}>{displayName}</Text>
+        <Text style={styles.number}>{displayName}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Text style={styles.duration}>{item.duration}</Text>
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: statusConfig.color + "20" },
+            ]}
+          >
+            <Ionicons
+              name={statusConfig.icon as any}
+              size={12}
+              color={statusConfig.color}
+            />
+          </View>
         </View>
-        <Text style={styles.duration}>{item.duration}</Text>
       </View>
       <Ionicons name="chevron-forward" size={16} color={Colors.textLight} />
     </TouchableOpacity>
@@ -100,16 +115,19 @@ const styles = StyleSheet.create({
   },
   info: {
     flex: 1,
-  },
-  numberRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 2,
+    gap: 6,
   },
   number: {
     fontSize: 14,
     fontWeight: "600",
     color: Colors.textPrimary,
+  },
+  statusBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
   duration: {
     fontSize: 12,

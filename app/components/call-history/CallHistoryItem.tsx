@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Colors } from "@/app/utils/colors";
+import { getCallStatusConfig } from "@/app/utils/callStatusHelpers";
 import type { RecentCallItem } from "@/app/utils/types";
 
 interface CallHistoryItemProps {
@@ -14,14 +15,10 @@ export function CallHistoryItem({ item }: CallHistoryItemProps) {
     router.push({ pathname: "/call-details/[id]", params: { id: item.id } });
   };
 
+  const statusConfig = getCallStatusConfig(item.status);
+
   return (
     <TouchableOpacity style={styles.callItem} onPress={handlePress}>
-      <View
-        style={[
-          styles.callStatusDot,
-          item.status === "missed" && styles.callStatusMissed,
-        ]}
-      />
       <View style={styles.callInfo}>
         <View style={styles.callNumberRow}>
           <Ionicons
@@ -64,10 +61,31 @@ export function CallHistoryItem({ item }: CallHistoryItemProps) {
           )}
         </View>
       </View>
-      <Text style={styles.callDuration} selectable>
-        {item.duration}
-      </Text>
-      <Ionicons name="chevron-forward" size={16} color={Colors.textLight} />
+      <View style={styles.callRightSection}>
+        <View style={styles.durationStatusRow}>
+          <Text style={styles.callDuration} selectable>
+            {item.duration}
+          </Text>
+          <View
+            style={[
+              styles.callStatusIcon,
+              { backgroundColor: statusConfig.color + "15" },
+            ]}
+          >
+            <Ionicons
+              name={statusConfig.icon as any}
+              size={14}
+              color={statusConfig.color}
+            />
+          </View>
+        </View>
+        <Ionicons
+          name="chevron-forward"
+          size={16}
+          color={Colors.textLight}
+          style={{ marginLeft: 8 }}
+        />
+      </View>
     </TouchableOpacity>
   );
 }
@@ -88,16 +106,6 @@ const styles = StyleSheet.create({
     elevation: 2,
     borderWidth: 1,
     borderColor: Colors.borderLight,
-  },
-  callStatusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.statusActive,
-    marginRight: 12,
-  },
-  callStatusMissed: {
-    backgroundColor: Colors.statusMissed,
   },
   callInfo: {
     flex: 1,
@@ -144,10 +152,25 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     textTransform: "capitalize",
   },
+  callRightSection: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  durationStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   callDuration: {
     fontSize: 13,
     color: Colors.textSecondary,
-    marginRight: 8,
     fontWeight: "500",
+  },
+  callStatusIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

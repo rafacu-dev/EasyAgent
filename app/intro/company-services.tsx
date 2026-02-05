@@ -77,6 +77,7 @@ export default function CompanyServices() {
   const [companyServices, setCompanyServices] = useState("");
   const [showContent, setShowContent] = useState(false);
   const [isScraping, setIsScraping] = useState(false);
+  const [autoScraped, setAutoScraped] = useState(false);
 
   // Get params from previous screens
   const sector = params.sector as string;
@@ -140,6 +141,26 @@ export default function CompanyServices() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Auto-scrape if socialMediaAndWeb exists and hasn't been scraped yet
+  useEffect(() => {
+    const autoScrape = async () => {
+      if (
+        socialMediaAndWeb &&
+        socialMediaAndWeb.trim() !== "" &&
+        !autoScraped &&
+        !isScraping
+      ) {
+        console.log("[AUTO-SCRAPE] Starting automatic scraping...");
+        setAutoScraped(true);
+        await handleScrape();
+      }
+    };
+
+    // Delay auto-scrape to allow UI to render first
+    const timer = setTimeout(autoScrape, 1000);
+    return () => clearTimeout(timer);
+  }, [socialMediaAndWeb, autoScraped, isScraping, handleScrape]);
+
   const handleSubmit = () => {
     // Continue to agent setup with all collected data
     router.push({
@@ -179,6 +200,21 @@ export default function CompanyServices() {
           {/* Scrape Button */}
           {socialMediaAndWeb && (
             <AnimatedView show={showContent} delay={300}>
+              {autoScraped && !isScraping ? (
+                <View style={styles.autoScrapeInfo}>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={Colors.success}
+                  />
+                  <Text style={styles.autoScrapeInfoText}>
+                    {t(
+                      "companyServices.autoScraped",
+                      "✓ Information automatically extracted from your links",
+                    )}
+                  </Text>
+                </View>
+              ) : null}
               <TouchableOpacity
                 style={[
                   styles.scrapeButton,
@@ -209,7 +245,9 @@ export default function CompanyServices() {
                     <Text style={styles.scrapeButtonText}>
                       {t(
                         "companyServices.scrapeFromLinks",
-                        "Auto-fill from website links",
+                        autoScraped
+                          ? "Re-scrape from website links"
+                          : "Auto-fill from website links",
                       )}
                     </Text>
                   </>
@@ -368,6 +406,24 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: 16,
     fontWeight: "600",
+  },
+  autoScrapeInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.success + "15",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.success + "40",
+  },
+  autoScrapeInfoText: {
+    color: Colors.success,
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 8,
+    flex: 1,
   },
   inputGroup: {
     marginBottom: 24,
