@@ -66,7 +66,7 @@ export interface UseDeviceContactsReturn {
 export const useDeviceContacts = (
   options: UseDeviceContactsOptions = {},
 ): UseDeviceContactsReturn => {
-  const { enabled = true, initialQuery = "", pageSize = 500 } = options;
+  const { enabled = true, initialQuery = "", pageSize = 10000 } = options;
 
   const queryClient = useQueryClient();
 

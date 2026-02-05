@@ -268,7 +268,13 @@
     "analytics": "Estadísticas del uso del agente",
     "callHistory": "Historial de llamadas",
     "subscription": "Administrar suscripción",
-    "deleteCompany": "Eliminar Empresa"
+    "deleteAccount": "Eliminar Cuenta",
+    "deleteAccountTitle": "Eliminar Cuenta",
+    "deleteAccountMessage": "Esto eliminará permanentemente tu cuenta, empresa, agente y liberará tu número de teléfono. Esta acción no se puede deshacer.",
+    "deleteAccountSuccess": "Cuenta Eliminada",
+    "deleteAccountSuccessMessage": "Tu cuenta ha sido eliminada exitosamente.",
+    "permissionDenied": "Permiso Denegado",
+    "notificationPermissionMessage": "Por favor habilita las notificaciones en la configuración de tu dispositivo."
   },
   "welcome": {
     "title": "¡Bienvenido a EasyAgent!",

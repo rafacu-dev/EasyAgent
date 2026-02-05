@@ -104,22 +104,22 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleDeleteCompany = () => {
+  const handleDeleteAccount = () => {
     showDestructiveAlert(
-      t("settings.deleteCompanyTitle", "Delete Company"),
+      t("settings.deleteAccountTitle", "Delete Account"),
       t(
-        "settings.deleteCompanyMessage",
-        "This will permanently delete your company, agent, and release your phone number. This action cannot be undone.",
+        "settings.deleteAccountMessage",
+        "This will permanently delete your account, company, agent, and release your phone number. This action cannot be undone.",
       ),
       async () => {
         setIsDeletingCompany(true);
         try {
           await apiClient.delete("profile/delete-company/");
           showSuccess(
-            t("settings.deleteCompanySuccess", "Company Deleted"),
+            t("settings.deleteAccountSuccess", "Account Deleted"),
             t(
-              "settings.deleteCompanySuccessMessage",
-              "Your company has been deleted successfully.",
+              "settings.deleteAccountSuccessMessage",
+              "Your account has been deleted successfully.",
             ),
           );
           // Clear all data after company deletion
@@ -136,7 +136,7 @@ export default function SettingsScreen() {
           setIsDeletingCompany(false);
         }
       },
-      t("settings.deleteCompany", "Delete Company"),
+      t("settings.deleteAccount", "Delete Account"),
       t("common.cancel", "Cancel"),
     );
   };
@@ -329,7 +329,7 @@ export default function SettingsScreen() {
               styles.settingItem,
               isDeletingCompany && styles.settingItemDisabled,
             ]}
-            onPress={handleDeleteCompany}
+            onPress={handleDeleteAccount}
             disabled={isDeletingCompany}
           >
             {isDeletingCompany ? (
@@ -338,7 +338,7 @@ export default function SettingsScreen() {
               <Ionicons name="trash-outline" size={24} color="#FF3B30" />
             )}
             <Text style={[styles.settingItemText, { color: "#FF3B30" }]}>
-              {t("settings.deleteCompany", "Delete Company")}
+              {t("settings.deleteAccount", "Delete Account")}
             </Text>
             <Ionicons name="chevron-forward" size={20} color="#ccc" />
           </TouchableOpacity>

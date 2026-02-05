@@ -136,7 +136,7 @@ export const getAllContacts = async (
       return [];
     }
 
-    const { pageSize = 100, pageOffset = 0, sort } = options;
+    const { pageSize = 10000, pageOffset = 0, sort } = options;
 
     const { data } = await Contacts.getContactsAsync({
       fields: [
@@ -190,7 +190,7 @@ export const searchContacts = async (
     }
 
     // Get all contacts and filter (expo-contacts doesn't have native search)
-    const allContacts = await getAllContacts({ ...options, pageSize: 1000 });
+    const allContacts = await getAllContacts({ ...options, pageSize: 10000 });
 
     const lowerQuery = query.toLowerCase();
 
@@ -262,7 +262,7 @@ export const findContactByPhoneNumber = async (
     const cleanNumber = phoneNumber.replace(/[\s\-\(\)\+]/g, "");
 
     // Search through contacts
-    const allContacts = await getAllContacts({ pageSize: 1000 });
+    const allContacts = await getAllContacts({ pageSize: 10000 });
 
     return (
       allContacts.find((contact) =>

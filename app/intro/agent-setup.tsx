@@ -89,6 +89,8 @@ export default function AgentSetup() {
     <View style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 30 : 30}
       >
         <ScrollView
           showsVerticalScrollIndicator={false}

@@ -44,7 +44,7 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="messages"
         options={{
           title: t("tabs.messages", "Messages"),
@@ -52,7 +52,7 @@ export default function TabsLayout() {
             <Ionicons name="chatbubble-outline" size={size} color={color} />
           ),
         }}
-      />
+      /> */}
       <Tabs.Screen
         name="calendar"
         options={{

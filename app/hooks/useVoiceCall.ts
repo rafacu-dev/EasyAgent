@@ -4,10 +4,9 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Platform } from "react-native";
 import { apiClient } from "@/app/utils/axios-interceptor";
 import { Audio } from "expo-av";
-import { showError, showInfo } from "@/app/utils/toast";
+import { showError, showInfo, showWarning } from "@/app/utils/toast";
 
 // Types for the Voice SDK
 interface VoiceToken {
@@ -45,6 +44,43 @@ const loadVoiceSDK = async () => {
     return true;
   } catch (error) {
     console.warn("[TWILIO DEBUG] ERROR: Voice SDK not available:", error);
+    return false;
+  }
+};
+
+/**
+ * Request microphone permission - CRITICAL for iOS
+ */
+const requestMicrophonePermission = async (): Promise<boolean> => {
+  console.log("[TWILIO DEBUG] Requesting microphone permission...");
+  try {
+    const { status, canAskAgain } = await Audio.requestPermissionsAsync();
+
+    if (status === "granted") {
+      console.log("[TWILIO DEBUG] ✅ Microphone permission granted");
+      return true;
+    }
+
+    console.warn("[TWILIO DEBUG] ❌ Microphone permission denied");
+
+    if (!canAskAgain) {
+      showError(
+        "Permission Required",
+        "Microphone access is required for voice calls. Please enable it in your device settings.",
+      );
+    } else {
+      showWarning(
+        "Permission Required",
+        "Microphone access is required to make voice calls.",
+      );
+    }
+
+    return false;
+  } catch (error) {
+    console.error(
+      "[TWILIO DEBUG] ❌ Error requesting microphone permission:",
+      error,
+    );
     return false;
   }
 };
@@ -101,7 +137,7 @@ export function useVoiceCall({
         // Apply current speaker setting when call connects
         try {
           await Audio.setAudioModeAsync({
-            allowsRecordingIOS: false,
+            allowsRecordingIOS: true, // Enable microphone for iOS
             playsInSilentModeIOS: true,
             staysActiveInBackground: true,
             shouldDuckAndroid: true,
@@ -262,6 +298,15 @@ export function useVoiceCall({
     async (toNumber: string): Promise<boolean> => {
       console.log(`[TWILIO DEBUG] 📞 makeCall called - To: ${toNumber}`);
 
+      // CRITICAL: Check microphone permission first (especially for iOS)
+      const hasPermission = await requestMicrophonePermission();
+      if (!hasPermission) {
+        console.error(
+          "[TWILIO DEBUG] ERROR: Microphone permission not granted",
+        );
+        return false;
+      }
+
       if (!isSDKAvailable || !voiceRef.current) {
         console.error("[TWILIO DEBUG] ERROR: Voice SDK not available");
         showError(
@@ -399,9 +444,9 @@ export function useVoiceCall({
       } Toggling speaker: ${newSpeakerState}`,
     );
     try {
-      // Set audio mode for speaker/earpiece
+      // Set audio mode for speaker/earpiece with iOS-specific configuration
       await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
+        allowsRecordingIOS: true, // Enable microphone
         playsInSilentModeIOS: true,
         staysActiveInBackground: true,
         shouldDuckAndroid: true,

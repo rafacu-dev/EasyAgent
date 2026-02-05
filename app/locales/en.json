@@ -268,7 +268,13 @@
     "analytics": "Agent Usage Analytics",
     "callHistory": "Call History",
     "subscription": "Manage Subscription",
-    "deleteCompany": "Delete Company"
+    "deleteAccount": "Delete Account",
+    "deleteAccountTitle": "Delete Account",
+    "deleteAccountMessage": "This will permanently delete your account, company, agent, and release your phone number. This action cannot be undone.",
+    "deleteAccountSuccess": "Account Deleted",
+    "deleteAccountSuccessMessage": "Your account has been deleted successfully.",
+    "permissionDenied": "Permission Denied",
+    "notificationPermissionMessage": "Please enable notifications in your device settings."
   },
   "welcome": {
     "title": "Welcome to EasyAgent!",

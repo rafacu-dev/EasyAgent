@@ -50,7 +50,7 @@ export function useContactLookup(): ContactLookupResult {
       if (!permission.granted) {
         return { contacts: [] as DeviceContact[], hasPermission: false };
       }
-      const contacts = await getAllContacts({ pageSize: 1000 });
+      const contacts = await getAllContacts({ pageSize: 10000 });
       return { contacts, hasPermission: true };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes

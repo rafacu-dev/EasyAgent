@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Pressable,
   KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -113,7 +114,11 @@ export default function EditAgent() {
 
   return (
     <View style={styles.container}>
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 30 : 30}
+      >
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 20 }}
@@ -511,12 +516,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: Colors.cardBackground,
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: Colors.primary,
+    shadowColor: Colors.shadowOrange,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
   },
   scrapeButtonDisabled: {
     opacity: 0.7,

@@ -31,21 +31,19 @@ export const PhoneDisplay = memo(function PhoneDisplay({
 
   return (
     <View style={styles.container}>
-      {/* Clear button - left side */}
+      {/* Contact picker button - left side */}
       <View style={styles.buttonContainer}>
-        {phoneNumber.length > 0 && (
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={onClear}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="backspace-outline"
-              size={20}
-              color={Colors.textSecondary}
-            />
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={onOpenContacts}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons
+            name="contacts-outline"
+            size={20}
+            color={Colors.primary}
+          />
+        </TouchableOpacity>
       </View>
 
       {/* Phone number input */}
@@ -65,19 +63,17 @@ export const PhoneDisplay = memo(function PhoneDisplay({
         />
       </View>
 
-      {/* Contact picker button - right side */}
+      {/* Clear button - right side */}
       <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={onOpenContacts}
-          activeOpacity={0.7}
-        >
-          <MaterialCommunityIcons
-            name="contacts-outline"
-            size={20}
-            color={Colors.primary}
-          />
-        </TouchableOpacity>
+        {phoneNumber.length > 0 && (
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={onClear}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="close" size={20} color={Colors.textSecondary} />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

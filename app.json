@@ -12,8 +12,8 @@
       "bundleIdentifier": "com.drecom.EasyAgent",
       "supportsTablet": true,
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "EasyAgent needs microphone access to make voice calls",
-        "UIBackgroundModes": ["audio"],
+        "NSMicrophoneUsageDescription": "EasyAgent needs microphone access to make voice calls with customers and clients",
+        "UIBackgroundModes": ["audio", "voip"],
         "ITSAppUsesNonExemptEncryption": false
       },
       "entitlements": {
@@ -43,6 +43,12 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for voice calls with customers and clients."
+        }
+      ],
       [
         "expo-splash-screen",
         {
