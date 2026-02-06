@@ -36,7 +36,6 @@ export default function CallDetailsScreen() {
     transcriptMessages,
     directionInfo,
     getStatusColor,
-    estimateCost,
   } = useCallDetails(id);
 
   const {
@@ -49,14 +48,8 @@ export default function CallDetailsScreen() {
     formatPlaybackTime,
     sound,
   } = useAudioPlayer();
-
-  const {
-    showAddContactModal,
-    isLoadingContact,
-    existingContact,
-    setShowAddContactModal,
-    handleAddContact,
-  } = useContactManagement(otherPartyNumber);
+  const { isLoadingContact, existingContact, handleAddContact } =
+    useContactManagement(otherPartyNumber);
 
   return (
     <View style={styles.container}>
@@ -133,7 +126,7 @@ export default function CallDetailsScreen() {
                 </View>
               ) : null}
             </View>
-            {displayAgent.name && (
+            {displayAgent.name && displayCall.recording_url && (
               <View style={styles.compactInfoRow}>
                 <View style={styles.infoIcon}>
                   <Ionicons name="person" size={16} color={Colors.primary} />
@@ -222,20 +215,6 @@ export default function CallDetailsScreen() {
               </View>
             ) : null}
 
-            <View style={styles.compactInfoRow}>
-              <View style={styles.infoIcon}>
-                <Ionicons name="cash" size={16} color={Colors.warning} />
-              </View>
-              <View style={styles.infoContent}>
-                <Text style={styles.compactInfoLabel}>
-                  {t("callDetails.cost")}
-                </Text>
-                <Text style={styles.compactInfoValue}>
-                  {estimateCost(displayCall.price)}
-                </Text>
-              </View>
-            </View>
-
             {displayCall.disconnect_reason ? (
               <View style={styles.compactInfoRow}>
                 <View style={styles.infoIcon}>
@@ -313,7 +292,7 @@ export default function CallDetailsScreen() {
                         {t("callDetails.call", "Call")}
                       </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
+                    {/* <TouchableOpacity
                       style={styles.contactActionButton}
                       onPress={() =>
                         router.push({
@@ -334,7 +313,7 @@ export default function CallDetailsScreen() {
                       <Text style={styles.contactActionText}>
                         {t("callDetails.message", "Message")}
                       </Text>
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                   </View>
                 </View>
               ) : (

@@ -150,11 +150,11 @@ export default function VerifyTokenScreen() {
 
       // Redirect based on user status
       if (response.is_new_user) {
-        // New user or user without company info - go to setup
+        // New user or user without company info - go to setup (will trigger index.tsx flow)
         router.replace("/");
       } else {
-        // Existing user with company info - go to main app
-        router.replace("/");
+        // Existing user with company info - go directly to main app (skip splash)
+        router.replace("/(tabs)/home" as any);
       }
     } catch (error: any) {
       if (__DEV__) console.error("Error verifying token:", error);

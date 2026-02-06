@@ -115,8 +115,8 @@ export default function Index() {
     );
   }
 
-  // Wait for agent loading (React Query handles API fetch and caching)
-  if (agentLoading) {
+  // Wait for agent loading (only if authenticated)
+  if (isAuthenticated && agentLoading) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color={Colors.primary} />

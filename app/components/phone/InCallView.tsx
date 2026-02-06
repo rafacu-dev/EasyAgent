@@ -4,8 +4,15 @@
  * Displays the in-call UI with call status, controls, and hang up button
  */
 
-import React, { memo } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import React, { memo, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  Vibration,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { Colors } from "@/app/utils/colors";
@@ -26,8 +33,15 @@ interface InCallViewProps {
   onHangUp: () => void;
   onToggleMute: () => void;
   onToggleSpeaker: () => void;
-  onOpenDialPad?: () => void;
+  onSendDigits?: (digit: string) => void;
 }
+
+const DIAL_DIGITS = [
+  ["1", "2", "3"],
+  ["4", "5", "6"],
+  ["7", "8", "9"],
+  ["*", "0", "#"],
+];
 
 export const InCallView = memo(function InCallView({
   callState,
@@ -36,9 +50,19 @@ export const InCallView = memo(function InCallView({
   onHangUp,
   onToggleMute,
   onToggleSpeaker,
-  onOpenDialPad,
+  onSendDigits,
 }: InCallViewProps) {
   const { t } = useTranslation();
+  const [showDialPad, setShowDialPad] = useState(false);
+  const [dtmfInput, setDtmfInput] = useState("");
+
+  const handleDigitPress = (digit: string) => {
+    Vibration.vibrate(1);
+    setDtmfInput((prev) => prev + digit);
+    if (onSendDigits) {
+      onSendDigits(digit);
+    }
+  };
 
   const getCallStatus = () => {
     if (callState.isConnecting) {
@@ -89,9 +113,24 @@ export const InCallView = memo(function InCallView({
         </TouchableOpacity>
 
         {/* Dial Pad Button */}
-        <TouchableOpacity style={styles.controlButton} onPress={onOpenDialPad}>
-          <Ionicons name="keypad" size={28} color={Colors.textSecondary} />
-          <Text style={styles.controlLabel}>
+        <TouchableOpacity
+          style={[
+            styles.controlButton,
+            showDialPad && styles.controlButtonActive,
+          ]}
+          onPress={() => setShowDialPad(true)}
+        >
+          <Ionicons
+            name="keypad"
+            size={28}
+            color={showDialPad ? "#fff" : Colors.textSecondary}
+          />
+          <Text
+            style={[
+              styles.controlLabel,
+              showDialPad && styles.controlLabelActive,
+            ]}
+          >
             {t("phone.dialPad", "Dial Pad")}
           </Text>
         </TouchableOpacity>
@@ -124,6 +163,72 @@ export const InCallView = memo(function InCallView({
       <TouchableOpacity style={styles.hangUpButton} onPress={onHangUp}>
         <Ionicons name="call" size={32} color="#fff" />
       </TouchableOpacity>
+
+      {/* DTMF Dial Pad Modal */}
+      <Modal
+        visible={showDialPad}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowDialPad(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.dialPadModal}>
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {t("phone.dialPad", "Dial Pad")}
+              </Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => {
+                  setShowDialPad(false);
+                  setDtmfInput("");
+                }}
+              >
+                <Ionicons name="close" size={24} color={Colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* DTMF Input Display */}
+            <View style={styles.dtmfDisplay}>
+              <Text style={styles.dtmfText}>
+                {dtmfInput || t("phone.enterDigits", "Enter digits")}
+              </Text>
+            </View>
+
+            {/* Dial Pad Grid */}
+            <View style={styles.dialPadContainer}>
+              {DIAL_DIGITS.map((row, rowIndex) => (
+                <View key={rowIndex} style={styles.dialRow}>
+                  {row.map((digit) => (
+                    <TouchableOpacity
+                      key={digit}
+                      style={styles.dialButton}
+                      onPress={() => handleDigitPress(digit)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.dialButtonText}>{digit}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ))}
+            </View>
+
+            {/* Done Button */}
+            <TouchableOpacity
+              style={styles.doneButton}
+              onPress={() => {
+                setShowDialPad(false);
+                setDtmfInput("");
+              }}
+            >
+              <Text style={styles.doneButtonText}>
+                {t("common.done", "Done")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 });
@@ -204,6 +309,91 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  dialPadModal: {
+    backgroundColor: Colors.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    paddingTop: 16,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.textPrimary,
+  },
+  closeButton: {
+    padding: 8,
+  },
+  dtmfDisplay: {
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    minHeight: 56,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  dtmfText: {
+    fontSize: 24,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+    letterSpacing: 4,
+  },
+  dialPadContainer: {
+    paddingVertical: 8,
+  },
+  dialRow: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    marginBottom: 12,
+  },
+  dialButton: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.cardBackground,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  dialButtonText: {
+    fontSize: 28,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+  },
+  doneButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 16,
+  },
+  doneButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
   },
 });
 

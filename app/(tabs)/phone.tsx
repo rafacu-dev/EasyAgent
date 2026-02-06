@@ -62,6 +62,7 @@ export default function PhoneScreen() {
     hangUp,
     toggleMute,
     toggleSpeaker,
+    sendDigits,
 
     // Contact Picker
     showContactsModal,
@@ -119,6 +120,7 @@ export default function PhoneScreen() {
         onHangUp={hangUp}
         onToggleMute={toggleMute}
         onToggleSpeaker={toggleSpeaker}
+        onSendDigits={sendDigits}
       />
     );
   }
