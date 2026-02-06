@@ -100,8 +100,19 @@ export default function VerifyTokenScreen() {
   };
 
   const handleKeyPress = (key: string, index: number) => {
-    if (key === "Backspace" && !code[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+    if (key === "Backspace") {
+      if (code[index]) {
+        // Delete current digit
+        const newCode = [...code];
+        newCode[index] = "";
+        setCode(newCode);
+      } else if (index > 0) {
+        // Move to previous input and delete its digit
+        const newCode = [...code];
+        newCode[index - 1] = "";
+        setCode(newCode);
+        inputRefs.current[index - 1]?.focus();
+      }
     }
   };
 
@@ -311,7 +322,6 @@ export default function VerifyTokenScreen() {
               }
               keyboardType="number-pad"
               editable={!isLoading}
-              selectTextOnFocus
             />
           ))}
         </View>
