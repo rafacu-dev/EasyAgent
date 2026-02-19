@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Switch,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import { Colors } from "@/app/utils/colors";
 import { useTranslation } from "react-i18next";
@@ -19,6 +20,7 @@ import { showDestructiveAlert } from "@/app/utils/alert";
 import { apiClient } from "@/app/utils/axios-interceptor";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQueryClient } from "@tanstack/react-query";
+import { LEGAL_URLS } from "@/app/utils/constants";
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
@@ -302,7 +304,10 @@ export default function SettingsScreen() {
             <Ionicons name="chevron-forward" size={20} color="#ccc" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => Linking.openURL(LEGAL_URLS.TERMS_OF_SERVICE)}
+          >
             <Ionicons name="document-text-outline" size={24} color="#666" />
             <Text style={styles.settingItemText}>
               {t("settings.terms", "Terms & Conditions")}
@@ -310,7 +315,10 @@ export default function SettingsScreen() {
             <Ionicons name="chevron-forward" size={20} color="#ccc" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => Linking.openURL(LEGAL_URLS.PRIVACY_POLICY)}
+          >
             <Ionicons name="shield-outline" size={24} color="#666" />
             <Text style={styles.settingItemText}>
               {t("settings.privacy", "Privacy Policy")}

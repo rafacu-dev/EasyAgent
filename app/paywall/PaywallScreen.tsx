@@ -30,7 +30,13 @@ import Purchases, {
 import { useTranslation } from "react-i18next";
 import { FontAwesome } from "@expo/vector-icons";
 import { Colors } from "@/app/utils/colors";
-import { showError, showSuccess, showInfo, showWarning } from "@/app/utils/toast";
+import {
+  showError,
+  showSuccess,
+  showInfo,
+  showWarning,
+} from "@/app/utils/toast";
+import { LEGAL_URLS } from "@/app/utils/constants";
 
 interface PaywallScreenProps {
   onPurchaseSuccess: () => void;
@@ -309,13 +315,11 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
   };
 
   const openTermsAndConditions = () => {
-    Linking.openURL(
-      "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
-    );
+    Linking.openURL(LEGAL_URLS.TERMS_OF_SERVICE);
   };
 
   const openPrivacyPolicy = () => {
-    Linking.openURL("https://rafacu-dev.github.io/remote-config/easy-invoice/");
+    Linking.openURL(LEGAL_URLS.PRIVACY_POLICY);
   };
 
   // Componente para las imágenes rotatorias
@@ -571,7 +575,10 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
           <View style={{ marginTop: 0, paddingTop: 0 }}>
             <View style={styles.iconContainer}>
               <RotatingImages />
-              <Image source={require("@/assets/images/icon.png")} style={styles.centerIcon} />
+              <Image
+                source={require("@/assets/images/icon.png")}
+                style={styles.centerIcon}
+              />
             </View>
             <View style={{ marginTop: -80, backgroundColor: "#fff" }}>
               <Reanimated.View style={titleAnimatedStyle}>
