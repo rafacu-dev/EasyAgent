@@ -38,8 +38,6 @@ const updateAgentOnBackend = async (
     agent_gender: config.agentGender,
     agent_description: config.agentDescription,
     social_media_and_web: config.socialMediaAndWeb,
-    company_services: config.companyServices || "",
-    company_description: config.companyDescription || "",
     language: config.language || "auto",
   });
 

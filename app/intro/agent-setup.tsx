@@ -48,14 +48,20 @@ export default function AgentSetup() {
 
     setIsLoading(true);
     try {
+      // Save company services/description on company profile first
+      await apiClient.patch("profile/", {
+        company_name: (params.companyName as string) || "",
+        sector: (params.sector as string) || "",
+        company_services: (params.companyServices as string) || "",
+        company_description: (params.companyDescription as string) || "",
+      });
+
       // Create agent in Retell.ai (company info comes from user profile)
       const response = await apiClient.post("agents/", {
         agent_name: agentName,
         agent_gender: agentGender,
         agent_description: agentDescription,
         social_media_and_web: (params.socialMediaAndWeb as string) || "",
-        company_services: (params.companyServices as string) || "",
-        company_description: (params.companyDescription as string) || "",
         language: language,
       });
 

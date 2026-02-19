@@ -1,5 +1,10 @@
 export const BaseUrl = "https://apieasyagent.onrender.com/api/";
 
+export const LEGAL_URLS = {
+  TERMS_OF_SERVICE: "https://apieasyagent.onrender.com/terms-of-service",
+  PRIVACY_POLICY: "https://apieasyagent.onrender.com/privacy-policy",
+} as const;
+
 // Centralized storage keys to avoid typos and ensure consistency
 export const STORAGE_KEYS = {
   AUTH_TOKEN: "authToken",

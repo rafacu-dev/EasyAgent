@@ -554,8 +554,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   languageButtonSelected: {
+    borderWidth: 2,
     borderColor: Colors.primary,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: Colors.cardBackground,
+    shadowColor: Colors.shadowOrange,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
   },
   languageButtonText: {
     fontSize: 14,

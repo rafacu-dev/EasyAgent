@@ -26,7 +26,6 @@ export const CallItem = memo(function CallItem({ item }: CallItemProps) {
     item.direction === "inbound"
       ? item.fromContactName || item.number
       : item.toContactName || item.number;
-  console.log(item.status);
   const statusConfig = getCallStatusConfig(item.status);
 
   return (

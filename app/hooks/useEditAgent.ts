@@ -83,6 +83,8 @@ export function useEditAgent(): UseEditAgentReturn {
       await apiClient.patch("profile/", {
         company_name: formData.companyName,
         sector: formData.sector,
+        company_services: formData.companyServices,
+        company_description: formData.companyDescription,
       });
 
       // Update agent via mutation

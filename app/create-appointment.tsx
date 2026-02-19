@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Colors } from "@/app/utils/colors";
 import { useTranslation } from "react-i18next";
@@ -49,6 +50,8 @@ export default function CreateAppointmentScreen() {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<Date>(new Date());
+  const [dateConfirmed, setDateConfirmed] = useState(false);
+  const [timeConfirmed, setTimeConfirmed] = useState(false);
 
   // Set the date from params only once when component mounts
   useEffect(() => {
@@ -71,17 +74,27 @@ export default function CreateAppointmentScreen() {
     }
     if (date) {
       setSelectedDate(date);
-      // Format date as YYYY-MM-DD
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      const formattedDate = `${year}-${month}-${day}`;
-      setFormData((prev) => ({ ...prev, date: formattedDate }));
-      // Hide picker after selection on Android, keep open on iOS until dismissed
       if (Platform.OS === "android") {
+        // Format and confirm immediately on Android
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const formattedDate = `${year}-${month}-${day}`;
+        setFormData((prev) => ({ ...prev, date: formattedDate }));
+        setDateConfirmed(true);
         setShowDatePicker(false);
       }
     }
+  };
+
+  const confirmDateSelection = () => {
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+    const day = String(selectedDate.getDate()).padStart(2, "0");
+    const formattedDate = `${year}-${month}-${day}`;
+    setFormData((prev) => ({ ...prev, date: formattedDate }));
+    setDateConfirmed(true);
+    setShowDatePicker(false);
   };
 
   // Handle time change
@@ -92,16 +105,25 @@ export default function CreateAppointmentScreen() {
     }
     if (time) {
       setSelectedTime(time);
-      // Format time as HH:MM
-      const hours = String(time.getHours()).padStart(2, "0");
-      const minutes = String(time.getMinutes()).padStart(2, "0");
-      const formattedTime = `${hours}:${minutes}`;
-      setFormData((prev) => ({ ...prev, start_time: formattedTime }));
-      // Hide picker after selection on Android, keep open on iOS until dismissed
       if (Platform.OS === "android") {
+        // Format and confirm immediately on Android
+        const hours = String(time.getHours()).padStart(2, "0");
+        const minutes = String(time.getMinutes()).padStart(2, "0");
+        const formattedTime = `${hours}:${minutes}`;
+        setFormData((prev) => ({ ...prev, start_time: formattedTime }));
+        setTimeConfirmed(true);
         setShowTimePicker(false);
       }
     }
+  };
+
+  const confirmTimeSelection = () => {
+    const hours = String(selectedTime.getHours()).padStart(2, "0");
+    const minutes = String(selectedTime.getMinutes()).padStart(2, "0");
+    const formattedTime = `${hours}:${minutes}`;
+    setFormData((prev) => ({ ...prev, start_time: formattedTime }));
+    setTimeConfirmed(true);
+    setShowTimePicker(false);
   };
 
   // Create appointment mutation
@@ -215,33 +237,70 @@ export default function CreateAppointmentScreen() {
               {t("calendar.date", "Date")} *
             </Text>
             <TouchableOpacity
-              style={styles.input}
-              onPress={() => setShowDatePicker(true)}
+              style={styles.pickerInput}
+              onPress={() => {
+                setShowDatePicker(true);
+                setDateConfirmed(false);
+              }}
             >
+              <Ionicons
+                name="calendar"
+                size={20}
+                color={Colors.primary}
+                style={{ marginRight: 8 }}
+              />
               <Text
                 style={
                   formData.date ? styles.inputText : styles.placeholderText
                 }
               >
-                {formData.date || t("calendar.datePlaceholder", "YYYY-MM-DD")}
+                {formData.date || t("calendar.datePlaceholder", "Select date")}
               </Text>
             </TouchableOpacity>
-            {showDatePicker && (
-              <DateTimePicker
-                value={selectedDate}
-                mode="date"
-                display="default"
-                onChange={onDateChange}
-              />
-            )}
+            {showDatePicker &&
+              (Platform.OS === "ios" ? (
+                <View style={styles.pickerModal}>
+                  <DateTimePicker
+                    value={selectedDate}
+                    mode="date"
+                    display="spinner"
+                    onChange={onDateChange}
+                    style={styles.iosPicker}
+                  />
+                  <TouchableOpacity
+                    style={styles.confirmButton}
+                    onPress={confirmDateSelection}
+                  >
+                    <Text style={styles.confirmButtonText}>
+                      {t("common.confirm", "Confirm")}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display="default"
+                  onChange={onDateChange}
+                />
+              ))}
 
             <Text style={styles.inputLabel}>
               {t("calendar.time", "Time")} *
             </Text>
             <TouchableOpacity
-              style={styles.input}
-              onPress={() => setShowTimePicker(true)}
+              style={styles.pickerInput}
+              onPress={() => {
+                setShowTimePicker(true);
+                setTimeConfirmed(false);
+              }}
             >
+              <Ionicons
+                name="time"
+                size={20}
+                color={Colors.primary}
+                style={{ marginRight: 8 }}
+              />
               <Text
                 style={
                   formData.start_time
@@ -250,18 +309,38 @@ export default function CreateAppointmentScreen() {
                 }
               >
                 {formData.start_time ||
-                  t("calendar.timePlaceholder", "HH:MM (e.g., 14:30)")}
+                  t("calendar.timePlaceholder", "Select time")}
               </Text>
             </TouchableOpacity>
-            {showTimePicker && (
-              <DateTimePicker
-                value={selectedTime}
-                mode="time"
-                display="default"
-                onChange={onTimeChange}
-                is24Hour={true}
-              />
-            )}
+            {showTimePicker &&
+              (Platform.OS === "ios" ? (
+                <View style={styles.pickerModal}>
+                  <DateTimePicker
+                    value={selectedTime}
+                    mode="time"
+                    display="spinner"
+                    onChange={onTimeChange}
+                    is24Hour={true}
+                    style={styles.iosPicker}
+                  />
+                  <TouchableOpacity
+                    style={styles.confirmButton}
+                    onPress={confirmTimeSelection}
+                  >
+                    <Text style={styles.confirmButtonText}>
+                      {t("common.confirm", "Confirm")}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <DateTimePicker
+                  value={selectedTime}
+                  mode="time"
+                  display="default"
+                  onChange={onTimeChange}
+                  is24Hour={true}
+                />
+              ))}
 
             <Text style={styles.inputLabel}>
               {t("calendar.duration", "Duration (minutes)")}
@@ -440,22 +519,69 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: Colors.border,
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 12,
+    padding: 14,
     fontSize: 16,
     color: Colors.textPrimary,
-    backgroundColor: Colors.backgroundLight,
+    backgroundColor: Colors.cardBackground,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  pickerInput: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    padding: 14,
+    backgroundColor: Colors.cardBackground,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   inputText: {
     fontSize: 16,
     color: Colors.textPrimary,
+    flex: 1,
   },
   placeholderText: {
     fontSize: 16,
     color: Colors.textLight,
+    flex: 1,
   },
   textArea: {
     height: 80,
     textAlignVertical: "top",
+  },
+  pickerModal: {
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 8,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  iosPicker: {
+    height: 180,
+  },
+  confirmButton: {
+    backgroundColor: Colors.primary,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 12,
+  },
+  confirmButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
