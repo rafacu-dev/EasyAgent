@@ -107,7 +107,6 @@
     "duration": "Duration",
     "started": "Started",
     "ended": "Ended",
-    "cost": "Estimated Cost",
     "disconnectReason": "Disconnect Reason",
     "inbound": "Inbound",
     "outbound": "Outbound",
@@ -568,7 +567,12 @@
     "multiplePhones": "{{count}} phone numbers",
     "searchPlaceholder": "Search contacts...",
     "loading": "Loading contacts...",
-    "phonesCount": "{{count}} phone numbers"
+    "phonesCount": "{{count}} phone numbers",
+    "callWith": "Call with",
+    "callTwilio": "AI Agent Number",
+    "callTwilioDesc": "Call using your Twilio number",
+    "callPhone": "Phone Number",
+    "callPhoneDesc": "Call using your phone directly"
   },
   "messages": {
     "title": "Messages",

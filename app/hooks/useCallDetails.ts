@@ -94,13 +94,6 @@ export const useCallDetails = (id?: string) => {
     }
   };
 
-  const estimateCost = (ms?: number) => {
-    if (!ms || ms <= 0) return "$0.00";
-    const minutes = Math.ceil(ms / 60000);
-    const cost = minutes * 0.06;
-    return `$${cost.toFixed(2)}`;
-  };
-
   // Parse transcript into chat messages
   const parseTranscript = (transcript?: string) => {
     if (!transcript) return [];
@@ -167,7 +160,6 @@ export const useCallDetails = (id?: string) => {
     transcriptMessages,
     directionInfo,
     getStatusColor,
-    estimateCost,
   };
 };
 
