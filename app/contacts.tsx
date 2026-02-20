@@ -21,6 +21,7 @@ import {
   RefreshControl,
   Alert,
   Linking,
+  Modal,
 } from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -41,6 +42,8 @@ export default function ContactsScreen() {
   const [expandedContactId, setExpandedContactId] = useState<string | null>(
     null,
   );
+  const [callModalVisible, setCallModalVisible] = useState(false);
+  const [callModalNumber, setCallModalNumber] = useState<string>("");
 
   const {
     filteredContacts,
@@ -64,6 +67,25 @@ export default function ContactsScreen() {
     setRefreshing(false);
   }, [refetch]);
 
+  // Show call method modal instead of calling directly
+  const handleCall = useCallback((phoneNumber: string) => {
+    setCallModalNumber(phoneNumber);
+    setCallModalVisible(true);
+  }, []);
+
+  const handleCallWithTwilio = useCallback(() => {
+    setCallModalVisible(false);
+    router.push({
+      pathname: "/(tabs)/phone",
+      params: { phoneNumber: callModalNumber },
+    });
+  }, [callModalNumber]);
+
+  const handleCallWithPhone = useCallback(() => {
+    setCallModalVisible(false);
+    Linking.openURL(`tel:${callModalNumber}`);
+  }, [callModalNumber]);
+
   // Show action options for a contact
   const showContactOptions = useCallback(
     (contact: DeviceContact, phoneNumber: string) => {
@@ -71,7 +93,7 @@ export default function ContactsScreen() {
         {
           text: t("contacts.call", "Call"),
           onPress: () => {
-            Linking.openURL(`tel:${phoneNumber}`);
+            handleCall(phoneNumber);
           },
         },
         {
@@ -229,7 +251,7 @@ export default function ContactsScreen() {
               <>
                 <TouchableOpacity
                   style={styles.iconButton}
-                  onPress={() => Linking.openURL(`tel:${primaryPhone}`)}
+                  onPress={() => handleCall(primaryPhone)}
                 >
                   <Ionicons
                     name="call-outline"
@@ -282,7 +304,7 @@ export default function ContactsScreen() {
                 <View style={styles.phoneListActions}>
                   <TouchableOpacity
                     style={styles.phoneListButton}
-                    onPress={() => Linking.openURL(`tel:${phone.number}`)}
+                    onPress={() => handleCall(phone.number)}
                   >
                     <Ionicons
                       name="call-outline"
@@ -425,6 +447,100 @@ export default function ContactsScreen() {
           windowSize={10}
         />
       )}
+
+      {/* Call Method Modal */}
+      <Modal
+        visible={callModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCallModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setCallModalVisible(false)}
+        >
+          <View style={styles.callModalContainer}>
+            <View style={styles.callModalContent}>
+              <Text style={styles.callModalTitle}>
+                {t("contacts.callWith", "Call with")}
+              </Text>
+              <Text style={styles.callModalNumber}>
+                {formatPhoneNumber(callModalNumber)}
+              </Text>
+
+              <TouchableOpacity
+                style={styles.callModalOption}
+                onPress={handleCallWithTwilio}
+              >
+                <View
+                  style={[
+                    styles.callModalIconContainer,
+                    { backgroundColor: Colors.primary + "15" },
+                  ]}
+                >
+                  <Ionicons name="headset" size={24} color={Colors.primary} />
+                </View>
+                <View style={styles.callModalOptionText}>
+                  <Text style={styles.callModalOptionTitle}>
+                    {t("contacts.callTwilio", "AI Agent Number")}
+                  </Text>
+                  <Text style={styles.callModalOptionDesc}>
+                    {t(
+                      "contacts.callTwilioDesc",
+                      "Call using your Twilio number",
+                    )}
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={Colors.textLight}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.callModalOption}
+                onPress={handleCallWithPhone}
+              >
+                <View
+                  style={[
+                    styles.callModalIconContainer,
+                    { backgroundColor: Colors.success + "15" },
+                  ]}
+                >
+                  <Ionicons name="call" size={24} color={Colors.success} />
+                </View>
+                <View style={styles.callModalOptionText}>
+                  <Text style={styles.callModalOptionTitle}>
+                    {t("contacts.callPhone", "Phone Number")}
+                  </Text>
+                  <Text style={styles.callModalOptionDesc}>
+                    {t(
+                      "contacts.callPhoneDesc",
+                      "Call using your phone directly",
+                    )}
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={Colors.textLight}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.callModalCancel}
+                onPress={() => setCallModalVisible(false)}
+              >
+                <Text style={styles.callModalCancelText}>
+                  {t("common.cancel", "Cancel")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -664,5 +780,78 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: 16,
     fontWeight: "600",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  callModalContainer: {
+    width: "85%",
+    maxWidth: 360,
+  },
+  callModalContent: {
+    backgroundColor: Colors.cardBackground,
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  callModalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: Colors.textPrimary,
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  callModalNumber: {
+    fontSize: 15,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  callModalOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: Colors.backgroundLight,
+    marginBottom: 10,
+  },
+  callModalIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  callModalOptionText: {
+    flex: 1,
+  },
+  callModalOptionTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+  },
+  callModalOptionDesc: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  callModalCancel: {
+    alignItems: "center",
+    paddingVertical: 12,
+    marginTop: 4,
+  },
+  callModalCancelText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: Colors.textSecondary,
   },
 });

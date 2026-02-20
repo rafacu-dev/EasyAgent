@@ -107,7 +107,6 @@
     "duration": "Duración",
     "started": "Iniciada",
     "ended": "Finalizada",
-    "cost": "Costo Estimado",
     "disconnectReason": "Razón de Desconexión",
     "inbound": "Entrante",
     "outbound": "Saliente",
@@ -568,7 +567,12 @@
     "searchPlaceholder": "Buscar contactos...",
     "noResults": "No se encontraron contactos",
     "tryDifferentSearch": "Prueba con otra búsqueda",
-    "phonesCount": "{{count}} números de teléfono"
+    "phonesCount": "{{count}} números de teléfono",
+    "callWith": "Llamar con",
+    "callTwilio": "Número del Agente IA",
+    "callTwilioDesc": "Llamar usando tu número Twilio",
+    "callPhone": "Número de Teléfono",
+    "callPhoneDesc": "Llamar usando tu teléfono directamente"
   },
   "messages": {
     "title": "Mensajes",
