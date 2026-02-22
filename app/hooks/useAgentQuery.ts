@@ -6,12 +6,18 @@ import type { AgentConfig } from "@/app/utils/types";
 // Fetch agent from API
 const fetchAgent = async (): Promise<AgentConfig | null> => {
   const response = await apiClient.get("agents/");
-  if (response.data && response.data.length > 0) {
-    const agentData = response.data[0];
+  const agents = Array.isArray(response)
+    ? response
+    : Array.isArray(response?.data)
+      ? response.data
+      : [];
+
+  if (agents.length > 0) {
+    const agentData = agents[0];
 
     const config: AgentConfig = {
       id: agentData.id,
-      agentName: agentData.name,
+      agentName: agentData.name || agentData.agent_name || "",
       agentGender: agentData.agent_gender,
       companyName: agentData.company_name,
       sector: agentData.sector,

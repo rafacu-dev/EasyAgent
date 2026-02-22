@@ -65,9 +65,11 @@ export default function AgentSetup() {
         language: language,
       });
 
-      if (response.data && response.data.id) {
+      const createdAgent = response?.data || response;
+
+      if (createdAgent && createdAgent.id) {
         const newConfig = {
-          id: response.data.id,
+          id: createdAgent.id,
           sector: params.sector as string,
           companyName: params.companyName as string,
           socialMediaAndWeb: (params.socialMediaAndWeb as string) || "",
