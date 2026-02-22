@@ -8,7 +8,7 @@ import { useEffect, useRef } from "react";
 import { AppState, AppStateStatus, Platform, StatusBar } from "react-native";
 import { saveLastLogin, getAuthToken } from "@/app/utils/storage";
 import * as Updates from "expo-updates";
-import Purchases, { LOG_LEVEL } from "react-native-purchases";
+import { RevenueCatProvider } from "@/app/contexts/RevenueCatContext";
 import NotificationProvider from "./notifications/NotificationProvider";
 import Toast from "react-native-toast-message";
 import { toastConfig } from "@/app/utils/toastConfig";
@@ -110,23 +110,6 @@ function AppStateHandler({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   useEffect(() => {
-    const initializePurchases = async () => {
-      Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
-      if (Platform.OS === "ios") {
-        Purchases.configure({
-          apiKey: Constants.expoConfig?.extra?.rcApplApiKey,
-        });
-      } //else if (Platform.OS === "android") {
-      //  Purchases.configure({
-      //    apiKey: Constants.expoConfig?.extra?.rcGooglApiKey,
-      //  });
-      //}
-    };
-
-    initializePurchases();
-  }, []);
-
-  useEffect(() => {
     const initializeFacebookSDK = async () => {
       // No ejecutar en Expo Go
       const isExpoGo = Constants.appOwnership === "expo";
@@ -162,40 +145,42 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent={true}
-      />
-      <AppStateHandler>
-        <NotificationProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: {
-                backgroundColor: Colors.background,
-                paddingTop: Constants.statusBarHeight,
-              },
-            }}
-          >
-            <Stack.Screen
-              name="create-appointment"
-              options={{
-                presentation: "modal",
-                contentStyle: { backgroundColor: Colors.background },
+      <RevenueCatProvider>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="transparent"
+          translucent={true}
+        />
+        <AppStateHandler>
+          <NotificationProvider>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: {
+                  backgroundColor: Colors.background,
+                  paddingTop: Constants.statusBarHeight,
+                },
               }}
-            />
-            <Stack.Screen
-              name="compose-message"
-              options={{
-                presentation: "modal",
-                contentStyle: { backgroundColor: Colors.background },
-              }}
-            />
-          </Stack>
-          <Toast config={toastConfig} />
-        </NotificationProvider>
-      </AppStateHandler>
+            >
+              <Stack.Screen
+                name="create-appointment"
+                options={{
+                  presentation: "modal",
+                  contentStyle: { backgroundColor: Colors.background },
+                }}
+              />
+              <Stack.Screen
+                name="compose-message"
+                options={{
+                  presentation: "modal",
+                  contentStyle: { backgroundColor: Colors.background },
+                }}
+              />
+            </Stack>
+            <Toast config={toastConfig} />
+          </NotificationProvider>
+        </AppStateHandler>
+      </RevenueCatProvider>
     </QueryClientProvider>
   );
 }

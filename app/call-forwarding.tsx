@@ -13,9 +13,12 @@ import { Colors } from "@/app/utils/colors";
 import { US_CARRIERS } from "@/app/utils/constants";
 import { useCallForwarding } from "@/app/hooks/useCallForwarding";
 import { CarrierCard } from "@/app/components/call-forwarding";
+import { useSubscription } from "@/app/hooks/useSubscription";
+import { showWarning } from "@/app/utils/toast";
 
 export default function CallForwardingScreen() {
   const { t } = useTranslation();
+  const { isProUser } = useSubscription();
   const {
     twilioNumber,
     hasTwilioNumber,
@@ -25,6 +28,23 @@ export default function CallForwardingScreen() {
     copyTwilioNumber,
     formatCode,
   } = useCallForwarding();
+
+  const handleGetPhoneNumber = () => {
+    if (!isProUser) {
+      showWarning(
+        t("subscription.proFeature", "Pro Feature"),
+        t(
+          "subscription.phoneNumberProMessage",
+          "Phone numbers are a Pro feature. Upgrade to access this feature.",
+        ),
+      );
+      setTimeout(() => {
+        router.push("/paywall/PaywallScreen");
+      }, 1500);
+    } else {
+      router.push("/buy-phone-number");
+    }
+  };
 
   if (!hasTwilioNumber) {
     return (
@@ -57,7 +77,7 @@ export default function CallForwardingScreen() {
           </Text>
           <TouchableOpacity
             style={styles.getPhoneButton}
-            onPress={() => router.push("/buy-phone-number")}
+            onPress={handleGetPhoneNumber}
           >
             <Text style={styles.getPhoneButtonText}>
               {t("callForwarding.getPhoneNumber", "Get Phone Number")}

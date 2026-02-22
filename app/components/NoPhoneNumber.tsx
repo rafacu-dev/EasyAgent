@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { router } from "expo-router";
 import { Colors } from "@/app/utils/colors";
-import { useUserQuery } from "@/app/hooks";
+import { useSubscription } from "@/app/hooks/useSubscription";
 import { showWarning } from "@/app/utils/toast";
 
 interface NoPhoneNumberProps {
@@ -16,10 +16,10 @@ export default function NoPhoneNumber({
   translationPrefix = "home",
 }: NoPhoneNumberProps) {
   const { t } = useTranslation();
-  const { isProOrAbove } = useUserQuery();
+  const { isProUser } = useSubscription();
 
   const handleBuyPhoneNumber = () => {
-    if (!isProOrAbove) {
+    if (!isProUser) {
       showWarning(
         t("subscription.proFeature", "Pro Feature"),
         t(

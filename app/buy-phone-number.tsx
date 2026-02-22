@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -13,9 +13,12 @@ import { Colors } from "@/app/utils/colors";
 import { PhoneSearchHeader } from "./components/PhoneSearchHeader";
 import { useBuyPhoneNumber } from "@/app/hooks/useBuyPhoneNumber";
 import { NumberCard, InfoModal } from "@/app/components/buy-phone-number";
+import { useSubscription } from "@/app/hooks/useSubscription";
+import { showWarning } from "@/app/utils/toast";
 
 export default function BuyPhoneNumberScreen() {
   const { t } = useTranslation();
+  const { isProUser, isLoading: isLoadingSubscription } = useSubscription();
   const {
     areaCode,
     setAreaCode,
@@ -30,6 +33,22 @@ export default function BuyPhoneNumberScreen() {
     handlePurchase,
     isPurchasing,
   } = useBuyPhoneNumber();
+
+  // Verificar si el usuario es premium al cargar la pantalla
+  useEffect(() => {
+    if (!isLoadingSubscription && !isProUser) {
+      showWarning(
+        t("subscription.proFeature", "Pro Feature"),
+        t(
+          "subscription.phoneNumberProMessage",
+          "Phone numbers are a Pro feature. Upgrade to access this feature.",
+        ),
+      );
+      setTimeout(() => {
+        router.replace("/paywall/PaywallScreen");
+      }, 1500);
+    }
+  }, [isProUser, isLoadingSubscription, t]);
 
   const ListEmptyComponent = () => {
     if (isLoading) return null;
