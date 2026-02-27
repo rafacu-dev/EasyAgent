@@ -88,6 +88,7 @@
     "notifications": "Actividad Reciente",
     "newCalls": "Nuevas Llamadas",
     "upcomingAppointments": "Próximas",
+    "upgradeToPro": "Actualizar a Pro",
     "noCallsYet": "Aún No Hay Llamadas",
     "noCallsDescription": "Tus llamadas recientes aparecerán aquí una vez que comiences a hacer o recibir llamadas.",
     "filterPhone": "Teléfono",
@@ -480,7 +481,34 @@
     "usingReferralCode": "🎁 Estás usando un código de referido que te da descuento",
     "activePlanTitle": "Plan Activo",
     "activePlanMessage": "Ya tienes un plan activo. Serás redirigido a la pantalla principal.",
-    "initializationError": "Error de Inicialización"
+    "initializationError": "Error de Inicialización",
+    "packages": {
+      "weekly": {
+        "title": "Plan Semanal",
+        "subtitle": "Accede a todas las funcionalidades",
+        "price": "$5.99",
+        "period": "por semana"
+      },
+      "monthly": {
+        "title": "Plan Mensual",
+        "subtitle": "Accede completo sin límites",
+        "price": "$9.99",
+        "period": "por mes"
+      },
+      "annual": {
+        "title": "Plan Anual",
+        "subtitle": "El mejor ahorro, funciones ilimitadas",
+        "price": "$69.99",
+        "comparePrice": "$119.88",
+        "period": "por año"
+      },
+      "basicMonthly": {
+        "title": "Plan Básico Mensual",
+        "subtitle": "Funcionalidades básicas",
+        "price": "$3.99",
+        "period": "por mes"
+      }
+    }
   },
   "subscription": {
     "proFeature": "Función Pro",

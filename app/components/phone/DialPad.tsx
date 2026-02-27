@@ -38,7 +38,7 @@ export const DialPad = memo(function DialPad({
   showBackspace = true,
 }: DialPadProps) {
   const handleDigitPress = (digit: string) => {
-    Vibration.vibrate(1);
+    //Vibration.vibrate(1);
     onDigitPress(digit);
   };
 
@@ -108,11 +108,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-evenly",
     marginBottom: 12,
+    flex: 1,
   },
   dialButton: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    aspectRatio: 1,
+    maxWidth: 65,
+    maxHeight: 65,
+    flex: 1,
+    marginHorizontal: 8,
+    borderRadius: 100,
     backgroundColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
@@ -131,15 +135,21 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.success,
   },
   backspaceButton: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    aspectRatio: 1,
+    maxWidth: 65,
+    maxHeight: 65,
+    flex: 1,
+    marginHorizontal: 8,
+    borderRadius: 100,
     justifyContent: "center",
     alignItems: "center",
   },
   placeholderButton: {
-    width: 72,
-    height: 72,
+    aspectRatio: 1,
+    maxWidth: 65,
+    maxHeight: 65,
+    flex: 1,
+    marginHorizontal: 8,
   },
 });
 

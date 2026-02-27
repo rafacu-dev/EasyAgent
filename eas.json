@@ -14,7 +14,7 @@
       "distribution": "internal"
     },
     "production": {
-      "channel": "main",
+      "channel": "production",
       "autoIncrement": true
     }
   },

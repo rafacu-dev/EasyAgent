@@ -11,6 +11,7 @@ import {
   Image,
   Animated,
   ImageBackground,
+  Alert,
 } from "react-native";
 import Reanimated, {
   useSharedValue,
@@ -91,7 +92,7 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
           );
           setTimeout(() => {
             router.dismissAll();
-            router.replace("/home");
+            router.replace("/(tabs)/home");
           }, 2000);
         }
       } catch (error) {
@@ -281,6 +282,18 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
       const hasActiveProduct =
         purchaseResult.customerInfo.activeSubscriptions.length > 0;
       const isSubscriptionActive = hasActiveSubscription || hasActiveProduct;
+      
+      // Si la suscripción está activa, redirigir a home
+      if (isSubscriptionActive) {
+        showSuccess(
+          t("paywall.purchaseSuccessTitle", "¡Compra exitosa!"),
+          t("paywall.purchaseSuccessMessage", "Ya eres usuario Pro")
+        );
+        setTimeout(() => {
+          router.dismissAll();
+          router.replace("/(tabs)/home");
+        }, 2000);
+      }
     } catch (error) {
       const purchaseError = error as PurchasesError;
       if (!purchaseError.userCancelled) {
@@ -406,83 +419,108 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
     );
   };
 
+  // Diccionario con los valores de cada oferta
+  const packagesDictionary: {
+    [key: string]: {
+      title: string;
+      subtitle: string;
+      price: string;
+      comparePrice: string | null;
+      period: string;
+    };
+  } = {
+    rc_weekly: {
+      title: t("paywall.packages.weekly.title"),
+      subtitle: t("paywall.packages.weekly.subtitle"),
+      price: t("paywall.packages.weekly.price"),
+      comparePrice: null,
+      period: t("paywall.packages.weekly.period"),
+    },
+    rc_monthly: {
+      title: t("paywall.packages.monthly.title"),
+      subtitle: t("paywall.packages.monthly.subtitle"),
+      price: t("paywall.packages.monthly.price"),
+      comparePrice: null,
+      period: t("paywall.packages.monthly.period"),
+    },
+    rc_annual: {
+      title: t("paywall.packages.annual.title"),
+      subtitle: t("paywall.packages.annual.subtitle"),
+      price: t("paywall.packages.annual.price"),
+      comparePrice: t("paywall.packages.annual.comparePrice"),
+      period: t("paywall.packages.annual.period"),
+    },
+    rc_basic_monthly: {
+      title: t("paywall.packages.basicMonthly.title"),
+      subtitle: t("paywall.packages.basicMonthly.subtitle"),
+      price: t("paywall.packages.basicMonthly.price"),
+      comparePrice: null,
+      period: t("paywall.packages.basicMonthly.period"),
+    },
+  };
+
   // Función para obtener título y descripción localizados
   const getLocalizedPackageInfo = (
     pkg: PurchasesPackage,
     index: number,
     isReferral: boolean = false,
   ) => {
-    const isPopular =
-      pkg.identifier.includes("annual") || pkg.identifier.includes("yearly");
-    const isMonthly =
-      pkg.identifier.includes("monthly") || pkg.identifier.includes("month");
-
-    let title = pkg.product.title;
-    let description = pkg.product.description;
-    let price = String(pkg.product.price);
-    let pricePeriod = "per month";
+    let title = "";
+    let description = "";
+    let price = "";
+    let pricePeriod = "";
     let originalPrice = "";
     let discountedPrice = "";
 
-    if (
-      !title ||
-      title.toLowerCase().includes("annual") ||
-      title.toLowerCase().includes("monthly") ||
-      title.toLowerCase().includes("premium")
-    ) {
-      if (isPopular) {
-        title = t("paywall.annual");
-      } else if (isMonthly) {
-        title = t("paywall.monthly");
-      } else {
-        title = `Plan ${index + 1}`;
+    // Buscar en el diccionario primero
+    let packageInfo = null;
+    const identifier = pkg.identifier.toLowerCase();
+    
+    // Intentar encontrar la clave correspondiente en el diccionario
+    for (const key in packagesDictionary) {
+      if (identifier.includes(key)) {
+        packageInfo = packagesDictionary[key];
+        break;
       }
     }
 
-    // Si no hay descripción o está en inglés, usar traducciones locales
-    if (
-      !description ||
-      description.toLowerCase().includes("premium") ||
-      description.toLowerCase().includes("unlimited") ||
-      description.toLowerCase().includes("features")
-    ) {
-    }
-
-    if (price.includes("3.9")) {
-      description = t("paywall.basicMonthlyDescription");
-      price = t("paywall.basicMonthlyPrice");
-      pricePeriod = t("paywall.perBasicMonthly");
-    } else if (isPopular) {
-      description = isReferral
-        ? t("paywall.annualReferralDescription")
-        : t("paywall.annualDescription");
-      price = t("paywall.annualPrice");
-      pricePeriod = t("paywall.perYear");
-
-      // Calcular descuento para referidos (30% off para plan anual)
-      if (isReferral) {
-        originalPrice = t("paywall.annualPrice");
-        const numericPrice = parseFloat(originalPrice.replace(/[^0-9.]/g, ""));
-        const discounted = numericPrice * 0.7; // 30% descuento
-        discountedPrice = `$${discounted.toFixed(2)}`;
-      }
-    } else if (isMonthly) {
-      description = isReferral
-        ? t("paywall.monthlyReferralDescription")
-        : t("paywall.monthlyDescription");
-      price = t("paywall.monthlyPrice");
-      pricePeriod = t("paywall.perMonth");
-
-      // Calcular descuento para referidos (50% off para plan mensual)
-      if (isReferral) {
-        originalPrice = t("paywall.monthlyPrice");
-        const numericPrice = parseFloat(originalPrice.replace(/[^0-9.]/g, ""));
-        const discounted = numericPrice * 0.5; // 50% descuento
+    // Si encontramos el paquete en el diccionario, usar esos valores
+    if (packageInfo) {
+      title = packageInfo.title;
+      description = packageInfo.subtitle;
+      price = packageInfo.price;
+      pricePeriod = packageInfo.period;
+      
+      // Si hay precio de comparación y es referral, calcular descuento
+      if (isReferral && packageInfo.comparePrice) {
+        originalPrice = packageInfo.comparePrice;
+        const numericPrice = parseFloat(packageInfo.price.replace(/[^0-9.]/g, ""));
+        
+        // Determinar el porcentaje de descuento según el tipo de plan
+        const discountPercentage = identifier.includes("annual") || identifier.includes("yearly") ? 0.7 : 0.5;
+        const discounted = numericPrice * discountPercentage;
         discountedPrice = `$${discounted.toFixed(2)}`;
       }
     } else {
-      description = t("paywall.defaultDescription");
-      price = t("paywall.defaultPrice");
+      // Fallback a la lógica anterior si no se encuentra en el diccionario
+      const isPopular =
+        identifier.includes("annual") || identifier.includes("yearly");
+      const isMonthly =
+        identifier.includes("monthly") || identifier.includes("month");
+
+      title = pkg.product.title || `Plan ${index + 1}`;
+      description = pkg.product.description || t("paywall.defaultDescription");
+      price = String(pkg.product.price);
+      pricePeriod = isPopular ? "per year" : isMonthly ? "per month" : "per period";
+
+      // Calcular descuento para referidos usando lógica anterior
+      if (isReferral) {
+        originalPrice = price;
+        const numericPrice = parseFloat(price.replace(/[^0-9.]/g, ""));
+        const discountPercentage = isPopular ? 0.7 : 0.5;
+        const discounted = numericPrice * discountPercentage;
+        discountedPrice = `$${discounted.toFixed(2)}`;
+      }
     }
 
     return {
@@ -549,8 +587,9 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
       >
         <TouchableOpacity
           onPress={() => {
-            if (fromIntro === "true") router.replace("/home");
-            else router.back();
+            //if (fromIntro === "true") router.replace("/(tabs)/home");
+            //else router.back();
+            router.replace("/(tabs)/home");
           }}
           style={{ alignItems: "center" }}
         >

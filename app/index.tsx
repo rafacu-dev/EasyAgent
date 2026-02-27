@@ -7,85 +7,146 @@ import FirstLoginView from "./intro/FirstLoginView";
 import { useAgentQuery } from "@/app/hooks";
 import { useTranslation } from "react-i18next";
 import { Colors } from "@/app/utils/colors";
+import { useSubscription } from "@/app/hooks/useSubscription";
 
 export default function Index() {
   const { t } = useTranslation();
+  const [showingSplash, setShowingSplash] = useState(true);
+  const [splashStatus, setSplashStatus] = useState<string>("");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [isCheckingUpdates, setIsCheckingUpdates] = useState(true);
-  const [updateStatus, setUpdateStatus] = useState<string>("");
-  const { data: agentConfig, isLoading: agentLoading } = useAgentQuery();
+  
+  // Solo cargar datos si el usuario está autenticado
+  const { data: agentConfig, isLoading: agentLoading } = useAgentQuery({
+    enabled: isAuthenticated === true,
+  });
+  const { isProUser, isLoading: subscriptionLoading } = useSubscription();
 
-  // Check for updates on mount
+  // Inicialización completa en el splash: Updates + Auth + Data loading
   useEffect(() => {
-    const checkForUpdates = async () => {
+    const initializeApp = async () => {
       const startTime = Date.now();
       const minimumSplashDuration = 3000; // 3 seconds
 
       try {
-        if (!__DEV__) {
-          setUpdateStatus(
-            t("index.checkingUpdates", "Buscando actualizaciones..."),
-          );
+        // ═══════════════════════════════════════
+        // PASO 1: VERIFICAR Y APLICAR ACTUALIZACIONES OTA
+        // ═══════════════════════════════════════
+        console.log("🔄 [OTA] ═══════════════════════════════════════");
+        console.log("🔄 [OTA] PASO 1: Verificación de actualizaciones");
+        console.log("🔄 [OTA] Updates.isEnabled:", Updates.isEnabled);
+        console.log("🔄 [OTA] Updates.channel:", Updates.channel || "none");
+        console.log("🔄 [OTA] Updates.updateId:", Updates.updateId || "none");
+        console.log("🔄 [OTA] Updates.isEmbeddedLaunch:", Updates.isEmbeddedLaunch);
+        console.log("🔄 [OTA] __DEV__:", __DEV__);
+        console.log("🔄 [OTA] ═══════════════════════════════════════");
 
-          const update = await Updates.checkForUpdateAsync();
-
-          if (update.isAvailable) {
-            setUpdateStatus(
-              t("index.downloadingUpdate", "Descargando actualización..."),
+        // expo-updates no funciona en Expo Go
+        if (Updates.isEnabled && !__DEV__) {
+          try {
+            setSplashStatus(
+              t("index.checkingUpdates", "Buscando actualizaciones..."),
             );
-            await Updates.fetchUpdateAsync();
 
-            setUpdateStatus(
-              t("index.applyingUpdate", "Aplicando actualización..."),
-            );
-            await Updates.reloadAsync();
-            // Si llegamos aquí, la app se reinició con la nueva versión
+            const update = await Updates.checkForUpdateAsync();
+            console.log("🔄 [OTA] Resultado:", {
+              isAvailable: update.isAvailable,
+              manifest: update.manifest,
+            });
+
+            if (update.isAvailable) {
+              console.log("✅ [OTA] ¡Actualización disponible! Descargando...");
+              setSplashStatus(
+                t("index.downloadingUpdate", "Descargando actualización..."),
+              );
+              
+              const fetchResult = await Updates.fetchUpdateAsync();
+              console.log("✅ [OTA] Actualización descargada:", {
+                isNew: fetchResult.isNew,
+              });
+
+              if (fetchResult.isNew) {
+                setSplashStatus(
+                  t("index.applyingUpdate", "Aplicando actualización..."),
+                );
+                console.log("✅ [OTA] Reiniciando app con nueva versión...");
+                await Updates.reloadAsync();
+                return; // La app se reiniciará, no continuar
+              }
+            } else {
+              console.log("✅ [OTA] App actualizada, continuando...");
+            }
+          } catch (error) {
+            console.log("⚠️ [OTA] Error verificando updates (probablemente Expo Go):", error);
           }
+        } else {
+          console.log("⚠️ [OTA] Updates deshabilitados (desarrollo/Expo Go)");
         }
+
+        // ═══════════════════════════════════════
+        // PASO 2: VERIFICAR AUTENTICACIÓN
+        // ═══════════════════════════════════════
+        console.log("🔐 [AUTH] PASO 2: Verificando autenticación...");
+        setSplashStatus(t("index.checkingAuth", "Verificando autenticación..."));
+        
+        const authToken = await AsyncStorage.getItem("authToken");
+        setIsAuthenticated(!!authToken);
+        console.log("🔐 [AUTH] Resultado:", authToken ? "Autenticado" : "No autenticado");
+
+        if (!authToken) {
+          // No autenticado, asegurar tiempo mínimo de splash y redirigir
+          const elapsedTime = Date.now() - startTime;
+          const remainingTime = minimumSplashDuration - elapsedTime;
+          if (remainingTime > 0) {
+            await new Promise((resolve) => setTimeout(resolve, remainingTime));
+          }
+          
+          console.log("🔐 [AUTH] Redirigiendo a login...");
+          router.replace("/login" as any);
+          return;
+        }
+
+        // ═══════════════════════════════════════
+        // PASO 3: CARGAR DATOS (agente y suscripción)
+        // ═══════════════════════════════════════
+        console.log("📊 [DATA] PASO 3: Esperando carga de datos...");
+        setSplashStatus(t("index.loadingData", "Cargando datos..."));
+        // Los datos se cargan automáticamente con useAgentQuery y useSubscription
+        // El siguiente useEffect manejará la navegación cuando estén listos
+        
       } catch (error) {
-        console.error("Error checking for updates:", error);
-        // Continue with normal flow even if update check fails
-      } finally {
-        // Ensure splash screen shows for at least 3 seconds
-        const elapsedTime = Date.now() - startTime;
-        const remainingTime = minimumSplashDuration - elapsedTime;
-
-        if (remainingTime > 0) {
-          await new Promise((resolve) => setTimeout(resolve, remainingTime));
+        console.error("❌ [INIT] Error durante inicialización:", error);
+        if (error instanceof Error) {
+          console.error("❌ [INIT] Mensaje:", error.message);
+          console.error("❌ [INIT] Stack:", error.stack);
         }
-
-        setIsCheckingUpdates(false);
+        // Continuar con flujo normal aunque falle
       }
     };
 
-    checkForUpdates();
+    initializeApp();
   }, [t]);
 
+  // Navegar cuando todos los datos estén listos (después de updates y auth)
   useEffect(() => {
-    const checkAuth = async () => {
-      const authToken = await AsyncStorage.getItem("authToken");
-      setIsAuthenticated(!!authToken);
-
-      if (!authToken) {
-        router.replace("/login" as any);
+    if (isAuthenticated && agentConfig && !agentLoading && !subscriptionLoading) {
+      console.log("✅ [INIT] Todos los datos cargados, navegando...");
+      console.log("✅ [INIT] isProUser:", isProUser);
+      
+      // Ocultar splash y navegar
+      setShowingSplash(false);
+      
+      if (!isProUser) {
+        console.log("➡️ [NAV] Usuario no-Pro, mostrando PaywallScreen");
+        router.replace("/paywall/PaywallScreen" as any);
+      } else {
+        console.log("➡️ [NAV] Usuario Pro, navegando a home");
+        router.replace("/(tabs)/home");
       }
-    };
-
-    // Only check auth after updates are checked
-    if (!isCheckingUpdates) {
-      checkAuth();
     }
-  }, [isCheckingUpdates]);
+  }, [isAuthenticated, agentConfig, agentLoading, subscriptionLoading, isProUser]);
 
-  // Navigate to home when authenticated and agent is loaded
-  useEffect(() => {
-    if (isAuthenticated && agentConfig && !agentLoading) {
-      router.replace("/(tabs)/home");
-    }
-  }, [isAuthenticated, agentConfig, agentLoading]);
-
-  // Show splash screen while checking updates
-  if (isCheckingUpdates) {
+  // Mostrar splash durante toda la inicialización (updates + auth + data loading)
+  if (showingSplash) {
     return (
       <View style={styles.splashContainer}>
         <Image
@@ -98,46 +159,13 @@ export default function Index() {
           color={Colors.primary}
           style={styles.loader}
         />
-        <Text style={styles.updateText}>{updateStatus}</Text>
+        <Text style={styles.updateText}>{splashStatus}</Text>
       </View>
     );
   }
 
-  // Wait for auth check
-  if (isAuthenticated === null) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>
-          {t("index.checkingAuth", "Checking authentication...")}
-        </Text>
-      </View>
-    );
-  }
-
-  // Wait for agent loading (only if authenticated)
-  if (isAuthenticated && agentLoading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>
-          {t("index.loadingAgent", "Loading agent...")}
-        </Text>
-      </View>
-    );
-  }
-
-  // If authenticated and has agent, show loading while navigating
-  if (isAuthenticated && agentConfig) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>
-          {t("index.redirecting", "Redirecting...")}
-        </Text>
-      </View>
-    );
-  }
+  // Estos estados ahora se manejan en el splash screen de arriba
+  // Si llegamos aquí es porque algo no está configurado correctamente
 
   // Authenticated but no agent - show first login view
   if (isAuthenticated) {

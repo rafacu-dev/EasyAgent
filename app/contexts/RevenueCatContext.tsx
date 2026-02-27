@@ -18,6 +18,9 @@ interface RevenueCatProviderProps {
   children: ReactNode;
 }
 
+// Detectar si estamos en Expo Go
+const isExpoGo = Constants.appOwnership === 'expo';
+
 export function RevenueCatProvider({ children }: RevenueCatProviderProps) {
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [isProUser, setIsProUser] = useState(false);
@@ -26,6 +29,15 @@ export function RevenueCatProvider({ children }: RevenueCatProviderProps) {
   // Inicializar Purchases
   useEffect(() => {
     const initializePurchases = async () => {
+      // RevenueCat no funciona en Expo Go - requiere un build nativo
+      if (isExpoGo) {
+        console.log('⚠️ RevenueCat deshabilitado en Expo Go');
+        console.log('ℹ️ Para probar suscripciones, usa: npx expo run:ios o npx expo run:android');
+        setIsProUser(true); // En desarrollo, simular usuario Pro
+        setIsLoading(false);
+        return;
+      }
+
       try {
         Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
         
@@ -54,6 +66,12 @@ export function RevenueCatProvider({ children }: RevenueCatProviderProps) {
 
   // Función para actualizar la información del cliente
   const refreshCustomerInfo = async () => {
+    if (isExpoGo) {
+      setIsProUser(true); // Simular usuario Pro en Expo Go
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       const info = await Purchases.getCustomerInfo();
@@ -100,7 +118,10 @@ export function RevenueCatProvider({ children }: RevenueCatProviderProps) {
   };
 
   // Función para restaurar compras
-  const restorePurchases = async (): Promise<{ success: boolean; error?: string }> => {
+  const restorePurchases = async (): Promise<{ success: boolean; error?: string }> => {    if (isExpoGo) {
+      console.log('⚠️ Restaurar compras no disponible en Expo Go');
+      return { success: false, error: 'Restaurar compras requiere un build nativo' };
+    }
     try {
       const info = await Purchases.restorePurchases();
       setCustomerInfo(info);

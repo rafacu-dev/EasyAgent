@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.drecom.EasyAgent",
-      "supportsTablet": true,
+      "supportsTablet": false,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "EasyAgent needs microphone access to make voice calls with customers and clients",
         "UIBackgroundModes": ["audio", "voip"],

@@ -5,14 +5,13 @@
  * Uses useHome hook for state management and home components for UI
  */
 
-import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useTranslation } from "react-i18next";
-import Constants from "expo-constants";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Colors } from "@/app/utils/colors";
 import { useHome } from "@/app/hooks/useHome";
+import { useSubscription } from "@/app/hooks/useSubscription";
 import NoPhoneNumber from "@/app/components/NoPhoneNumber";
 import {
   NotificationsCard,
@@ -23,6 +22,7 @@ import {
 
 export default function HomeScreen() {
   const { t } = useTranslation();
+  const { isProUser } = useSubscription();
 
   const {
     // Loading states
@@ -94,14 +94,18 @@ export default function HomeScreen() {
       {/* Header */}
       <Header />
 
-      {/* Expo Go Dev Button */}
-      {Constants.appOwnership === "expo" && (
+      {/* Upgrade to Pro Button - Solo visible si NO es usuario Pro */}
+      {!isProUser && (
         <TouchableOpacity
-          style={styles.expoGoButton}
+          style={styles.upgradeButton}
           onPress={() => router.push("/paywall/PaywallScreen")}
+          activeOpacity={0.8}
         >
-          <Ionicons name="rocket" size={16} color="#fff" />
-          <Text style={styles.expoGoButtonText}>Paywall</Text>
+          <Ionicons name="star" size={20} color="#fff" style={styles.upgradeIcon} />
+          <Text style={styles.upgradeButtonText}>
+            {t("home.upgradeToPro", "Actualizar a Pro")}
+          </Text>
+          <Ionicons name="chevron-forward" size={20} color="#fff" />
         </TouchableOpacity>
       )}
 
@@ -167,27 +171,30 @@ const styles = StyleSheet.create({
   loadingText: {
     color: Colors.textSecondary,
   },
-  expoGoButton: {
+  upgradeButton: {
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "flex-start",
-    marginLeft: 20,
+    justifyContent: "center",
+    marginHorizontal: 20,
     marginBottom: 16,
     backgroundColor: Colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
     shadowColor: Colors.shadowOrange,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  expoGoButtonText: {
+  upgradeIcon: {
+    marginRight: 8,
+  },
+  upgradeButtonText: {
     color: "#fff",
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: "bold",
+    flex: 1,
   },
   callsListWrapper: {
     flex: 1,
