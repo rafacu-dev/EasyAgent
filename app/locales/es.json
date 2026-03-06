@@ -22,7 +22,14 @@
     "redirecting": "Redirigiendo...",
     "checkingUpdates": "Buscando actualizaciones...",
     "downloadingUpdate": "Descargando actualización...",
-    "applyingUpdate": "Aplicando actualización..."
+    "applyingUpdate": "Aplicando actualización...",
+    "loadingData": "Cargando datos..."
+  },
+  "splash": {
+    "easyInvoice": "EasyInvoice",
+    "easyInvoiceDesc": "Generador de facturas con IA",
+    "easyAgent": "EasyAgent",
+    "easyAgentDesc": "Agente de llamadas con IA"
   },
   "intro": {
     "intro0_desc1": "Agente de llamadas activo 24 horas al día",

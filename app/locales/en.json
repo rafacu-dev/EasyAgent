@@ -22,7 +22,14 @@
     "redirecting": "Redirecting...",
     "checkingUpdates": "Checking for updates...",
     "downloadingUpdate": "Downloading update...",
-    "applyingUpdate": "Applying update..."
+    "applyingUpdate": "Applying update...",
+    "loadingData": "Loading data..."
+  },
+  "splash": {
+    "easyInvoice": "EasyInvoice",
+    "easyInvoiceDesc": "AI invoice maker",
+    "easyAgent": "EasyAgent",
+    "easyAgentDesc": "AI call agent"
   },
   "intro": {
     "intro0_desc1": "AI call agent active 24 hours a day",

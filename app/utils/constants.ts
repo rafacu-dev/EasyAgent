@@ -1,8 +1,8 @@
 export const BaseUrl = "https://apieasyagent.onrender.com/api/";
 
 export const LEGAL_URLS = {
-  TERMS_OF_SERVICE: "https://apieasyagent.onrender.com/terms-of-service",
-  PRIVACY_POLICY: "https://apieasyagent.onrender.com/privacy-policy",
+  TERMS_OF_SERVICE: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula",
+  PRIVACY_POLICY: "https://easyagent.drecom.dev/privacy/",
 } as const;
 
 // Centralized storage keys to avoid typos and ensure consistency

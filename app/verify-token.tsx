@@ -125,50 +125,68 @@ export default function VerifyTokenScreen() {
     }
 
     setIsLoading(true);
+    let navigationPerformed = false;
+    
     try {
-      const response = await apiClient.post("auth/verify-token/", {
-        email,
-        token,
-      });
+        console.log("🔐 [VERIFY] Verifying token...");
+        const response = await apiClient.post("auth/verify-token/", {
+          email,
+          token,
+        });
 
-      // Save tokens using constants
-      await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.access);
-      await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refresh);
-      await AsyncStorage.setItem(
-        STORAGE_KEYS.USER,
-        JSON.stringify(response.user),
-      );
+        console.log("✅ [VERIFY] Token verified successfully");
 
-      // Register for push notifications after successful login
-      try {
-        const NotificationService = (
-          await import("./notifications/NotificationService")
-        ).default;
-        const notificationService = NotificationService.getInstance();
+        // Save tokens using constants
+        await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.access);
+        await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refresh);
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.USER,
+          JSON.stringify(response.user),
+        );
 
-        // Request permissions and get token
-        const pushToken =
-          await notificationService.requestPermissionsAndRegister();
-        if (pushToken) {
-          console.log("✅ Notification token obtained after login");
-          // Send to server
-          await notificationService.sendTokenToServer();
+        console.log("✅ [VERIFY] Tokens saved to storage");
+
+        // Set flag to avoid updating state after navigation
+        navigationPerformed = true;
+
+        // Redirect based on user status IMMEDIATELY
+        // Don't wait for notifications to avoid freezing the app
+        if (response.is_new_user) {
+            console.log("➡️ [NAV] New user, navigating to setup");
+            // New user or user without company info - go to setup (will trigger index.tsx flow)
+            router.replace("/");
+        } else {
+            console.log("➡️ [NAV] Existing user, navigating to home");
+            // Existing user with company info - go directly to main app (skip splash)
+            router.replace("/(tabs)/home" as any);
         }
-      } catch (notifError) {
-        console.error("⚠️ Error setting up notifications:", notifError);
-        // Don't block login if notifications fail
-      }
 
-      // Redirect based on user status
-      if (response.is_new_user) {
-        // New user or user without company info - go to setup (will trigger index.tsx flow)
-        router.replace("/");
-      } else {
-        // Existing user with company info - go directly to main app (skip splash)
-        router.replace("/(tabs)/home" as any);
-      }
+        // Register for push notifications in the background (non-blocking)
+        // This happens after navigation so it won't freeze the app
+        setTimeout(async () => {
+          try {
+            console.log("🔔 [NOTIF] Starting notification registration...");
+            const NotificationService = (
+              await import("./notifications/NotificationService")
+            ).default;
+            const notificationService = NotificationService.getInstance();
+
+            // Request permissions and get token
+            const pushToken =
+              await notificationService.requestPermissionsAndRegister();
+            if (pushToken) {
+              console.log("✅ [NOTIF] Token obtained:", pushToken.substring(0, 20) + "...");
+              // Send to server
+              await notificationService.sendTokenToServer();
+              console.log("✅ [NOTIF] Token sent to server");
+            }
+          } catch (notifError) {
+            console.error("⚠️ [NOTIF] Error setting up notifications:", notifError);
+            // Don't block login if notifications fail
+          }
+        }, 100);
     } catch (error: any) {
-      if (__DEV__) console.error("Error verifying token:", error);
+      console.error("❌ [VERIFY] Error verifying token:", error);
       showError(
         t("common.error"),
         error.response?.data?.error || t("verifyToken.verifyFailed"),
@@ -177,7 +195,11 @@ export default function VerifyTokenScreen() {
       setCode(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
     } finally {
-      setIsLoading(false);
+      // Only update loading state if navigation hasn't happened yet
+      // to avoid updating state on unmounted component
+      if (!navigationPerformed) {
+        setIsLoading(false);
+      }
     }
   };
 

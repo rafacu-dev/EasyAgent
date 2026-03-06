@@ -296,7 +296,10 @@ export default function SettingsScreen() {
             {t("settings.support", "Support")}
           </Text>
 
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => Linking.openURL("mailto:easyagent@drecom.dev")}
+          >
             <Ionicons name="help-circle-outline" size={24} color="#666" />
             <Text style={styles.settingItemText}>
               {t("settings.help", "Help & Support")}
