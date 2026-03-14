@@ -277,11 +277,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: Colors.background,
     paddingHorizontal: 40,
+    paddingBottom: 150,
   },
   contentColumn: {
     alignItems: "flex-start",
     justifyContent: "flex-start",
     marginHorizontal: "auto",
+    marginBottom: 50,
   },
   mainLogo: {
     width: 180,
