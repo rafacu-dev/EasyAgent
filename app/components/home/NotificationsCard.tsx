@@ -5,10 +5,11 @@
  */
 
 import React, { memo } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
+import { router } from "expo-router";
 import { Colors } from "@/app/utils/colors";
 import { SkeletonBar } from "./SkeletonBar";
 
@@ -16,17 +17,20 @@ interface NotificationsCardProps {
   newCalls: number;
   newAppointments: number;
   isLoading: boolean;
+  phoneNumber?: string;
 }
 
 export const NotificationsCard = memo(function NotificationsCard({
   newCalls,
   newAppointments,
   isLoading,
+  phoneNumber,
 }: NotificationsCardProps) {
   const { t } = useTranslation();
 
   return (
     <View style={styles.container}>
+
       <View style={styles.header}>
         <Ionicons name="notifications" size={20} color={Colors.primary} />
         <Text style={styles.title}>
@@ -82,6 +86,26 @@ export const NotificationsCard = memo(function NotificationsCard({
           </View>
         </View>
       )}
+
+      {/* Manage Phone Number Button */}
+      <TouchableOpacity
+        style={styles.settingItem}
+        onPress={() => router.push("/call-forwarding" as any)}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="call" size={20} color={Colors.primary} />
+        <View style={styles.settingItemTextContainer}>
+          <Text style={styles.settingItemText}>
+            {t("home.managePhoneNumber", "Gestionar número de teléfono")}
+          </Text>
+          {phoneNumber && (
+            <Text style={styles.phoneNumberText}>
+              {phoneNumber}
+            </Text>
+          )}
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#ccc" />
+      </TouchableOpacity>
     </View>
   );
 });
@@ -154,6 +178,29 @@ const styles = StyleSheet.create({
     height: 40,
     backgroundColor: Colors.borderLight,
     marginHorizontal: 16,
+  },
+  settingItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 24,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+    gap: 6,
+  },
+  settingItemTextContainer: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  settingItemText: {
+    fontSize: 14,
+    color: Colors.textPrimary,
+    fontWeight: "600",
+  },
+  phoneNumberText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 2,
   },
 });
 

@@ -9,6 +9,9 @@ import {
   View,
   ActivityIndicator,
   StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  Image
 } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -16,11 +19,13 @@ import Animated, {
   withDelay,
   withSpring,
   withTiming,
+  withRepeat,
+  Easing,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/app/utils/colors";
 import { apiClient } from "@/app/utils/axios-interceptor";
-import { showError, showSuccess } from "@/app/utils/toast";
+import { showError } from "@/app/utils/toast";
 import { VoiceInput } from "@/app/components/VoiceInput";
 
 const AnimatedView = ({
@@ -70,19 +75,92 @@ const AnimatedView = ({
   );
 };
 
+const ScrapingLoader = ({ visible, t }: { visible: boolean; t: any }) => {
+  const containerOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    if (visible) {
+      containerOpacity.value = withTiming(1, { duration: 300 });
+    } else {
+      containerOpacity.value = withTiming(0, { duration: 200 });
+    }
+  }, [visible, containerOpacity]);
+
+  const containerStyle = useAnimatedStyle(() => ({
+    opacity: containerOpacity.value,
+  }));
+
+  return (
+    <View style={styles.loaderContainer}>
+      <Animated.View style={[styles.loaderContent, containerStyle]}>
+        {/* Imagen sin animación */}
+        <Image
+          source={require("@/assets/images/scraping.jpg")}
+          style={styles.scrapingImage}
+          resizeMode="contain"
+        />
+
+        {/* Loading text */}
+        <Text style={styles.loaderTitle}>
+          {t("companyServices.analyzing", "Analizando tu sitio web")}
+        </Text>
+        <Text style={styles.loaderSubtitle}>
+          {t(
+            "companyServices.extractingInfo",
+            "Extrayendo información de tu empresa...",
+          )}
+        </Text>
+
+        {/* Dots animation */}
+        <View style={styles.dotsContainer}>
+          {[0, 1, 2].map((index) => (
+            <LoadingDot key={index} delay={index * 200} />
+          ))}
+        </View>
+      </Animated.View>
+    </View>
+  );
+};
+
+const LoadingDot = ({ delay }: { delay: number }) => {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    scale.value = withDelay(
+      delay,
+      withRepeat(
+        withTiming(1.5, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true,
+      ),
+    );
+  }, [delay, scale]);
+
+  const dotStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return <Animated.View style={[styles.dot, dotStyle]} />;
+};
+
 export default function CompanyServices() {
   const { t, i18n } = useTranslation();
   const params = useLocalSearchParams();
   const [companyDescription, setCompanyDescription] = useState("");
-  const [companyServices, setCompanyServices] = useState("");
+  const [companyServices, setCompanyServices] = useState<string[]>([]);
+  const [newService, setNewService] = useState("");
   const [showContent, setShowContent] = useState(false);
-  const [isScraping, setIsScraping] = useState(false);
   const [autoScraped, setAutoScraped] = useState(false);
 
   // Get params from previous screens
   const sector = params.sector as string;
   const companyName = params.companyName as string;
   const socialMediaAndWeb = params.socialMediaAndWeb as string;
+
+  // Inicializar isScraping como true si hay URLs para scrapear
+  const [isScraping, setIsScraping] = useState(
+    !!(socialMediaAndWeb && socialMediaAndWeb.trim() !== ""),
+  );
 
   const handleScrape = useCallback(async () => {
     if (!socialMediaAndWeb || socialMediaAndWeb.trim() === "") {
@@ -110,17 +188,12 @@ export default function CompanyServices() {
         setCompanyDescription(data.company_description);
       }
       if (data.company_services) {
-        setCompanyServices(data.company_services);
-      }
-
-      if (data.company_description || data.company_services) {
-        showSuccess(
-          t("common.success"),
-          t(
-            "companyServices.scrapeSuccess",
-            "Company information extracted successfully!",
-          ),
-        );
+        // Parsear servicios desde texto a array
+        const servicesArray = data.company_services
+          .split("\n")
+          .map((s: string) => s.trim())
+          .filter((s: string) => s.length > 0);
+        setCompanyServices(servicesArray);
       }
     } catch (error: any) {
       console.error("Error scraping company info:", error);
@@ -149,7 +222,7 @@ export default function CompanyServices() {
         socialMediaAndWeb &&
         socialMediaAndWeb.trim() !== "" &&
         !autoScraped &&
-        !isScraping
+        isScraping
       ) {
         console.log("[AUTO-SCRAPE] Starting automatic scraping...");
         setAutoScraped(true);
@@ -157,12 +230,15 @@ export default function CompanyServices() {
       }
     };
 
-    // Delay auto-scrape to allow UI to render first
-    const timer = setTimeout(autoScrape, 1000);
+    // Iniciar auto-scrape inmediatamente
+    const timer = setTimeout(autoScrape, 100);
     return () => clearTimeout(timer);
   }, [socialMediaAndWeb, autoScraped, isScraping, handleScrape]);
 
   const handleSubmit = () => {
+    // Convertir array de servicios a texto
+    const servicesText = companyServices.join("\n");
+    
     // Continue to agent setup with all collected data
     router.push({
       pathname: "/intro/agent-setup",
@@ -171,16 +247,42 @@ export default function CompanyServices() {
         companyName,
         socialMediaAndWeb,
         companyDescription,
-        companyServices,
+        companyServices: servicesText,
       },
     });
   };
 
+  const addService = () => {
+    if (newService.trim()) {
+      setCompanyServices([...companyServices, newService.trim()]);
+      setNewService("");
+    }
+  };
+
+  const removeService = (index: number) => {
+    setCompanyServices(companyServices.filter((_, i) => i !== index));
+  };
+
+  // Si está scrapeando, mostrar solo el loader
+  if (isScraping) {
+    return (
+      <View style={styles.container}>
+        <ScrapingLoader visible={true} t={t} />
+      </View>
+    );
+  }
+
+  // Si no está scrapeando, mostrar el contenido normal
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={0}
+    >
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
           <AnimatedView show={showContent}>
@@ -215,45 +317,44 @@ export default function CompanyServices() {
                     )}
                   </Text>
                 </View>
-              ) : null}
-              <TouchableOpacity
-                style={[
-                  styles.scrapeButton,
-                  isScraping && styles.scrapeButtonDisabled,
-                ]}
-                onPress={handleScrape}
-                disabled={isScraping}
-              >
-                {isScraping ? (
-                  <>
-                    <ActivityIndicator
-                      size="small"
-                      color={Colors.primary}
-                      style={{ marginRight: 10 }}
-                    />
-                    <Text style={styles.scrapeButtonText}>
-                      {t("companyServices.scraping", "Analyzing websites...")}
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    <Ionicons
-                      name="sparkles"
-                      size={20}
-                      color={Colors.primary}
-                      style={{ marginRight: 10 }}
-                    />
-                    <Text style={styles.scrapeButtonText}>
-                      {t(
-                        "companyServices.scrapeFromLinks",
-                        autoScraped
-                          ? "Re-scrape from website links"
-                          : "Auto-fill from website links",
-                      )}
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[
+                    styles.scrapeButton,
+                    isScraping && styles.scrapeButtonDisabled,
+                  ]}
+                  onPress={handleScrape}
+                  disabled={isScraping}
+                >
+                  {isScraping ? (
+                    <>
+                      <ActivityIndicator
+                        size="small"
+                        color={Colors.primary}
+                        style={{ marginRight: 10 }}
+                      />
+                      <Text style={styles.scrapeButtonText}>
+                        {t("companyServices.scraping", "Analyzing websites...")}
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Ionicons
+                        name="sparkles"
+                        size={20}
+                        color={Colors.primary}
+                        style={{ marginRight: 10 }}
+                      />
+                      <Text style={styles.scrapeButtonText}>
+                        {t(
+                          "companyServices.scrapeFromLinks",
+                          "Auto-fill from website links",
+                        )}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
             </AnimatedView>
           )}
 
@@ -307,12 +408,6 @@ export default function CompanyServices() {
                 {t("companyServices.services", "Services Offered")}
                 <Text style={styles.optional}> ({t("common.optional")})</Text>
               </Text>
-              <VoiceInput
-                onTranscription={setCompanyServices}
-                currentValue={companyServices}
-                appendMode={true}
-                size="small"
-              />
             </View>
             <Text style={styles.helperText}>
               {t(
@@ -320,19 +415,50 @@ export default function CompanyServices() {
                 "List your services, pricing, and specialties",
               )}
             </Text>
-            <TextInput
-              value={companyServices}
-              onChangeText={setCompanyServices}
-              placeholder={t(
-                "companyServices.servicesPlaceholder",
-                "List your services and pricing...",
-              )}
-              placeholderTextColor={Colors.textLight}
-              multiline
-              numberOfLines={8}
-              textAlignVertical="top"
-              style={[styles.textArea, { height: 200 }]}
-            />
+
+            {/* Lista de servicios */}
+            {companyServices.length > 0 && (
+              <View style={styles.servicesList}>
+                {companyServices.map((service, index) => (
+                  <View key={index} style={styles.serviceItem}>
+                    <Text style={styles.serviceText}>{service}</Text>
+                    <TouchableOpacity
+                      onPress={() => removeService(index)}
+                      style={styles.removeButton}
+                    >
+                      <Ionicons name="close-circle" size={24} color={Colors.error || "#FF3B30"} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Input para agregar nuevo servicio */}
+            <View style={styles.addServiceContainer}>
+              <TextInput
+                value={newService}
+                onChangeText={setNewService}
+                placeholder={t(
+                  "companyServices.addServicePlaceholder",
+                  "Add a service...",
+                )}
+                placeholderTextColor={Colors.textLight}
+                style={styles.addServiceInput}
+                onSubmitEditing={addService}
+                returnKeyType="done"
+              />
+              <TouchableOpacity
+                onPress={addService}
+                style={styles.addButton}
+                disabled={!newService.trim()}
+              >
+                <Ionicons
+                  name="add-circle"
+                  size={32}
+                  color={newService.trim() ? Colors.primary : Colors.textLight}
+                />
+              </TouchableOpacity>
+            </View>
           </AnimatedView>
         </View>
       </ScrollView>
@@ -340,7 +466,10 @@ export default function CompanyServices() {
       {/* Footer Button */}
       <AnimatedView show={showContent} delay={800} style={styles.footer}>
         <TouchableOpacity
-          style={[styles.continueButton, isScraping && styles.buttonDisabled]}
+          style={[
+            styles.continueButton,
+            isScraping && styles.buttonDisabled,
+          ]}
           disabled={isScraping}
           onPress={handleSubmit}
         >
@@ -353,7 +482,7 @@ export default function CompanyServices() {
           )}
         </TouchableOpacity>
       </AnimatedView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -497,5 +626,86 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "600",
     letterSpacing: 0.3,
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.background,
+    padding: 24,
+  },
+  loaderContent: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scrapingImage: {
+    width: 200,
+    height: 200,
+  },
+  loaderTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: Colors.textPrimary,
+    marginTop: 8,
+    textAlign: "center",
+  },
+  loaderSubtitle: {
+    fontSize: 15,
+    color: Colors.textSecondary,
+    marginTop: 8,
+    textAlign: "center",
+    paddingHorizontal: 12,
+  },
+  dotsContainer: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 20,
+  },
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.primary,
+  },
+  servicesList: {
+    marginBottom: 16,
+  },
+  serviceItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: Colors.cardBackground,
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  serviceText: {
+    flex: 1,
+    fontSize: 15,
+    color: Colors.textPrimary,
+    marginRight: 12,
+  },
+  removeButton: {
+    padding: 4,
+  },
+  addServiceContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  addServiceInput: {
+    flex: 1,
+    backgroundColor: Colors.cardBackground,
+    padding: 14,
+    borderRadius: 12,
+    fontSize: 16,
+    color: Colors.textPrimary,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  addButton: {
+    padding: 4,
   },
 });

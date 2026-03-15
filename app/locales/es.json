@@ -101,7 +101,9 @@
     "filterPhone": "Teléfono",
     "filterWeb": "Web",
     "filterRetell": "Agente",
-    "filterTwilio": "Teléfono"
+    "filterTwilio": "Teléfono",
+    "support": "Soporte",
+    "managePhoneNumber": "Gestionar número de teléfono"
   },
   "callDetails": {
     "title": "Detalles de Llamada",

@@ -8,8 +8,6 @@ import React, { memo } from "react";
 import {
   View,
   Text,
-  SectionList,
-  RefreshControl,
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,27 +21,13 @@ import type { RecentCallItem } from "@/app/utils/types";
 interface CallsListProps {
   sections: CallSection[];
   isLoading: boolean;
-  refreshing: boolean;
-  onRefresh: () => void;
 }
 
 export const CallsList = memo(function CallsList({
   sections,
   isLoading,
-  refreshing,
-  onRefresh,
 }: CallsListProps) {
   const { t } = useTranslation();
-
-  const renderItem = ({ item }: { item: RecentCallItem }) => (
-    <CallItem item={item} />
-  );
-
-  const renderSectionHeader = ({ section }: { section: { title: string } }) => (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionHeaderText}>{section.title}</Text>
-    </View>
-  );
 
   // Loading state
   if (isLoading) {
@@ -83,39 +67,27 @@ export const CallsList = memo(function CallsList({
 
   return (
     <View style={styles.card}>
-      <SectionList
-        sections={sections}
-        renderItem={renderItem}
-        renderSectionHeader={renderSectionHeader}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
-        style={styles.list}
-        stickySectionHeadersEnabled={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={Colors.primary}
-            colors={[Colors.primary]}
-          />
-        }
-      />
+      {sections.map((section) => (
+        <View key={section.title}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionHeaderText}>{section.title}</Text>
+          </View>
+          {section.data.map((item) => (
+            <CallItem key={item.id} item={item} />
+          ))}
+        </View>
+      ))}
     </View>
   );
 });
 
 const styles = StyleSheet.create({
   card: {
-    flex: 1,
     backgroundColor: Colors.background,
     borderRadius: 0,
     marginHorizontal: 0,
     paddingVertical: 0,
     paddingHorizontal: 0,
-  },
-  list: {
-    flex: 1,
-    backgroundColor: "transparent",
     paddingBottom: 20,
   },
   sectionHeader: {

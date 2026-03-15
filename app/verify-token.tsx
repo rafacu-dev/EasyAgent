@@ -149,17 +149,13 @@ export default function VerifyTokenScreen() {
         // Set flag to avoid updating state after navigation
         navigationPerformed = true;
 
-        // Redirect based on user status IMMEDIATELY
-        // Don't wait for notifications to avoid freezing the app
-        if (response.is_new_user) {
-            console.log("➡️ [NAV] New user, navigating to setup");
-            // New user or user without company info - go to setup (will trigger index.tsx flow)
-            router.replace("/");
-        } else {
-            console.log("➡️ [NAV] Existing user, navigating to home");
-            // Existing user with company info - go directly to main app (skip splash)
-            router.replace("/(tabs)/home" as any);
-        }
+        // Always redirect to root (/) to let index.tsx check agent config
+        // index.tsx will:
+        // - Show FirstLoginView if no agent exists
+        // - Redirect to paywall if not Pro user
+        // - Redirect to home if Pro user with agent
+        console.log("➡️ [NAV] Navigating to index for agent verification");
+        router.replace("/");
 
         // Register for push notifications in the background (non-blocking)
         // This happens after navigation so it won't freeze the app

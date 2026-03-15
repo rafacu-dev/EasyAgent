@@ -5,7 +5,7 @@
  * Uses useHome hook for state management and home components for UI
  */
 
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Linking, ScrollView, RefreshControl } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -55,11 +55,21 @@ export default function HomeScreen() {
   const Header = () => (
     <View style={styles.header}>
       <View style={styles.headerTopRow}>
-        <Text style={styles.headerTitle}>
+        <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
           {t("home.welcome", "Welcome")},{" "}
           {agentConfig?.companyName ||
             t("home.yourDashboard", "Your Dashboard")}
         </Text>
+        <TouchableOpacity
+          style={styles.supportButton}
+          onPress={() => Linking.openURL("sms:+13522784162")}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="chatbubble-ellipses-outline" size={24} color={"black"} />
+          <Text style={styles.supportButtonText}>
+            {t("home.support", "Soporte")}
+          </Text>
+        </TouchableOpacity>
       </View>
       {error && <Text style={styles.headerSubtitle}>{error}</Text>}
     </View>
@@ -94,43 +104,52 @@ export default function HomeScreen() {
       {/* Header */}
       <Header />
 
-      {/* Upgrade to Pro Button - Solo visible si NO es usuario Pro */}
-      {!isProUser && (
-        <TouchableOpacity
-          style={styles.upgradeButton}
-          onPress={() => router.push("/paywall/PaywallScreen")}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="star" size={20} color="#fff" style={styles.upgradeIcon} />
-          <Text style={styles.upgradeButtonText}>
-            {t("home.upgradeToPro", "Actualizar a Pro")}
-          </Text>
-          <Ionicons name="chevron-forward" size={20} color="#fff" />
-        </TouchableOpacity>
-      )}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.primary}
+            colors={[Colors.primary]}
+          />
+        }
+      >
+        {/* Upgrade to Pro Button - Solo visible si NO es usuario Pro */}
+        {!isProUser && (
+          <TouchableOpacity
+            style={styles.upgradeButton}
+            onPress={() => router.push("/paywall/PaywallScreen")}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="star" size={20} color="#fff" style={styles.upgradeIcon} />
+            <Text style={styles.upgradeButtonText}>
+              {t("home.upgradeToPro", "Actualizar a Pro")}
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color="#fff" />
+          </TouchableOpacity>
+        )}
 
-      {/* Notifications Card */}
-      <NotificationsCard
-        newCalls={notifications?.newCalls ?? 0}
-        newAppointments={notifications?.newAppointments ?? 0}
-        isLoading={isLoadingNotifications}
-      />
+        {/* Notifications Card */}
+        <NotificationsCard
+          newCalls={notifications?.newCalls ?? 0}
+          newAppointments={notifications?.newAppointments ?? 0}
+          isLoading={isLoadingNotifications}
+          phoneNumber={phoneNumber}
+        />
 
-      {/* Calls Filter */}
-      <CallsFilter filter={callTypeFilter} onFilterChange={setCallTypeFilter} />
+        {/* Calls Filter */}
+        <CallsFilter filter={callTypeFilter} onFilterChange={setCallTypeFilter} />
 
-      {/* Search Bar */}
-      <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
+        {/* Search Bar */}
+        <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
 
-      {/* Calls List */}
-      <View style={styles.callsListWrapper}>
+        {/* Calls List */}
         <CallsList
           sections={callSections}
           isLoading={isLoadingCalls}
-          refreshing={refreshing}
-          onRefresh={onRefresh}
         />
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -148,7 +167,7 @@ const styles = StyleSheet.create({
   headerTopRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 12,
   },
   headerTitle: {
@@ -156,7 +175,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     color: Colors.textPrimary,
-    marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 16,
@@ -196,8 +214,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     flex: 1,
   },
-  callsListWrapper: {
-    flex: 1,
-    marginBottom: 20,
+  supportButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 4,
+  },
+  supportButtonText: {
+    fontSize: 8,
+    marginTop: 2,
+    fontWeight: "700",
   },
 });

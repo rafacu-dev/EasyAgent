@@ -101,7 +101,9 @@
     "filterPhone": "Phone",
     "filterWeb": "Web",
     "filterRetell": "Agent",
-    "filterTwilio": "Phone"
+    "filterTwilio": "Phone",
+    "support": "Support",
+    "managePhoneNumber": "Manage Phone Number"
   },
   "callDetails": {
     "title": "Call Details",

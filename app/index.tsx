@@ -255,11 +255,12 @@ export default function Index() {
   // Si llegamos aquí es porque algo no está configurado correctamente
 
   // Authenticated but no agent - show first login view
-  if (isAuthenticated) {
+  // Only show FirstLoginView if user is authenticated, loading is done, and has no agent
+  if (isAuthenticated && !agentLoading && !subscriptionLoading && !agentConfig) {
     return <FirstLoginView />;
   }
 
-  // Fallback loading
+  // Fallback loading (still loading data)
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color={Colors.primary} />
