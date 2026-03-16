@@ -8,11 +8,12 @@
 import { View, Text, TouchableOpacity, StyleSheet, Linking, ScrollView, RefreshControl } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Colors } from "@/app/utils/colors";
 import { useHome } from "@/app/hooks/useHome";
 import { useSubscription } from "@/app/hooks/useSubscription";
 import NoPhoneNumber from "@/app/components/NoPhoneNumber";
+import { useCallback } from "react";
 import {
   NotificationsCard,
   CallsFilter,
@@ -22,7 +23,14 @@ import {
 
 export default function HomeScreen() {
   const { t } = useTranslation();
-  const { isProUser } = useSubscription();
+  const { isProUser, refresh } = useSubscription();
+
+  // Refrescar el estado de suscripción cuando la pantalla recibe foco
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
 
   const {
     // Loading states

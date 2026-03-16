@@ -14,7 +14,21 @@
     "ok": "OK",
     "pro": "PRO",
     "x": "x",
-    "call": "Llamar"
+    "call": "Llamar",
+    "voiceSdkNotAvailable": "SDK de Voz No Disponible",
+    "voiceSdkNotAvailableMessage": "La función de llamadas de voz no está disponible en este dispositivo. Por favor, asegúrese de tener los módulos nativos adecuados instalados.",
+    "noPhoneForCalls": "No hay número de teléfono disponible para realizar llamadas",
+    "callInProgress": "Ya hay una llamada en curso",
+    "callFailed": "Llamada Fallida",
+    "failedToInitiateCall": "Error al iniciar la llamada",
+    "failedToToggleSpeaker": "Error al cambiar el modo de altavoz",
+    "voice": "Voz",
+    "sms": "SMS",
+    "mms": "MMS",
+    "premiumOnly": "Esta funcionalidad es exclusiva para usuarios Premium",
+    "upgradeToPremium": "⭐ Actualizar a Premium",
+    "premiumBadge": "⭐ PREMIUM",
+    "version": "EasyAgent v1.0.0"
   },
   "index": {
     "checkingAuth": "Verificando autenticación...",

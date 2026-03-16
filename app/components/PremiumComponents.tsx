@@ -4,6 +4,7 @@ import { useSubscription } from '@/app/hooks/useSubscription';
 import { router } from 'expo-router';
 import { Colors } from '@/app/utils/colors';
 import { FontAwesome } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Componente que muestra contenido solo para usuarios premium
@@ -21,6 +22,7 @@ interface PremiumGateProps {
 
 export function PremiumGate({ children, message }: PremiumGateProps) {
   const { isProUser, isLoading } = useSubscription();
+  const { t } = useTranslation();
 
   if (isLoading) {
     return (
@@ -35,13 +37,13 @@ export function PremiumGate({ children, message }: PremiumGateProps) {
       <View style={styles.lockedContainer}>
         <FontAwesome name="lock" size={48} color={Colors.gray} />
         <Text style={styles.lockedText}>
-          {message || 'Esta funcionalidad es exclusiva para usuarios Premium'}
+          {message || t("common.premiumOnly", "This feature is exclusive to Premium users")}
         </Text>
         <TouchableOpacity
           style={styles.upgradeButton}
           onPress={() => router.push('/paywall/PaywallScreen')}
         >
-          <Text style={styles.upgradeButtonText}>⭐ Actualizar a Premium</Text>
+          <Text style={styles.upgradeButtonText}>{t("common.upgradeToPremium", "⭐ Upgrade to Premium")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -58,6 +60,7 @@ export function PremiumGate({ children, message }: PremiumGateProps) {
  */
 export function PremiumBadge() {
   const { isProUser, isLoading } = useSubscription();
+  const { t } = useTranslation();
 
   if (isLoading || !isProUser) {
     return null;
@@ -65,7 +68,7 @@ export function PremiumBadge() {
 
   return (
     <View style={styles.badge}>
-      <Text style={styles.badgeText}>⭐ PREMIUM</Text>
+      <Text style={styles.badgeText}>{t("common.premiumBadge", "⭐ PREMIUM")}</Text>
     </View>
   );
 }

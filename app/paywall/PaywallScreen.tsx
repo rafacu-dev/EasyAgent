@@ -38,6 +38,7 @@ import {
   showWarning,
 } from "@/app/utils/toast";
 import { LEGAL_URLS } from "@/app/utils/constants";
+import { useRevenueCat } from "@/app/contexts/RevenueCatContext";
 
 interface PaywallScreenProps {
   onPurchaseSuccess: () => void;
@@ -45,6 +46,7 @@ interface PaywallScreenProps {
 
 const PaywallScreen: React.FC<PaywallScreenProps> = () => {
   const { t } = useTranslation();
+  const { refreshCustomerInfo } = useRevenueCat();
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
@@ -282,6 +284,9 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
       const hasActiveProduct =
         purchaseResult.customerInfo.activeSubscriptions.length > 0;
       const isSubscriptionActive = hasActiveSubscription || hasActiveProduct;
+      
+      // Refrescar el estado de suscripción en el contexto
+      await refreshCustomerInfo();
       
       // Si la suscripción está activa, redirigir a home
       if (isSubscriptionActive) {

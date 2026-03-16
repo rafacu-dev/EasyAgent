@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import {
   View,
   Text,
@@ -6,7 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { Colors } from "@/app/utils/colors";
@@ -18,7 +18,7 @@ import { showWarning } from "@/app/utils/toast";
 
 export default function CallForwardingScreen() {
   const { t } = useTranslation();
-  const { isProUser } = useSubscription();
+  const { isProUser, refresh } = useSubscription();
   const {
     twilioNumber,
     hasTwilioNumber,
@@ -28,6 +28,13 @@ export default function CallForwardingScreen() {
     copyTwilioNumber,
     formatCode,
   } = useCallForwarding();
+
+  // Refrescar el estado de suscripción cuando la pantalla recibe foco
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
 
   const handleGetPhoneNumber = () => {
     if (!isProUser) {

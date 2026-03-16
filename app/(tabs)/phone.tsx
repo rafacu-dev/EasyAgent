@@ -5,7 +5,7 @@
  * Uses usePhone hook for state management and phone components for UI
  */
 
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import {
   Keyboard,
 } from "react-native";
 import { useTranslation } from "react-i18next";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Colors } from "@/app/utils/colors";
 import { usePhone } from "@/app/hooks/usePhone";
 import NoPhoneNumber from "@/app/components/NoPhoneNumber";

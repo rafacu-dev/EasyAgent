@@ -1,10 +1,11 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Colors } from "@/app/utils/colors";
 import { useSubscription } from "@/app/hooks/useSubscription";
 import { showWarning } from "@/app/utils/toast";
+import { useCallback } from "react";
 
 interface NoPhoneNumberProps {
   variant?: "simple" | "detailed";
@@ -16,7 +17,14 @@ export default function NoPhoneNumber({
   translationPrefix = "home",
 }: NoPhoneNumberProps) {
   const { t } = useTranslation();
-  const { isProUser } = useSubscription();
+  const { isProUser, refresh } = useSubscription();
+
+  // Refrescar el estado de suscripción cuando el componente recibe foco
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
 
   const handleBuyPhoneNumber = () => {
     if (!isProUser) {
@@ -29,7 +37,7 @@ export default function NoPhoneNumber({
       );
       setTimeout(() => {
         router.push("/paywall/PaywallScreen");
-      }, 1500);
+      }, 500);
     } else {
       router.push("/buy-phone-number");
     }

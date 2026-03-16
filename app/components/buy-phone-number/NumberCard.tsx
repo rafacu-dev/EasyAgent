@@ -47,19 +47,19 @@ export function NumberCard({
           {item.capabilities?.voice && (
             <View style={styles.capabilityBadge}>
               <Ionicons name="call" size={12} color={Colors.success} />
-              <Text style={styles.capabilityText}>Voice</Text>
+              <Text style={styles.capabilityText}>{t("common.voice", "Voice")}</Text>
             </View>
           )}
           {item.capabilities?.SMS && (
             <View style={styles.capabilityBadge}>
               <Ionicons name="chatbubble" size={12} color={Colors.info} />
-              <Text style={styles.capabilityText}>SMS</Text>
+              <Text style={styles.capabilityText}>{t("common.sms", "SMS")}</Text>
             </View>
           )}
           {item.capabilities?.MMS && (
             <View style={styles.capabilityBadge}>
               <Ionicons name="image" size={12} color={Colors.info} />
-              <Text style={styles.capabilityText}>MMS</Text>
+              <Text style={styles.capabilityText}>{t("common.mms", "MMS")}</Text>
             </View>
           )}
         </View>

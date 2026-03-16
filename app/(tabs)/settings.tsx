@@ -364,7 +364,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>EasyAgent v1.0.0</Text>
+          <Text style={styles.versionText}>{t("common.version", "EasyAgent v1.0.0")}</Text>
         </View>
       </ScrollView>
     </View>

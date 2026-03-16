@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { apiClient } from "@/app/utils/axios-interceptor";
 import { Audio } from "expo-av";
 import { showError, showInfo, showWarning } from "@/app/utils/toast";
+import { useTranslation } from "react-i18next";
 
 // Types for the Voice SDK
 interface VoiceToken {
@@ -89,6 +90,7 @@ export function useVoiceCall({
   fromNumber,
   onCallStateChange,
 }: UseVoiceCallOptions) {
+  const { t } = useTranslation();
   const [isSDKAvailable, setIsSDKAvailable] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [callState, setCallState] = useState<CallState>({
@@ -310,21 +312,21 @@ export function useVoiceCall({
       if (!isSDKAvailable || !voiceRef.current) {
         console.error("[TWILIO DEBUG] ERROR: Voice SDK not available");
         showError(
-          "Voice SDK Not Available",
-          "The voice calling feature is not available on this device. Please ensure you have the proper native modules installed.",
+          t("common.voiceSdkNotAvailable", "Voice SDK Not Available"),
+          t("common.voiceSdkNotAvailableMessage", "The voice calling feature is not available on this device. Please ensure you have the proper native modules installed."),
         );
         return false;
       }
 
       if (!fromNumber) {
         console.error("[TWILIO DEBUG] ERROR: No from_number available");
-        showError("Error", "No phone number available for making calls");
+        showError(t("common.error", "Error"), t("common.noPhoneForCalls", "No phone number available for making calls"));
         return false;
       }
 
       if (activeCallRef.current) {
         console.warn("[TWILIO DEBUG] WARNING: Call already in progress");
-        showError("Error", "A call is already in progress");
+        showError(t("common.error", "Error"), t("common.callInProgress", "A call is already in progress"));
         return false;
       }
 
@@ -368,7 +370,7 @@ export function useVoiceCall({
           JSON.stringify(error, null, 2),
         );
         updateCallState({ isConnecting: false, remoteParty: null });
-        showError("Call Failed", error.message || "Failed to initiate call");
+        showError(t("common.callFailed", "Call Failed"), error.message || t("common.failedToInitiateCall", "Failed to initiate call"));
         return false;
       }
     },
@@ -460,7 +462,7 @@ export function useVoiceCall({
       );
     } catch (error) {
       console.error("[TWILIO DEBUG] ❌ Failed to toggle speaker:", error);
-      showError("Error", "Failed to toggle speaker mode");
+      showError(t("common.error", "Error"), t("common.failedToToggleSpeaker", "Failed to toggle speaker mode"));
     }
   }, [callState.isSpeakerOn, updateCallState]);
 
