@@ -130,7 +130,7 @@ const NotificationPreferencesScreen: React.FC = () => {
   const testNotification = async (): Promise<void> => {
     try {
       if (!expoPushToken) {
-        showError(t("common.error"), "No push token available");
+        showError(t("common.error"), t("notifications.noPushToken"));
         return;
       }
 

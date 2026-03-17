@@ -28,7 +28,22 @@
     "premiumOnly": "This feature is exclusive to Premium users",
     "upgradeToPremium": "⭐ Upgrade to Premium",
     "premiumBadge": "⭐ PREMIUM",
-    "version": "EasyAgent v1.0.0"
+    "version": "EasyAgent v1.0.0",
+    "perYear": "per year",
+    "perMonth": "per month",
+    "perPeriod": "per period",
+    "step1": "1",
+    "step2": "2",
+    "step3": "3"
+  },
+  "languages": {
+    "autoDetect": "Auto-detect",
+    "spanish": "Español",
+    "english": "English",
+    "french": "Français",
+    "german": "Deutsch",
+    "portuguese": "Português",
+    "italian": "Italiano"
   },
   "index": {
     "checkingAuth": "Checking authentication...",
@@ -505,6 +520,8 @@
     "activePlanTitle": "Active Plan",
     "activePlanMessage": "You already have an active plan. You will be redirected to the home screen.",
     "initializationError": "Initialization Error",
+    "enableFreeTrial": "Enable Free Trial",
+    "freeTrialDays": "3-day free trial",
     "packages": {
       "weekly": {
         "title": "Weekly Plan",
@@ -648,5 +665,8 @@
     "noMessages": "No messages yet",
     "searchPlaceholder": "Search contacts...",
     "loading": "Loading contacts..."
+  },
+  "notifications": {
+    "noPushToken": "No push token available"
   }
 }

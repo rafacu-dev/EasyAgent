@@ -156,7 +156,7 @@ export default function CallForwardingScreen() {
           <View style={styles.stepsCard}>
             <View style={styles.step}>
               <View style={styles.stepNumber}>
-                <Text style={styles.stepNumberText}>1</Text>
+                <Text style={styles.stepNumberText}>{t("common.step1")}</Text>
               </View>
               <View style={styles.stepContent}>
                 <Text style={styles.stepTitle}>
@@ -172,7 +172,7 @@ export default function CallForwardingScreen() {
             </View>
             <View style={styles.step}>
               <View style={styles.stepNumber}>
-                <Text style={styles.stepNumberText}>2</Text>
+                <Text style={styles.stepNumberText}>{t("common.step2")}</Text>
               </View>
               <View style={styles.stepContent}>
                 <Text style={styles.stepTitle}>
@@ -188,7 +188,7 @@ export default function CallForwardingScreen() {
             </View>
             <View style={styles.step}>
               <View style={styles.stepNumber}>
-                <Text style={styles.stepNumberText}>3</Text>
+                <Text style={styles.stepNumberText}>{t("common.step3")}</Text>
               </View>
               <View style={styles.stepContent}>
                 <Text style={styles.stepTitle}>

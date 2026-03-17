@@ -257,7 +257,7 @@ export default function SettingsScreen() {
               {t("settings.language", "Language")}
             </Text>
             <Text style={styles.settingItemValue}>
-              {i18n.language === "en" ? "English" : "Español"}
+              {i18n.language === "en" ? t("languages.english") : t("languages.spanish")}
             </Text>
             <Ionicons name="chevron-forward" size={20} color="#ccc" />
           </TouchableOpacity> */}

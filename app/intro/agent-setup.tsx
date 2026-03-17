@@ -22,13 +22,13 @@ import { VoiceInput } from "@/app/components/VoiceInput";
 
 // Language options for the agent
 const LANGUAGE_OPTIONS = [
-  { code: "auto", label: "Auto-detect", icon: "globe" },
-  { code: "es", label: "Español", icon: "language" },
-  { code: "en", label: "English", icon: "language" },
-  { code: "fr", label: "Français", icon: "language" },
-  { code: "de", label: "Deutsch", icon: "language" },
-  { code: "pt", label: "Português", icon: "language" },
-  { code: "it", label: "Italiano", icon: "language" },
+  { code: "auto", label: "languages.autoDetect", icon: "globe" },
+  { code: "es", label: "languages.spanish", icon: "language" },
+  { code: "en", label: "languages.english", icon: "language" },
+  { code: "fr", label: "languages.french", icon: "language" },
+  { code: "de", label: "languages.german", icon: "language" },
+  { code: "pt", label: "languages.portuguese", icon: "language" },
+  { code: "it", label: "languages.italian", icon: "language" },
 ] as const;
 
 type LanguageCode = (typeof LANGUAGE_OPTIONS)[number]["code"];
@@ -248,7 +248,7 @@ export default function AgentSetup() {
                           styles.languageButtonTextSelected,
                       ]}
                     >
-                      {option.label}
+                      {t(option.label)}
                     </Text>
                   </Pressable>
                 ))}

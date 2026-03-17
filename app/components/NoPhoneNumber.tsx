@@ -28,16 +28,7 @@ export default function NoPhoneNumber({
 
   const handleBuyPhoneNumber = () => {
     if (!isProUser) {
-      showWarning(
-        t("subscription.proFeature", "Pro Feature"),
-        t(
-          "subscription.phoneNumberProMessage",
-          "Phone numbers are a Pro feature. Upgrade to access this feature.",
-        ),
-      );
-      setTimeout(() => {
-        router.push("/paywall/PaywallScreen");
-      }, 500);
+      router.push("/paywall/PaywallScreen");
     } else {
       router.push("/buy-phone-number");
     }

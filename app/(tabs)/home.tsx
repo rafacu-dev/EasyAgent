@@ -75,7 +75,7 @@ export default function HomeScreen() {
         >
           <Ionicons name="chatbubble-ellipses-outline" size={24} color={"black"} />
           <Text style={styles.supportButtonText}>
-            {t("home.support", "Soporte")}
+            {t("home.support", "Support")}
           </Text>
         </TouchableOpacity>
       </View>

@@ -28,7 +28,22 @@
     "premiumOnly": "Esta funcionalidad es exclusiva para usuarios Premium",
     "upgradeToPremium": "⭐ Actualizar a Premium",
     "premiumBadge": "⭐ PREMIUM",
-    "version": "EasyAgent v1.0.0"
+    "version": "EasyAgent v1.0.0",
+    "perYear": "por año",
+    "perMonth": "por mes",
+    "perPeriod": "por período",
+    "step1": "1",
+    "step2": "2",
+    "step3": "3"
+  },
+  "languages": {
+    "autoDetect": "Auto-detectar",
+    "spanish": "Español",
+    "english": "English",
+    "french": "Français",
+    "german": "Deutsch",
+    "portuguese": "Português",
+    "italian": "Italiano"
   },
   "index": {
     "checkingAuth": "Verificando autenticación...",
@@ -505,6 +520,8 @@
     "activePlanTitle": "Plan Activo",
     "activePlanMessage": "Ya tienes un plan activo. Serás redirigido a la pantalla principal.",
     "initializationError": "Error de Inicialización",
+    "enableFreeTrial": "Activar prueba gratuita",
+    "freeTrialDays": "Prueba gratis de 3 días",
     "packages": {
       "weekly": {
         "title": "Plan Semanal",
@@ -644,5 +661,8 @@
     "typeMessage": "Escribe un mensaje...",
     "noMessages": "Aún no hay mensajes",
     "sendMessage": "Enviar Mensaje"
+  },
+  "notifications": {
+    "noPushToken": "No hay token de notificaciones disponible"
   }
 }

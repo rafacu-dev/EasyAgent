@@ -12,6 +12,7 @@ import {
   Animated,
   ImageBackground,
   Alert,
+  Switch,
 } from "react-native";
 import Reanimated, {
   useSharedValue,
@@ -53,6 +54,7 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
   const [selectedPackage, setSelectedPackage] =
     useState<PurchasesPackage | null>(null);
   const [isProUser, setIsProUser] = useState<boolean>(false);
+  const [freeTrialEnabled, setFreeTrialEnabled] = useState<boolean>(false);
 
   const { init, ref, fromIntro } = useLocalSearchParams();
 
@@ -239,6 +241,32 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
 
     checkInitialization();
   }, []);
+
+  // Efecto para actualizar el paquete seleccionado cuando cambie el switch
+  useEffect(() => {
+    if (!offerings) return;
+
+    const currentOffering = offerings?.current;
+    let offeringToUse = currentOffering;
+    if (!offeringToUse || offeringToUse.availablePackages.length === 0) {
+      const allOfferings = Object.values(offerings?.all || {});
+      offeringToUse =
+        allOfferings.find((offering) => offering.availablePackages.length > 0) ||
+        null;
+    }
+
+    const allPackages = offeringToUse?.availablePackages || [];
+    const filteredPackages = allPackages.filter((pkg) => {
+      const hasTrial = pkg.identifier.toLowerCase().includes("trial") || 
+                       pkg.identifier.toLowerCase().includes("free");
+      return freeTrialEnabled ? hasTrial : !hasTrial;
+    });
+
+    // Seleccionar el primer paquete filtrado disponible
+    if (filteredPackages.length > 0) {
+      setSelectedPackage(filteredPackages[0]);
+    }
+  }, [freeTrialEnabled, offerings]);
 
   const getOfferings = async () => {
     try {
@@ -516,7 +544,7 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
       title = pkg.product.title || `Plan ${index + 1}`;
       description = pkg.product.description || t("paywall.defaultDescription");
       price = String(pkg.product.price);
-      pricePeriod = isPopular ? "per year" : isMonthly ? "per month" : "per period";
+      pricePeriod = isPopular ? t("common.perYear") : isMonthly ? t("common.perMonth") : t("common.perPeriod");
 
       // Calcular descuento para referidos usando lógica anterior
       if (isReferral) {
@@ -572,6 +600,13 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
       null;
   }
   const allPackages = offeringToUse?.availablePackages || [];
+  
+  // Filtrar paquetes según el estado del switch
+  const filteredPackages = allPackages.filter((pkg) => {
+    const hasTrial = pkg.identifier.toLowerCase().includes("trial") || 
+                     pkg.identifier.toLowerCase().includes("free");
+    return freeTrialEnabled ? hasTrial : !hasTrial;
+  });
 
   //<DetailsPager/>
   return (
@@ -706,9 +741,23 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
             </Reanimated.View>
           </View>
 
+          {/* Switch para activar/desactivar prueba gratuita */}
+          <View style={styles.switchContainer}>
+            <Text style={styles.switchText}>
+              {t("paywall.enableFreeTrial")}
+            </Text>
+            <Switch
+              value={freeTrialEnabled}
+              onValueChange={setFreeTrialEnabled}
+              trackColor={{ false: "#d6d6d6ff", true: Colors.primary }}
+              thumbColor="#fff"
+              ios_backgroundColor="#d6d6d6ff"
+            />
+          </View>
+
           <View style={styles.packagesContainer}>
             <Reanimated.View style={packagesAnimatedStyle}>
-              {allPackages.map((pkg: PurchasesPackage, index: number) => {
+              {filteredPackages.map((pkg: PurchasesPackage, index: number) => {
                 const isPopular =
                   pkg.identifier.includes("annual") ||
                   pkg.identifier.includes("yearly");
