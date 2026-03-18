@@ -810,57 +810,84 @@ const PaywallScreen: React.FC<PaywallScreenProps> = () => {
                           alignItems: "center",
                         }}
                       >
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.packageTitle}>{title}</Text>
-                          <Text style={{ fontSize: 12, fontWeight: "300" }}>
-                            {description}
-                          </Text>
-                        </View>
-
-                        <View
-                          style={{
-                            flexDirection: "column",
-                            alignItems: "flex-end",
-                          }}
-                        >
-                          {isReferral && originalPrice && discountedPrice ? (
-                            <>
-                              <View
-                                style={{
-                                  flexDirection: "row",
-                                  alignItems: "center",
-                                  gap: 8,
-                                }}
-                              >
-                                <Text style={styles.originalPrice}>
-                                  {originalPrice}
-                                </Text>
-                                <Text style={styles.discountedPrice}>
-                                  {discountedPrice}
-                                </Text>
-                              </View>
-                              <Text
-                                style={{
-                                  fontWeight: 500,
-                                  textAlign: "center",
-                                  fontSize: 12,
-                                }}
-                              >
-                                {pricePeriod}
+                        {/* Si es un plan con trial gratuito, mostrar el diseño especial */}
+                        {freeTrialEnabled ? (
+                          <>
+                            <View style={{ flex: 1 }}>
+                              <Text style={styles.freeTrialTitle}>
+                                {t("paywall.freeTrialDays")}
                               </Text>
-                            </>
-                          ) : (
-                            <>
+                            </View>
+
+                            <View
+                              style={{
+                                flexDirection: "column",
+                                alignItems: "flex-end",
+                              }}
+                            >
                               <Text style={styles.packagePrice}> {price} </Text>
                               <Text
                                 style={{ fontWeight: 500, textAlign: "center" }}
                               >
-                                {" "}
-                                {pricePeriod}{" "}
+                                {t("common.perWeek")}
                               </Text>
-                            </>
-                          )}
-                        </View>
+                            </View>
+                          </>
+                        ) : (
+                          <>
+                            <View style={{ flex: 1 }}>
+                              <Text style={styles.packageTitle}>{title}</Text>
+                              <Text style={{ fontSize: 12, fontWeight: "300" }}>
+                                {description}
+                              </Text>
+                            </View>
+
+                            <View
+                              style={{
+                                flexDirection: "column",
+                                alignItems: "flex-end",
+                              }}
+                            >
+                              {isReferral && originalPrice && discountedPrice ? (
+                                <>
+                                  <View
+                                    style={{
+                                      flexDirection: "row",
+                                      alignItems: "center",
+                                      gap: 8,
+                                    }}
+                                  >
+                                    <Text style={styles.originalPrice}>
+                                      {originalPrice}
+                                    </Text>
+                                    <Text style={styles.discountedPrice}>
+                                      {discountedPrice}
+                                    </Text>
+                                  </View>
+                                  <Text
+                                    style={{
+                                      fontWeight: 500,
+                                      textAlign: "center",
+                                      fontSize: 12,
+                                    }}
+                                  >
+                                    {pricePeriod}
+                                  </Text>
+                                </>
+                              ) : (
+                                <>
+                                  <Text style={styles.packagePrice}> {price} </Text>
+                                  <Text
+                                    style={{ fontWeight: 500, textAlign: "center" }}
+                                  >
+                                    {" "}
+                                    {pricePeriod}{" "}
+                                  </Text>
+                                </>
+                              )}
+                            </View>
+                          </>
+                        )}
                       </View>
                     </TouchableOpacity>
                   </Reanimated.View>
@@ -975,9 +1002,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   packagesContainer: {
+    marginTop: 0,
     marginBottom: 10,
-    flex: 1,
-    justifyContent: "center",
   },
   packageButton: {
     borderRadius: 16,
@@ -1197,9 +1223,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 16,
-    marginBottom: 25,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: "#d6d6d6ff",
+  },
+  freeTrialTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#FF8C00",
+    marginBottom: 3,
+    textAlign: "left",
   },
   switchText: {
     fontSize: 13,
@@ -1212,13 +1245,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF5E6",
     borderRadius: 16,
     alignItems: "center",
-  },
-  freeTrialTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#FF8C00",
-    marginBottom: 10,
-    textAlign: "center",
   },
   freeTrialDescription: {
     fontSize: 14,
